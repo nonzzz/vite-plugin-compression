@@ -1,0 +1,26 @@
+{
+  "name": "vite-compression-plugin",
+  "version": "0.0.0",
+  "description": "none",
+  "main": "index.js",
+  "scripts": {
+    "dev": "vite build"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/XeryYue/k.git"
+  },
+  "keywords": [],
+  "author": "Kanno",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/XeryYue/k/issues"
+  },
+  "homepage": "https://github.com/XeryYue/k#readme",
+  "devDependencies": {
+    "@types/node": "^17.0.14",
+    "prettier": "^2.5.1",
+    "typescript": "^4.5.5",
+    "vite": "^2.7.13"
+  }
+}
