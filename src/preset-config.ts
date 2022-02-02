@@ -4,10 +4,12 @@ export type Algorithm = 'gzip' | 'brotliCompress' | 'deflate' | 'deflateRaw'
 
 export type CompressionOptions = Partial<ZlibOptions> | Partial<BrotliOptions>
 
+export type Regular = string | RegExp | Array<string | RegExp> | undefined
+
 export interface ViteCompressionPluginConfig {
-  test?: string | RegExp | Array<string | RegExp> | undefined
-  include?: string | RegExp | Array<string | RegExp> | undefined
-  exclude?: string | RegExp | Array<string | RegExp> | undefined
+  test?: Regular
+  include?: Regular
+  exclude?: Regular
   algorithm?: Algorithm | (() => Algorithm)
   compressionOptions?: CompressionOptions
   filename?: string | (() => string)
