@@ -1,14 +1,12 @@
 import type { ZlibOptions, BrotliOptions } from 'zlib'
-
+import type { Pattern } from 'fast-glob'
 export type Algorithm = 'gzip' | 'brotliCompress' | 'deflate' | 'deflateRaw'
 
 export type CompressionOptions = Partial<ZlibOptions> | Partial<BrotliOptions>
 
-export type Regular = string | RegExp | Array<string | RegExp> | undefined
+export type Regular = Pattern[]
 
 export interface ViteCompressionPluginConfig {
-  test?: Regular
-  include?: Regular
   exclude?: Regular
   algorithm?: Algorithm | (() => Algorithm)
   compressionOptions?: CompressionOptions
@@ -17,9 +15,7 @@ export interface ViteCompressionPluginConfig {
 }
 
 const DEFAULT_CONFIG: ViteCompressionPluginConfig = {
-  test: undefined,
-  include: undefined,
-  exclude: undefined,
+  exclude: [],
   algorithm: 'gzip',
   compressionOptions: {
     level: 9

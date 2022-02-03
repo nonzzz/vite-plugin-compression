@@ -1,9 +1,7 @@
 import path from 'path'
 import fg from 'fast-glob'
-import type { ViteCompressionPluginConfig } from './preset-config'
+import type { Regular, ViteCompressionPluginConfig } from './preset-config'
 import fs from 'fs-extra'
-
-type Regular = Pick<ViteCompressionPluginConfig, 'test' | 'include' | 'exclude'>
 
 const normalizePath = (entry: string) => entry.replace(/\\/g, '/')
 
@@ -14,9 +12,8 @@ const generatorPath = (entry: string, root = process.cwd()) => (isAbsolutePath(e
 export const resolvePath = (entry: string, root = process.cwd()) => generatorPath(entry, root)
 
 export const readGlobalFiles = async (entry: string, regular: Regular) => {
-  const { test, include, exclude } = regular
   entry = normalizePath(path.join(entry, '**', '*'))
-  const files = await fg(entry, { dot: true })
+  const files = await fg(entry, { dot: true, ignore: regular })
   return files
 }
 

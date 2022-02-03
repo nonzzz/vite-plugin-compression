@@ -1,4 +1,3 @@
-import fs from 'fs-extra'
 import { resolveConfig } from './preset-config'
 import { readGlobalFiles, removeFiles, resolvePath } from './utils'
 import type { Plugin, ResolvedConfig } from 'vite'
@@ -18,11 +17,9 @@ export default function (opts: ViteCompressionPluginConfig = {}): Plugin {
       outputPath = resolvePath(userConfig.build.outDir, userConfig.root)
     },
     async closeBundle() {
-      const { test, include, exclude, deleteOriginalAssets, compressionOptions, algorithm } = options
-      const files = await readGlobalFiles(outputPath, { test, include, exclude })
+      const { deleteOriginalAssets, compressionOptions, algorithm, exclude } = options
+      const files = await readGlobalFiles(outputPath, exclude)
       // should compression files.
-
-      getCompression(algorithm, compressionOptions)
 
       // do delete file or not after compression
       try {
