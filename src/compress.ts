@@ -10,3 +10,9 @@ export const getCompression = (algorithm: Algorithm, compressionOptions: Compres
   if (algorithm === 'brotliCompress') raw = require('zlib').createBrotliCompress
   return raw(compressionOptions)
 }
+
+export const getCompressExt = (algorithm: Algorithm) => {
+  if (algorithm === 'gzip') return '.gz'
+  if (algorithm === 'brotliCompress') return '.br'
+  return ''
+}

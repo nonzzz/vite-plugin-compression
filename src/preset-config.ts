@@ -11,7 +11,6 @@ export interface ViteCompressionPluginConfig {
   threshold?: number
   algorithm?: Algorithm | (() => Algorithm)
   compressionOptions?: CompressionOptions
-  filename?: string | (() => string)
   deleteOriginalAssets?: boolean | 'keep-source-map'
   loginfo?: 'silent' | 'info'
 }
@@ -23,7 +22,6 @@ const DEFAULT_CONFIG: ViteCompressionPluginConfig = {
   compressionOptions: {
     level: 9
   },
-  filename: '[path][base].gz',
   deleteOriginalAssets: false,
   loginfo: 'info'
 }

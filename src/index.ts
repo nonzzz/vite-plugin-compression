@@ -6,16 +6,22 @@ import { logError, logSuccess } from './logger'
 import type { Plugin, ResolvedConfig } from 'vite'
 import type { ViteCompressionPluginConfig } from './preset-config'
 import chalk from 'chalk'
+import { getCompressExt, getCompression } from './compress'
+import { transfer } from './stream'
 
 export default function (opts: ViteCompressionPluginConfig = {}): Plugin {
   let outputPath
   let log: ResolvedConfig['logger']
   const options = resolveConfig(opts)
 
+  const compressList = []
+
   const compressMap = new Map<
     string,
     {
       beforeCompressBytes?: number
+      afterCompressBytes?: number
+      compressName?: string
       fileName?: string
     }
   >()
@@ -29,28 +35,57 @@ export default function (opts: ViteCompressionPluginConfig = {}): Plugin {
       outputPath = resolvePath(userConfig.build.outDir, userConfig.root)
     },
     async closeBundle() {
-      const { deleteOriginalAssets, compressionOptions, algorithm, exclude, threshold, filename } = options
+      const { deleteOriginalAssets, compressionOptions, algorithm, exclude, threshold } = options
+      const ext = getCompressExt(algorithm)
       const files = await readGlobalFiles(outputPath, exclude)
       let flag = files.length
-      // set should compress file infomation.
+
       while (flag > 0) {
         flag--
         const { size: beforeCompressBytes } = await fs.stat(files[flag])
         if (beforeCompressBytes <= threshold) continue
         compressMap.set(files[flag], {
           beforeCompressBytes,
-          fileName: path.basename(files[flag])
+          fileName: path.extname(files[flag])
+        })
+        compressList.push(files[flag])
+      }
+      //
+      await Promise.all(
+        compressList.map(async (filePath) => {
+          try {
+            const compressInfo = compressMap.get(filePath)
+            const compress = getCompression(algorithm, compressionOptions)
+            const afterCompressBytes = await transfer(filePath, filePath + ext, compress)
+
+            compressMap.set(filePath, {
+              ...compressInfo,
+              compressName: compressInfo.fileName + ext,
+              afterCompressBytes
+            })
+          } catch (error) {
+            logError(error, log)
+          }
+        })
+      )
+
+      if (options.loginfo === 'info') {
+        logSuccess('[vite-compression-plugin]: compressed file successfully:', log)
+        compressMap.forEach((val) => {
+          const { beforeCompressBytes, afterCompressBytes, compressName } = val
+          const str = `${fromatBytes(beforeCompressBytes)} / ${fromatBytes(afterCompressBytes)}`
+          const ratio = `ratio: ${(afterCompressBytes / beforeCompressBytes).toFixed(2)}%`
+
+          log.info(
+            chalk.dim(path.basename(outputPath) + '/') +
+              chalk.greenBright(compressName) +
+              '  ' +
+              chalk.dim(str) +
+              '  ' +
+              chalk.dim(ratio)
+          )
         })
       }
-
-      compressMap.forEach((val, filePath) => {
-        const { fileName, beforeCompressBytes } = val
-        const str = `${fromatBytes(beforeCompressBytes)} / ${fromatBytes(beforeCompressBytes)}`
-        if (options.loginfo === 'info') {
-          logSuccess('[vite-compression-plugin]: compressed file successfully:', log)
-          log.info(chalk.dim(path.basename(outputPath) + '/') + chalk.greenBright(fileName) + '  ' + chalk.dim(str))
-        }
-      })
 
       // do delete file or not after compression
       try {
