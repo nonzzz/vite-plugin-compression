@@ -8,20 +8,24 @@ export type Regular = Pattern[]
 
 export interface ViteCompressionPluginConfig {
   exclude?: Regular
+  threshold?: number
   algorithm?: Algorithm | (() => Algorithm)
   compressionOptions?: CompressionOptions
   filename?: string | (() => string)
   deleteOriginalAssets?: boolean | 'keep-source-map'
+  loginfo?: 'slient' | 'info'
 }
 
 const DEFAULT_CONFIG: ViteCompressionPluginConfig = {
   exclude: [],
+  threshold: 0,
   algorithm: 'gzip',
   compressionOptions: {
     level: 9
   },
   filename: '[path][base].gz',
-  deleteOriginalAssets: false
+  deleteOriginalAssets: false,
+  loginfo: 'info'
 }
 
 export const resolveConfig = (userConfig?: ViteCompressionPluginConfig) =>
