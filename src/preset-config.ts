@@ -13,7 +13,7 @@ export interface ViteCompressionPluginConfig {
   compressionOptions?: CompressionOptions
   filename?: string | (() => string)
   deleteOriginalAssets?: boolean | 'keep-source-map'
-  loginfo?: 'slient' | 'info'
+  loginfo?: 'silent' | 'info'
 }
 
 const DEFAULT_CONFIG: ViteCompressionPluginConfig = {

@@ -6,11 +6,11 @@ This is a compression plugin for vite. Use node stream cover bundle to zlib.
 
 - [x] support exclude option.
 - [x] support threshold option.
-- [] support algorithm option.
-- [] support compressionOptions option.
-- [] support filename option.
+- [ ] support algorithm option.
+- [ ] support compressionOptions option.
+- [ ] support filename option.
 - [x] support deleteOriginalAssets option.
-- [] support loginfo option.
+- [x] support loginfo option.
 
 ## Options
 
