@@ -1,6 +1,6 @@
 {
   "name": "vite-compression-plugin",
-  "version": "0.0.0",
+  "version": "0.0.1",
   "description": "compress souce file by stream, use it in vite.",
   "main": "dist/vite-compression-plugin.cjs.js",
   "types": "dist/vite-compression-plugin.d.ts",
