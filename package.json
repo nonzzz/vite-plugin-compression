@@ -1,6 +1,6 @@
 {
   "name": "vite-compression-plugin",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "compress souce file by stream, use it in vite.",
   "main": "dist/vite-compression-plugin.cjs.js",
   "types": "dist/vite-compression-plugin.d.ts",
@@ -15,15 +15,15 @@
   ],
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/XeryYue/k.git"
+    "url": "git+https://github.com/XeryYue/vite-compression-plugin.git"
   },
   "keywords": [],
   "author": "Kanno",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/XeryYue/k/issues"
+    "url": "https://github.com/XeryYue/vite-compression-plugin/issues"
   },
-  "homepage": "https://github.com/XeryYue/k#readme",
+  "homepage": "https://github.com/XeryYue/vite-compression-plugin#readme",
   "devDependencies": {
     "@microsoft/api-extractor": "^7.19.4",
     "@rollup/plugin-node-resolve": "^13.1.3",

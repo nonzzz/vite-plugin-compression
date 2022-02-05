@@ -2,6 +2,33 @@
 
 This is a compression plugin for vite. Use node stream.
 
+## Install
+
+```bash
+
+$ yarn add vite-compression-plugin -D
+
+# or
+
+$ npm install vite-compression-plugin -D
+
+```
+
+## Usage
+
+```js
+import { defineConfig } from 'vite'
+
+import Compression from 'vite-compression-plugin'
+
+export default defineConfig({
+  plugins: [
+    // ...your plugin
+    Compression()
+  ]
+})
+```
+
 ## Options
 
 | params                 | type                       | default | description                                                                                                                                               |
@@ -20,3 +47,7 @@ This is a compression plugin for vite. Use node stream.
 ## Author
 
 Kanno
+
+```
+
+```
