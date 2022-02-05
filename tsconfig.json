@@ -3,9 +3,11 @@
     "allowJs": true,
     "baseUrl": ".",
     "noImplicitThis": true,
-    "importHelpers": true,
     "esModuleInterop": true,
+    "skipLibCheck": true,
     "target": "ESNext",
+    "lib": ["esnext"],
+    "resolveJsonModule": true,
     "module": "ESNext",
     "moduleResolution": "node",
     "outDir": "dist"

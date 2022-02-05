@@ -9,7 +9,9 @@ import chalk from 'chalk'
 import { getCompressExt, getCompression } from './compress'
 import { transfer } from './stream'
 
-export default function (opts: ViteCompressionPluginConfig = {}): Plugin {
+export type { ViteCompressionPluginConfig, Regular, CompressionOptions, Algorithm } from './preset-config'
+
+function ViteCompressionPlugin(opts: ViteCompressionPluginConfig = {}): Plugin {
   let outputPath
   let log: ResolvedConfig['logger']
   const options = resolveConfig(opts)
@@ -97,3 +99,5 @@ export default function (opts: ViteCompressionPluginConfig = {}): Plugin {
     }
   }
 }
+
+export default ViteCompressionPlugin
