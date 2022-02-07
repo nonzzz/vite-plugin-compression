@@ -17,7 +17,11 @@
     "type": "git",
     "url": "git+https://github.com/XeryYue/vite-compression-plugin.git"
   },
-  "keywords": [],
+  "keywords": [
+    "vite",
+    "vite-plugin",
+    "compress"
+  ],
   "author": "Kanno",
   "license": "MIT",
   "bugs": {
