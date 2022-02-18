@@ -16,7 +16,7 @@ function ViteCompressionPlugin(opts: ViteCompressionPluginConfig = {}): Plugin {
   let log: ResolvedConfig['logger']
   const options = resolveConfig(opts)
 
-  const compressList = []
+  const compressList: string[] = []
 
   const compressMap = new Map<
     string,
@@ -91,7 +91,7 @@ function ViteCompressionPlugin(opts: ViteCompressionPluginConfig = {}): Plugin {
 
       // do delete file or not after compression
       try {
-        const removed = await removeFiles(files, deleteOriginalAssets)
+        const removed = await removeFiles(compressList, deleteOriginalAssets)
         if (removed) logSuccess(removed, log)
       } catch (error) {
         logError(error, log)
