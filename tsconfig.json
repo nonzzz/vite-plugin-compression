@@ -5,7 +5,7 @@
     "noImplicitThis": true,
     "esModuleInterop": true,
     "skipLibCheck": true,
-    "target": "ES2017",
+    "target": "ES2019",
     "lib": ["esnext"],
     "resolveJsonModule": true,
     "module": "ESNext",

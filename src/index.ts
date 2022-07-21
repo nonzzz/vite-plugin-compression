@@ -1,23 +1,32 @@
 import fs from 'fs-extra'
 import path from 'path'
-import { resolveConfig } from './preset-config'
 import { fromatBytes, readGlobalFiles, removeFiles, resolvePath } from './utils'
-import { logError, logSuccess } from './logger'
-import type { Plugin, ResolvedConfig } from 'vite'
-import type { ViteCompressionPluginConfig } from './preset-config'
+import { printf as _printf } from './logger'
 import chalk from 'chalk'
 import { getCompressExt, getCompression } from './compress'
 import { transfer } from './stream'
 
-export type { ViteCompressionPluginConfig, Regular, CompressionOptions, Algorithm } from './preset-config'
+import type { Plugin } from 'vite'
+import type { ViteCompressionPluginConfig } from './interface'
+
+export type { Regular, CompressionOptions, Algorithm } from './interface'
 
 function ViteCompressionPlugin(opts: ViteCompressionPluginConfig = {}): Plugin {
   let outputPath
-  let log: ResolvedConfig['logger']
-  const options = resolveConfig(opts)
+  let printf: ReturnType<typeof _printf>
 
+  const preset: ViteCompressionPluginConfig = {
+    exclude: [],
+    threshold: 0,
+    algorithm: 'gzip',
+    compressionOptions: {
+      level: 9
+    },
+    deleteOriginalAssets: false,
+    loginfo: 'info'
+  }
+  const options = Object.assign(preset, opts && typeof opts === 'object' ? opts : {})
   const compressList: string[] = []
-
   const compressMap = new Map<
     string,
     {
@@ -33,7 +42,7 @@ function ViteCompressionPlugin(opts: ViteCompressionPluginConfig = {}): Plugin {
     apply: 'build',
     enforce: 'post',
     configResolved(userConfig) {
-      log = userConfig.logger
+      printf = _printf(userConfig.logger)
       outputPath = resolvePath(userConfig.build.outDir, userConfig.root)
     },
     async closeBundle() {
@@ -66,19 +75,21 @@ function ViteCompressionPlugin(opts: ViteCompressionPluginConfig = {}): Plugin {
               afterCompressBytes
             })
           } catch (error) {
-            logError(error, log)
+            if (error instanceof Error) {
+              printf.error(error.message)
+            }
           }
         })
       )
 
       if (options.loginfo === 'info') {
-        logSuccess('[vite-compression-plugin]: compressed file successfully:', log)
+        printf.info('[vite-compression-plugin]: compressed file successfully:\n')
         compressMap.forEach((val) => {
           const { beforeCompressBytes, afterCompressBytes, compressName } = val
           const str = `${fromatBytes(beforeCompressBytes)} / ${fromatBytes(afterCompressBytes)}`
           const ratio = `ratio: ${(afterCompressBytes / beforeCompressBytes).toFixed(2)}%`
 
-          log.info(
+          printf.info(
             chalk.dim(path.basename(outputPath) + '/') +
               chalk.greenBright(compressName) +
               '  ' +
@@ -92,9 +103,9 @@ function ViteCompressionPlugin(opts: ViteCompressionPluginConfig = {}): Plugin {
       // do delete file or not after compression
       try {
         const removed = await removeFiles(compressList, deleteOriginalAssets)
-        if (removed) logSuccess(removed, log)
+        if (removed) printf.info(removed)
       } catch (error) {
-        logError(error, log)
+        printf.error(error.message)
       }
     }
   }

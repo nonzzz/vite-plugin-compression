@@ -1,5 +1,0 @@
-input:
-  index: 'src/index.ts'
-output:
-  dts: true
-  dir: dist

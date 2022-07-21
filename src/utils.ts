@@ -1,9 +1,9 @@
 import path from 'path'
+import { normalizePath } from 'vite'
 import fg from 'fast-glob'
-import type { Regular, ViteCompressionPluginConfig } from './preset-config'
 import fs from 'fs-extra'
 
-const normalizePath = (entry: string) => entry.replace(/\\/g, '/')
+import type { Regular, ViteCompressionPluginConfig } from './interface'
 
 const isAbsolutePath = (entry: string) => (path.isAbsolute(entry) ? true : false)
 
@@ -46,3 +46,5 @@ export const fromatBytes = (bytes: number, decimals = 2) => {
   const i = Math.floor(Math.log(bytes) / Math.log(k))
   return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i]
 }
+
+export const len = <T>(source?: T[] | string) => source.length
