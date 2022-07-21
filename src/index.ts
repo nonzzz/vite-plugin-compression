@@ -32,8 +32,7 @@ function ViteCompressionPlugin(opts: ViteCompressionPluginConfig = {}): Plugin {
     {
       beforeCompressBytes?: number
       afterCompressBytes?: number
-      compressName?: string
-      fileName?: string
+      resultPath?: string
     }
   >()
 
@@ -57,7 +56,7 @@ function ViteCompressionPlugin(opts: ViteCompressionPluginConfig = {}): Plugin {
         if (beforeCompressBytes <= threshold) continue
         compressMap.set(files[flag], {
           beforeCompressBytes,
-          fileName: path.extname(files[flag])
+          resultPath: path.relative(outputPath, files[flag]) + ext
         })
         compressList.push(files[flag])
       }
@@ -71,7 +70,6 @@ function ViteCompressionPlugin(opts: ViteCompressionPluginConfig = {}): Plugin {
 
             compressMap.set(filePath, {
               ...compressInfo,
-              compressName: compressInfo.fileName + ext,
               afterCompressBytes
             })
           } catch (error) {
@@ -85,13 +83,12 @@ function ViteCompressionPlugin(opts: ViteCompressionPluginConfig = {}): Plugin {
       if (options.loginfo === 'info') {
         printf.info('[vite-compression-plugin]: compressed file successfully:\n')
         compressMap.forEach((val) => {
-          const { beforeCompressBytes, afterCompressBytes, compressName } = val
+          const { beforeCompressBytes, afterCompressBytes, resultPath } = val
           const str = `${fromatBytes(beforeCompressBytes)} / ${fromatBytes(afterCompressBytes)}`
           const ratio = `ratio: ${(afterCompressBytes / beforeCompressBytes).toFixed(2)}%`
-
           printf.info(
             chalk.dim(path.basename(outputPath) + '/') +
-              chalk.greenBright(compressName) +
+              chalk.greenBright(resultPath) +
               '  ' +
               chalk.dim(str) +
               '  ' +

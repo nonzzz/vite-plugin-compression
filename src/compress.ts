@@ -1,4 +1,4 @@
-import type { CompressionOptions, ViteCompressionPluginConfig } from './preset-config'
+import type { CompressionOptions, ViteCompressionPluginConfig } from './interface'
 
 type Algorithm = ViteCompressionPluginConfig['algorithm']
 

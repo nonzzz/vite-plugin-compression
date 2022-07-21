@@ -8,7 +8,7 @@
     "target": "ES2019",
     "lib": ["esnext"],
     "resolveJsonModule": true,
-    "module": "ESNext",
+    "module": "CommonJS",
     "moduleResolution": "node",
     "outDir": "dist"
   }
