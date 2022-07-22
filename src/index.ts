@@ -68,13 +68,14 @@ function ViteCompressionPlugin(opts: ViteCompressionPluginConfig = {}): Plugin {
         })
         compressList.push(files[flag])
       }
+      if (!len(compressList)) return
       await Promise.all(
         compressList.map(async (filePath) => {
           try {
             const compressInfo = compressMap.get(filePath)
             const compress = getCompression(algorithm, compressionOptions)
             const afterCompressBytes = await transfer(filePath, filePath + ext, compress)
-            compressMap.set(filePath, Object.assign(compressInfo, afterCompressBytes))
+            compressMap.set(filePath, Object.assign(compressInfo, { afterCompressBytes }))
           } catch (error) {
             return this.error(error)
           }
