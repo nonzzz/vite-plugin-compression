@@ -1,6 +1,4 @@
-import type { CompressionOptions, ViteCompressionPluginConfig } from './interface'
-
-type Algorithm = ViteCompressionPluginConfig['algorithm']
+import type { CompressionOptions, Algorithm } from './interface'
 
 export const getCompression = (algorithm: Algorithm, compressionOptions: CompressionOptions) => {
   let raw

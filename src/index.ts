@@ -1,6 +1,6 @@
 import fs from 'fs-extra'
 import path from 'path'
-import { fromatBytes, readGlobalFiles, removeFiles, resolvePath } from './utils'
+import { fromatBytes, readGlobalFiles, removeFiles, resolvePath, len } from './utils'
 import { printf as _printf } from './logger'
 import chalk from 'chalk'
 import { getCompressExt, getCompression } from './compress'
@@ -37,7 +37,7 @@ function ViteCompressionPlugin(opts: ViteCompressionPluginConfig = {}): Plugin {
   >()
 
   return {
-    name: 'vite-compression-plugin',
+    name: 'vite-plugin-compression',
     apply: 'build',
     enforce: 'post',
     configResolved(userConfig) {
@@ -45,11 +45,19 @@ function ViteCompressionPlugin(opts: ViteCompressionPluginConfig = {}): Plugin {
       outputPath = resolvePath(userConfig.build.outDir, userConfig.root)
     },
     async closeBundle() {
-      const { deleteOriginalAssets, compressionOptions, algorithm, exclude, threshold } = options
+      const { deleteOriginalAssets, compressionOptions, algorithm: _algorithm, exclude, threshold } = options
+      const algorithm = typeof _algorithm === 'function' ? _algorithm() : _algorithm
       const ext = getCompressExt(algorithm)
       const files = await readGlobalFiles(outputPath, exclude)
-      let flag = files.length
+      let flag = len(files)
 
+      /**
+       * We should read the file content before compression.
+       * The process of reading stat is approximately serial.
+       * But when we compress the file, the process of reading is parallel.
+       *
+       */
+      if (!flag) return
       while (flag > 0) {
         flag--
         const { size: beforeCompressBytes } = await fs.stat(files[flag])
@@ -60,22 +68,15 @@ function ViteCompressionPlugin(opts: ViteCompressionPluginConfig = {}): Plugin {
         })
         compressList.push(files[flag])
       }
-      //
       await Promise.all(
         compressList.map(async (filePath) => {
           try {
             const compressInfo = compressMap.get(filePath)
             const compress = getCompression(algorithm, compressionOptions)
             const afterCompressBytes = await transfer(filePath, filePath + ext, compress)
-
-            compressMap.set(filePath, {
-              ...compressInfo,
-              afterCompressBytes
-            })
+            compressMap.set(filePath, Object.assign(compressInfo, afterCompressBytes))
           } catch (error) {
-            if (error instanceof Error) {
-              printf.error(error.message)
-            }
+            return this.error(error)
           }
         })
       )
@@ -97,12 +98,12 @@ function ViteCompressionPlugin(opts: ViteCompressionPluginConfig = {}): Plugin {
         })
       }
 
-      // do delete file or not after compression
       try {
         const removed = await removeFiles(compressList, deleteOriginalAssets)
+        if (options.loginfo === 'silent') return
         if (removed) printf.info(removed)
       } catch (error) {
-        printf.error(error.message)
+        return this.error(error)
       }
     }
   }

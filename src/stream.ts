@@ -1,7 +1,5 @@
 import { createReadStream, createWriteStream } from 'fs'
-import type { Gzip, Deflate, DeflateRaw, BrotliCompress } from 'zlib'
-
-type Compress = Gzip | Deflate | DeflateRaw | BrotliCompress
+import type { Compress } from './interface'
 
 export const transfer = (entry: string, to: string, compress: Compress): Promise<number> => {
   const len = []
