@@ -1,0 +1,23 @@
+name: Unit test
+
+on: [push, pull_request]
+
+jobs:
+  run-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: setup node environment
+        uses: actions/setup-node@v3
+        with:
+          node-version: '16.x'
+
+      - name: install dependices
+        run: yarn
+
+      - name: run test
+        run: yarn test
+
+      - name: report coverage
+        uses: codecov/codecov-action@v2

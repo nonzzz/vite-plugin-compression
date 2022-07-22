@@ -3,3 +3,4 @@ dist
 temp
 types
 .tmpl
+coverage
