@@ -1,7 +1,7 @@
 import path from 'path'
 import { normalizePath } from 'vite'
 import fg from 'fast-glob'
-import fs from 'fs-extra'
+import fs from './fs'
 
 import type { Regular, ViteCompressionPluginConfig } from './interface'
 

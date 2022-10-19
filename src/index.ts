@@ -1,8 +1,8 @@
-import fs from 'fs-extra'
 import path from 'path'
+import chalk from 'chalk'
+import fs from './fs'
 import { fromatBytes, readGlobalFiles, removeFiles, resolvePath, len } from './utils'
 import { printf as _printf } from './logger'
-import chalk from 'chalk'
 import { getCompressExt, getCompression } from './compress'
 import { transfer } from './stream'
 

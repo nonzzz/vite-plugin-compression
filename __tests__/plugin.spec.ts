@@ -1,6 +1,6 @@
 import { build } from 'vite'
 import test from 'ava'
-import fs from 'fs-extra'
+import fs from '../src/fs'
 import compression from '../src'
 
 import type { InlineConfig } from 'vite'
