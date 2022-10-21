@@ -10,7 +10,15 @@ export const getCompression = (algorithm: Algorithm, compressionOptions: Compres
 }
 
 export const getCompressExt = (algorithm: Algorithm) => {
-  if (algorithm === 'gzip') return '.gz'
-  if (algorithm === 'brotliCompress') return '.br'
-  return ''
+  switch (algorithm) {
+    case 'gzip':
+      return '.gz'
+    case 'brotliCompress':
+      return '.br'
+    case 'deflateRaw':
+    case 'deflate':
+      return ''
+    default:
+      throw new Error('Invalid algorithm')
+  }
 }
