@@ -1,113 +1,95 @@
-import fs from 'fs-extra'
 import path from 'path'
-import { fromatBytes, readGlobalFiles, removeFiles, resolvePath, len } from './utils'
-import { printf as _printf } from './logger'
-import chalk from 'chalk'
-import { getCompressExt, getCompression } from './compress'
-import { transfer } from './stream'
-
+import fs from './fs'
+import { readGlobalFiles, resolvePath, len, printf } from './utils'
+import { ensureAlgorithmAndFormat, transfer } from './compress'
 import type { Plugin } from 'vite'
 import type { ViteCompressionPluginConfig } from './interface'
 
 export type { Regular, CompressionOptions, Algorithm } from './interface'
 
-function ViteCompressionPlugin(opts: ViteCompressionPluginConfig = {}): Plugin {
-  let outputPath
-  let printf: ReturnType<typeof _printf>
+const OUT_PUT_KEY = Symbol('__vite__plugin_compression__output__path')
 
-  const preset: ViteCompressionPluginConfig = {
-    exclude: [],
-    threshold: 0,
-    algorithm: 'gzip',
-    compressionOptions: {
-      level: 9
-    },
-    deleteOriginalAssets: false,
-    loginfo: 'info'
-  }
-  const options = Object.assign(preset, opts && typeof opts === 'object' ? opts : {})
-  const compressList: string[] = []
-  const compressMap = new Map<
+function compression(opts: ViteCompressionPluginConfig = {}): Plugin {
+  const {
+    exclude = [],
+    threshold = 100,
+    algorithm: userAlgorithm = 'gzip',
+    compressionOptions = { level: 9 },
+    deleteOriginalAssets = false,
+    loginfo = 'info'
+  } = opts
+  const bucket = new Map<
     string,
     {
       beforeCompressBytes?: number
       afterCompressBytes?: number
-      resultPath?: string
     }
   >()
+
+  const pluginInstance = Object.create(null)
 
   return {
     name: 'vite-plugin-compression',
     apply: 'build',
     enforce: 'post',
     configResolved(userConfig) {
-      printf = _printf(userConfig.logger)
-      outputPath = resolvePath(userConfig.build.outDir, userConfig.root)
+      // ConfigResolved is the vite's hook.
+      Reflect.set(pluginInstance, OUT_PUT_KEY, resolvePath(userConfig.build.outDir, userConfig.root))
     },
     async closeBundle() {
-      const { deleteOriginalAssets, compressionOptions, algorithm: _algorithm, exclude, threshold } = options
-      const algorithm = typeof _algorithm === 'function' ? _algorithm() : _algorithm
-      const ext = getCompressExt(algorithm)
+      const [algorithm, ext] = await ensureAlgorithmAndFormat(
+        typeof userAlgorithm === 'function' ? userAlgorithm() : userAlgorithm,
+        compressionOptions
+      )
+      const outputPath = Reflect.get(pluginInstance, OUT_PUT_KEY)
       const files = await readGlobalFiles(outputPath, exclude)
-      let flag = len(files)
 
-      /**
-       * We should read the file content before compression.
-       * The process of reading stat is approximately serial.
-       * But when we compress the file, the process of reading is parallel.
-       *
-       */
-      if (!flag) return
-      while (flag > 0) {
-        flag--
-        const { size: beforeCompressBytes } = await fs.stat(files[flag])
-        if (beforeCompressBytes <= threshold) continue
-        compressMap.set(files[flag], {
-          beforeCompressBytes,
-          resultPath: path.relative(outputPath, files[flag]) + ext
-        })
-        compressList.push(files[flag])
-      }
-      if (!len(compressList)) return
+      if (!len(files)) return
+
       await Promise.all(
-        compressList.map(async (filePath) => {
-          try {
-            const compressInfo = compressMap.get(filePath)
-            const compress = getCompression(algorithm, compressionOptions)
-            const afterCompressBytes = await transfer(filePath, filePath + ext, compress)
-            compressMap.set(filePath, Object.assign(compressInfo, { afterCompressBytes }))
-          } catch (error) {
-            return this.error(error)
-          }
+        files.map(async (file) => {
+          const { size } = await fs.stat(file).catch()
+          if (size <= threshold) return
+          bucket.set(file, {
+            beforeCompressBytes: size
+          })
         })
       )
-
-      if (options.loginfo === 'info') {
-        printf.info('[vite-compression-plugin]: compressed file successfully:\n')
-        compressMap.forEach((val) => {
-          const { beforeCompressBytes, afterCompressBytes, resultPath } = val
-          const str = `${fromatBytes(beforeCompressBytes)} / ${fromatBytes(afterCompressBytes)}`
-          const ratio = `ratio: ${(afterCompressBytes / beforeCompressBytes).toFixed(2)}%`
-          printf.info(
-            chalk.dim(path.basename(outputPath) + '/') +
-              chalk.greenBright(resultPath) +
-              '  ' +
-              chalk.dim(str) +
-              '  ' +
-              chalk.dim(ratio)
-          )
-        })
-      }
-
       try {
-        const removed = await removeFiles(compressList, deleteOriginalAssets)
-        if (options.loginfo === 'silent') return
-        if (removed) printf.info(removed)
+        const tasks = Array.from(bucket.keys())
+        if (!len(tasks)) return
+        await Promise.all(
+          tasks.map(async (task) => {
+            const before = bucket.get(task)
+            const bytes = await transfer(task, task + ext, algorithm)
+            bucket.set(task, { ...before, afterCompressBytes: bytes })
+            if (deleteOriginalAssets) {
+              switch (deleteOriginalAssets) {
+                case 'keep-source-map':
+                  return task.endsWith('.map') && fs.remove(task)
+                case true:
+                  return fs.remove(task)
+                default:
+                  throw new Error('[vite-plugin-compress]: Invalid deleteOriginalAssets')
+              }
+            }
+          })
+        )
       } catch (error) {
-        return this.error(error)
+        this.error(error)
+      }
+      if (loginfo === 'info') {
+        printf.info('[vite-plugin-compress]: compressed file successfully:\n')
+        bucket.forEach(({ beforeCompressBytes, afterCompressBytes }, key) => {
+          const target = path.relative(outputPath, key) + ext
+          const ratio = `ratio: ${(afterCompressBytes / beforeCompressBytes).toFixed(2)}%`
+          printf.dim(`${target} ${ratio}`)
+        })
       }
     }
   }
 }
 
-export default ViteCompressionPlugin
+export { compression }
+
+export default compression

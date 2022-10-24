@@ -1,6 +1,6 @@
 import { build } from 'vite'
 import test from 'ava'
-import fs from 'fs-extra'
+import fs from '../src/fs'
 import compression from '../src'
 
 import type { InlineConfig } from 'vite'
@@ -10,7 +10,7 @@ const defaultWd = __dirname
 
 const conf: InlineConfig = {
   root: defaultWd,
-  plugins: [compression()],
+  plugins: [compression({ threshold: 0 })],
   configFile: false,
   publicDir: false,
   build: {
@@ -40,7 +40,7 @@ test.serial('threshold', async (t) => {
 })
 
 test.serial('deleteOriginalAssets', async (t) => {
-  conf.plugins = [compression({ deleteOriginalAssets: true })]
+  conf.plugins = [compression({ deleteOriginalAssets: true, threshold: 0 })]
   await build(conf)
   await sleep(1000)
   t.is(fs.existsSync(path.join(defaultWd, 'dist/mock.cjs.js')), false)
