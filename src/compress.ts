@@ -1,23 +1,20 @@
+import type { Gzip } from 'zlib'
 import type { CompressionOptions, Algorithm } from './interface'
 
-export const getCompression = (algorithm: Algorithm, compressionOptions: CompressionOptions) => {
-  let raw
-  if (algorithm === 'gzip') raw = require('zlib').createGzip
-  if (algorithm === 'deflate') raw = require('zlib').createDeflate
-  if (algorithm === 'deflateRaw') raw = require('zlib').createDeflateRaw
-  if (algorithm === 'brotliCompress') raw = require('zlib').createBrotliCompress
-  return raw(compressionOptions)
-}
-
-export const getCompressExt = (algorithm: Algorithm) => {
+export const ensureAlgorithmAndFormat = async (
+  algorithm: Algorithm,
+  compressionOptions: CompressionOptions
+): Promise<[Gzip, string]> => {
+  const zlib = await import('zlib')
   switch (algorithm) {
     case 'gzip':
-      return '.gz'
+      return [zlib.createGzip(compressionOptions), '.gz']
     case 'brotliCompress':
-      return '.br'
-    case 'deflateRaw':
+      return [zlib.createBrotliCompress(compressionOptions), '.br']
     case 'deflate':
-      return ''
+    case 'deflateRaw':
+      const algo = algorithm === 'deflate' ? zlib.createDeflate : zlib.createDeflateRaw
+      return [algo(compressionOptions), '']
     default:
       throw new Error('Invalid algorithm')
   }
