@@ -1,9 +1,7 @@
 import path from 'path'
 import fs from './fs'
-import { Threads } from './threads'
-import { fromatBytes, readGlobalFiles, resolvePath, len, printf } from './utils'
-import { ensureAlgorithmAndFormat } from './compress'
-import { transfer } from './stream'
+import { readGlobalFiles, resolvePath, len, printf } from './utils'
+import { ensureAlgorithmAndFormat, transfer } from './compress'
 import type { Plugin } from 'vite'
 import type { ViteCompressionPluginConfig } from './interface'
 
