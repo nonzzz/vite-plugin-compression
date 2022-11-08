@@ -19,12 +19,12 @@ $ npm install vite-plugin-compression2 -D
 ```js
 import { defineConfig } from 'vite'
 
-import { Compression } from 'vite-plugin-compression2'
+import { compression } from 'vite-plugin-compression2'
 
 export default defineConfig({
   plugins: [
     // ...your plugin
-    Compression()
+    compression()
   ]
 })
 ```
