@@ -19,7 +19,7 @@ $ npm install vite-plugin-compression2 -D
 ```js
 import { defineConfig } from 'vite'
 
-import { Compression } from 'vite-compression-plugin'
+import { Compression } from 'vite-plugin-compression2'
 
 export default defineConfig({
   plugins: [
@@ -31,14 +31,14 @@ export default defineConfig({
 
 ### Options
 
-| params                 | type                       | default | description                                                                                                                                               |
-| ---------------------- | -------------------------- | ------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `exclude`              | `Array<string>`            | `[]`    | Exclude all assets matching any of these conditions,Details see[fast-glob](https://www.npmjs.com/package/fast-glob#how-to-exclude-directory-from-reading) |
-| `threshold`            | `number`                   | `100`   | Only assets bigger than this size are processed (in bytes)                                                                                                |
-| `algorithm`            | `string`                   | `gzip`  | The compression algorithm                                                                                                                                 |
-| `compressionOptions`   | `Record<string,any>`       | `{}`    | Compression options for `algorithm`                                                                                                                       |
-| `deleteOriginalAssets` | `boolean\|keep-source-map` | `false` | Whether to delete the original assets or not                                                                                                              |
-| `loginfo`              | `silent\|info`             | `info`  | consola compressed info                                                                                                                                   |
+| params                 | type                                          | default | description                                                    |
+| ---------------------- | --------------------------------------------- | ------- | -------------------------------------------------------------- |
+| `include`              | `string \| RegExp \| Array<string \| RegExp>` | `-`     | Include all assets matching any of these conditions.           |
+| `exclude`              | `string \| RegExp \| Array<string \| RegExp>` | `-`     | Exclude all assets matching any of these conditions.           |
+| `threshold`            | `number`                                      | `0`     | Only assets bigger than this size are processed (in bytes)     |
+| `algorithm`            | `string`                                      | `gzip`  | The compression algorithm                                      |
+| `compressionOptions`   | `Record<string,any>`                          | `{}`    | Compression options for `algorithm`(details see `zlib module`) |
+| `deleteOriginalAssets` | `boolean`                                     | `false` | Whether to delete the original assets or not                   |
 
 ### Q & A
 
