@@ -1,90 +1,73 @@
-import path from 'path'
-import fs from './fs'
-import { readGlobalFiles, resolvePath, len, printf } from './utils'
+import { createFilter } from '@rollup/pluginutils'
+import { len } from './utils'
 import { ensureAlgorithmAndFormat, transfer } from './compress'
 import type { Plugin } from 'vite'
 import type { ViteCompressionPluginConfig } from './interface'
 
-export type { Regular, CompressionOptions, Algorithm } from './interface'
-
-const OUT_PUT_KEY = Symbol('__vite__plugin_compression__output__path')
-
 function compression(opts: ViteCompressionPluginConfig = {}): Plugin {
   const {
-    exclude = [],
-    threshold = 100,
+    include,
+    exclude,
+    threshold = 0,
     algorithm: userAlgorithm = 'gzip',
     compressionOptions = { level: 9 },
-    deleteOriginalAssets = false,
-    loginfo = 'info'
+    deleteOriginalAssets = false
   } = opts
+
+  const filter = createFilter(include, exclude)
+
   const bucket = new Map<
     string,
     {
+      source?: Buffer
+      type: 'asset' | 'chunk'
       beforeCompressBytes?: number
       afterCompressBytes?: number
     }
   >()
 
-  const pluginInstance = Object.create(null)
-
   return {
     name: 'vite-plugin-compression',
     apply: 'build',
     enforce: 'post',
-    configResolved(userConfig) {
-      // ConfigResolved is the vite's hook.
-      Reflect.set(pluginInstance, OUT_PUT_KEY, resolvePath(userConfig.build.outDir, userConfig.root))
-    },
-    async closeBundle() {
-      const [algorithm, ext] = await ensureAlgorithmAndFormat(
-        typeof userAlgorithm === 'function' ? userAlgorithm() : userAlgorithm,
-        compressionOptions
+    async generateBundle(_, bundles) {
+      const { algorithm, ext } = await ensureAlgorithmAndFormat(
+        typeof userAlgorithm === 'function' ? userAlgorithm() : userAlgorithm
       )
-      const outputPath = Reflect.get(pluginInstance, OUT_PUT_KEY)
-      const files = await readGlobalFiles(outputPath, exclude)
 
-      if (!len(files)) return
-
-      await Promise.all(
-        files.map(async (file) => {
-          const { size } = await fs.stat(file).catch()
-          if (size <= threshold) return
-          bucket.set(file, {
-            beforeCompressBytes: size
-          })
+      for (const fileName in bundles) {
+        if (!filter(fileName)) break
+        const bundle = bundles[fileName]
+        const source = bundle.type === 'asset' ? bundle.source : bundle.code
+        const beforeCompressBytes =
+          typeof source === 'string' ? Buffer.from(source).byteLength : source.buffer.byteLength
+        if (beforeCompressBytes <= threshold) break
+        bucket.set(fileName, {
+          source: Buffer.from(source),
+          type: bundle.type,
+          beforeCompressBytes
         })
-      )
+      }
+
       try {
         const tasks = Array.from(bucket.keys())
         if (!len(tasks)) return
         await Promise.all(
           tasks.map(async (task) => {
-            const before = bucket.get(task)
-            const bytes = await transfer(task, task + ext, algorithm)
-            bucket.set(task, { ...before, afterCompressBytes: bytes })
+            const { beforeCompressBytes, type, source } = bucket.get(task)
+            const compressed = await transfer(source, algorithm, compressionOptions)
+            this.emitFile({ type: 'asset', source: compressed, fileName: task + ext })
+            const afterCompressBytes = compressed.byteLength
+            bucket.set(task, { beforeCompressBytes, type, afterCompressBytes })
             if (deleteOriginalAssets) {
-              switch (deleteOriginalAssets) {
-                case 'keep-source-map':
-                  return task.endsWith('.map') && fs.remove(task)
-                case true:
-                  return fs.remove(task)
-                default:
-                  throw new Error('[vite-plugin-compress]: Invalid deleteOriginalAssets')
+              if (Reflect.has(bundles, task)) {
+                Reflect.deleteProperty(bundles, task)
               }
             }
           })
         )
       } catch (error) {
         this.error(error)
-      }
-      if (loginfo === 'info') {
-        printf.info('[vite-plugin-compress]: compressed file successfully:\n')
-        bucket.forEach(({ beforeCompressBytes, afterCompressBytes }, key) => {
-          const target = path.relative(outputPath, key) + ext
-          const ratio = `ratio: ${(afterCompressBytes / beforeCompressBytes).toFixed(2)}%`
-          printf.dim(`${target} ${ratio}`)
-        })
       }
     }
   }
@@ -93,3 +76,5 @@ function compression(opts: ViteCompressionPluginConfig = {}): Plugin {
 export { compression }
 
 export default compression
+
+export type { CompressionOptions, Algorithm } from './interface'

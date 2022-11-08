@@ -1,34 +1,30 @@
-import { createReadStream, createWriteStream } from 'fs'
-import type { Gzip } from 'zlib'
-import type { CompressionOptions, Algorithm, Compress } from './interface'
+import type { Algorithm, CompressionOptions, AlgorithmFunction } from './interface'
 
-export const ensureAlgorithmAndFormat = async (
-  algorithm: Algorithm,
-  compressionOptions: CompressionOptions
-): Promise<[Gzip, string]> => {
+export const ensureAlgorithmAndFormat = async (algorithm: Algorithm) => {
   const zlib = await import('zlib')
-  switch (algorithm) {
-    case 'gzip':
-      return [zlib.createGzip(compressionOptions), '.gz']
-    case 'brotliCompress':
-      return [zlib.createBrotliCompress(compressionOptions), '.br']
-    case 'deflate':
-    case 'deflateRaw':
-      const algo = algorithm === 'deflate' ? zlib.createDeflate : zlib.createDeflateRaw
-      return [algo(compressionOptions), '']
-    default:
-      throw new Error('Invalid algorithm')
+  if (algorithm in zlib) {
+    const ext = algorithm === 'gzip' ? '.gz' : algorithm === 'brotliCompress' ? '.br' : ''
+    return {
+      algorithm: zlib[algorithm],
+      ext
+    }
   }
+  throw new Error('Invalid algorithm in "zlib"')
 }
 
-export const transfer = (entry: string, to: string, compress: Compress): Promise<number> => {
-  const len = []
+export const transfer = (buf: Buffer, compress: AlgorithmFunction, options: CompressionOptions): Promise<Buffer> => {
   return new Promise((resolve, reject) => {
-    createReadStream(entry)
-      .pipe(compress)
-      .on('data', (chunk) => len.push(chunk))
-      .pipe(createWriteStream(to))
-      .on('close', () => resolve(Buffer.concat(len).byteLength))
-      .on('error', reject)
+    compress(buf, options, (err, bf) => {
+      if (err) {
+        reject(err)
+        return
+      }
+
+      if (!Buffer.isBuffer(bf)) {
+        resolve(Buffer.from(bf))
+      } else {
+        resolve(bf)
+      }
+    })
   })
 }
