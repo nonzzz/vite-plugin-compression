@@ -18,7 +18,7 @@
   ],
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/XeryYue/vite-compression-plugin.git"
+    "url": "git+https://github.com/nonzzz/vite-compression-plugin.git"
   },
   "keywords": [
     "vite",
@@ -28,9 +28,9 @@
   "author": "Kanno",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/XeryYue/vite-compression-plugin/issues"
+    "url": "https://github.com/nonzzz/vite-compression-plugin/issues"
   },
-  "homepage": "https://github.com/XeryYue/vite-compression-plugin#readme",
+  "homepage": "https://github.com/nonzzz/vite-compression-plugin#readme",
   "devDependencies": {
     "@types/node": "^17.0.14",
     "ava": "^4.3.1",
