@@ -47,6 +47,9 @@
     "@rollup/pluginutils": "^5.0.2"
   },
   "ava": {
+    "files": [
+      "__tests__/*.spec.ts"
+    ],
     "extensions": [
       "ts"
     ],

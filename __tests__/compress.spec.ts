@@ -1,4 +1,5 @@
 import test from 'ava'
+import { Buffer } from 'buffer'
 import { ensureAlgorithmAndFormat, transfer } from '../src/compress'
 import type { Algorithm } from '../src/interface'
 
@@ -22,7 +23,11 @@ test('algorithm', async (t) => {
   t.is(msg.message, 'Invalid algorithm in "zlib"')
 })
 
-test('transer', (t) => {})
+test('transer', async (t) => {
+  const fake = Buffer.alloc(4, 'test')
+  await mockTransfer('gzip', fake)
+  t.pass()
+})
 
 test('transfer with error', async (t) => {
   const msg = await t.throwsAsync(mockTransfer('gzip', 123 as any))

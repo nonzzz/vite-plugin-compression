@@ -77,4 +77,4 @@ export { compression }
 
 export default compression
 
-export type { CompressionOptions, Algorithm } from './interface'
+export type { CompressionOptions, Algorithm, ViteCompressionPluginConfig } from './interface'
