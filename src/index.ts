@@ -36,12 +36,12 @@ function compression(opts: ViteCompressionPluginConfig = {}): Plugin {
       )
 
       for (const fileName in bundles) {
-        if (!filter(fileName)) break
+        if (!filter(fileName)) continue
         const bundle = bundles[fileName]
         const source = bundle.type === 'asset' ? bundle.source : bundle.code
         const beforeCompressBytes =
           typeof source === 'string' ? Buffer.from(source).byteLength : source.buffer.byteLength
-        if (beforeCompressBytes <= threshold) break
+        if (beforeCompressBytes < threshold) continue
         bucket.set(fileName, {
           source: Buffer.from(source),
           type: bundle.type,

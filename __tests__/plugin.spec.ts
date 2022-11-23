@@ -83,7 +83,7 @@ test('threshold', async (t) => {
   })
   const r = await readAll(path.join(dist, id))
   const compressed = len(r.filter((s) => s.endsWith('.gz')))
-  t.is(compressed, 1)
+  t.is(compressed, 2)
 })
 
 test('algorithm', async (t) => {
