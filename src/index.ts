@@ -1,5 +1,7 @@
+import fsp from 'fs/promises'
+import path from 'path'
 import { createFilter } from '@rollup/pluginutils'
-import { len, replaceFileName } from './utils'
+import { len, replaceFileName, slash } from './utils'
 import { defaultCompressionOptions, ensureAlgorithm, transfer } from './compress'
 import type { Plugin } from 'vite'
 import type { AlgorithmFunction, CompressionOptions, ViteCompressionPluginConfig } from './interface'
@@ -27,10 +29,13 @@ function compression<T>(opts: ViteCompressionPluginConfig<T> = {}): Plugin {
     }
   >()
 
+  const dynamicImports = []
+
   const zlib: {
     algorithm: AlgorithmFunction<T>
     filename: string | ((id: string) => string)
     options: CompressionOptions<T>
+    dest: string
   } = Object.create(null)
 
   zlib.algorithm = typeof userAlgorithm === 'string' ? ensureAlgorithm(userAlgorithm).algorithm : userAlgorithm
@@ -44,6 +49,9 @@ function compression<T>(opts: ViteCompressionPluginConfig<T> = {}): Plugin {
     name: 'vite-plugin-compression',
     apply: 'build',
     enforce: 'post',
+    configResolved(config) {
+      zlib.dest = config.build.outDir
+    },
     async generateBundle(_, bundles) {
       for (const fileName in bundles) {
         if (!filter(fileName)) continue
@@ -52,6 +60,10 @@ function compression<T>(opts: ViteCompressionPluginConfig<T> = {}): Plugin {
         const beforeCompressBytes =
           typeof source === 'string' ? Buffer.from(source).byteLength : source.buffer.byteLength
         if (beforeCompressBytes < threshold) continue
+        if (bundle.type === 'chunk' && len(bundle.dynamicImports)) {
+          dynamicImports.push(fileName)
+          continue
+        }
         bucket.set(fileName, {
           source: Buffer.from(source),
           type: bundle.type,
@@ -64,12 +76,10 @@ function compression<T>(opts: ViteCompressionPluginConfig<T> = {}): Plugin {
         if (!len(tasks)) return
         await Promise.all(
           tasks.map(async (task) => {
-            const { beforeCompressBytes, type, source } = bucket.get(task)
+            const { source } = bucket.get(task)
             const compressed = await transfer(source, zlib.algorithm, zlib.options)
             const fileName = replaceFileName(task, zlib.filename)
             this.emitFile({ type: 'asset', source: compressed, fileName })
-            const afterCompressBytes = compressed.byteLength
-            bucket.set(task, { beforeCompressBytes, type, afterCompressBytes })
             if (deleteOriginalAssets) {
               if (Reflect.has(bundles, task)) {
                 Reflect.deleteProperty(bundles, task)
@@ -79,6 +89,22 @@ function compression<T>(opts: ViteCompressionPluginConfig<T> = {}): Plugin {
         )
       } catch (error) {
         this.error(error)
+      }
+    },
+    async closeBundle() {
+      if (len(dynamicImports)) {
+        const files = dynamicImports.map((file) => [file, slash(path.join(zlib.dest, file))])
+        await Promise.all(
+          files.map(async ([filename, file]) => {
+            const buf = await fsp.readFile(file)
+            const compressed = await transfer(buf, zlib.algorithm, zlib.options)
+            const fileName = replaceFileName(filename, zlib.filename)
+            await fsp.writeFile(path.join(zlib.dest, fileName), compressed)
+            if (deleteOriginalAssets) {
+              await fsp.rm(file, { recursive: true, force: true })
+            }
+          })
+        )
       }
     }
   }

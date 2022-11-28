@@ -9,3 +9,9 @@ export const replaceFileName = (staticPath: string, rule: string | ((id: string)
   if (len(path)) path = path + '/'
   return fileNameTempalte.replace(/\[path\]/, path).replace(/\[base\]/, base)
 }
+
+export const slash = (path: string) => {
+  const isExtendedLengthPath = /^\\\\\?\\/.test(path)
+  if (isExtendedLengthPath) return path
+  return path.replace(/\\/g, '/')
+}
