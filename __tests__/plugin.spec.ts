@@ -10,22 +10,20 @@ import type { ZlibOptions } from 'zlib'
 
 const getId = () => Math.random().toString(32).slice(2, 10)
 
+const sleep = (delay: number) => new Promise((resolve) => setTimeout(resolve, delay))
+
 const dist = path.join(__dirname, 'dist')
 
-interface MockBuild<T, Q> {
-  (config: ViteCompressionPluginConfig<T>): string
-  (config: [ViteCompressionPluginConfig<T>, ViteCompressionPluginConfig<Q>]): string
-}
-
-async function mockBuild<T>(config?: ViteCompressionPluginConfig<T>): Promise<string>
+async function mockBuild<T>(config?: ViteCompressionPluginConfig<T>, path?: string): Promise<string>
 async function mockBuild<T, K>(
-  config: [ViteCompressionPluginConfig<T>, ViteCompressionPluginConfig<K>]
+  config: [ViteCompressionPluginConfig<T>, ViteCompressionPluginConfig<K>],
+  path?: string
 ): Promise<string>
-async function mockBuild(config: any = {}) {
+async function mockBuild(config: any = {}, dir = 'normal') {
   const id = getId()
   const plugins = Array.isArray(config) ? config.map((conf) => compression(conf)) : [compression(config)]
   await build({
-    root: path.join(__dirname, 'fixture'),
+    root: path.join(__dirname, 'fixtures', dir),
     plugins,
     configFile: false,
     logLevel: 'silent',
@@ -164,4 +162,12 @@ test('multiple', async (t) => {
   const br = len(r.filter((s) => s.endsWith('.br')))
   t.is(gz, 1)
   t.is(br, 1)
+})
+
+test('dynamic', async (t) => {
+  const id = await mockBuild({ deleteOriginalAssets: true }, 'dynamic')
+  await sleep(3000)
+  const r = await readAll(path.join(dist, id))
+  const compressed = len(r.filter((s) => s.endsWith('.gz')))
+  t.is(compressed, 4)
 })

@@ -6,8 +6,8 @@
   "types": "dist/index.d.ts",
   "module": "dist/index.esm.js",
   "scripts": {
-    "build": "node bootstrap.mjs",
-    "dev": "node bootstrap.mjs dev",
+    "build": "bump -c",
+    "dev": "bump -w",
     "test": "c8 -r=lcov ava"
   },
   "files": [
@@ -35,9 +35,9 @@
     "@types/node": "^17.0.14",
     "ava": "^4.3.1",
     "c8": "^7.12.0",
-    "no-bump": "^0.5.1",
+    "no-bump": "^0.6.0",
     "prettier": "^2.5.1",
-    "rollup-plugin-dts": "^4.2.2",
+    "rollup-plugin-dts": "^5.0.0",
     "ts-node": "^10.9.1",
     "tslib": "^2.3.1",
     "typescript": "^4.5.5",
@@ -45,6 +45,9 @@
   },
   "dependencies": {
     "@rollup/pluginutils": "^5.0.2"
+  },
+  "peerDependencies": {
+    "vite": "^3.2.3"
   },
   "ava": {
     "files": [
