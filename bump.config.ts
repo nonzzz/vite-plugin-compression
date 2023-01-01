@@ -6,7 +6,11 @@ const clean = argvs.includes('-c')
 
 export default define({
   input: 'src/index.ts',
-  output: { dts: true, exports: 'named' },
-  clean,
-  watch
+  output: {
+    dts: !watch,
+    exports: 'named',
+    file: ({ format }) => (format === 'cjs' ? '[name][ext]' : '[name].mjs')
+  },
+  watch,
+  clean
 })
