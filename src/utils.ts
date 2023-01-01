@@ -1,4 +1,4 @@
-export const len = <T>(source?: T[] | string) => source.length
+export const len = <T>(source?: T[] | string | Uint8Array) => source.length
 
 // [path][base].ext
 export const replaceFileName = (staticPath: string, rule: string | ((id: string) => string)) => {

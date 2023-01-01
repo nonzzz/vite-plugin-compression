@@ -27,6 +27,21 @@ type InternalCompressionPluginOptions<T> = {
 
 export type ViteCompressionPluginConfig<T> = BaseCompressionPluginOptions<T> & InternalCompressionPluginOptions<T>
 
+interface BaseCompressMetaInfo {
+  effect: boolean
+}
+
+interface NormalCompressMetaInfo extends BaseCompressMetaInfo {
+  effect: false
+}
+
+interface DyanmiCompressMetaInfo extends BaseCompressMetaInfo {
+  effect: true
+  file: string
+}
+
+export type CompressMetaInfo = NormalCompressMetaInfo | DyanmiCompressMetaInfo
+
 export interface AlgorithmFunction<T> {
   (buf: Buffer, options: CompressionOptions<T>, callback: (err: Error | null, result: Buffer) => void)
 }
