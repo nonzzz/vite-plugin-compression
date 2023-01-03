@@ -1,20 +1,20 @@
 <template>
   <div class="wrapper">
+    <DynamicComponent />
     <fe-spacer :x="2" :y="2" />
-    <div>
-      <fe-button type="success" auto size="mini">Action</fe-button>
-    </div>
+    <fe-button type="success" auto size="mini">Action</fe-button>
   </div>
 </template>
 
 <script>
-import { defineComponent } from 'vue'
+import { defineComponent, defineAsyncComponent } from 'vue'
 import { Spacer, Button } from '@fect-ui/vue'
 
 export default defineComponent({
   components: {
     [Spacer.name]: Spacer,
-    [Button.name]: Button
+    [Button.name]: Button,
+    DynamicComponent: defineAsyncComponent(() => import('./component.vue'))
   }
 })
 </script>
