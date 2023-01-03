@@ -59,7 +59,18 @@ export default defineConfig({
 
 > Can i generate multiple compressed assets with difference compression algorithm?
 
-- Yes, you can see the unit test case.
+```js
+import { defineComponent } from 'vite'
+import { compression } from 'vite-plugin-compression2'
+
+export default defineComponent({
+  plugins: [
+    // ...your plugin
+    compression(),
+    compression({ algorithm: 'br', deleteOriginalAssets: true })
+  ]
+})
+```
 
 ### LICENSE
 

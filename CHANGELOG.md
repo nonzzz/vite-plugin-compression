@@ -1,3 +1,11 @@
+## 0.4.3
+
+# Background
+
+### Patches
+
+- Fix dynamicImports loose right assets info.(Vite's intenral logic cause it. So we define the order for us plugin).
+
 ## 0.4.2
 
 # Background
