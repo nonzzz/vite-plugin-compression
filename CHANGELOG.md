@@ -1,3 +1,10 @@
+## 0.5.0
+
+### MINOR
+
+- Migrate vite version.
+- Peerdependencies support `vite3` and `vite`.
+
 ## 0.4.3
 
 # Background
