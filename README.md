@@ -67,7 +67,7 @@ export default defineComponent({
   plugins: [
     // ...your plugin
     compression(),
-    compression({ algorithm: 'br', exclude: [/\.(br)$/, /\.(gz)$/], deleteOriginalAssets: true })
+    compression({ algorithm: 'brotliCompress', exclude: [/\.(br)$/, /\.(gz)$/], deleteOriginalAssets: true })
   ]
 })
 ```
