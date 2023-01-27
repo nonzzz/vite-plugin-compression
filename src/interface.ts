@@ -1,18 +1,14 @@
-import type { ZlibOptions, BrotliOptions } from 'zlib'
-
 export type Algorithm = 'gzip' | 'brotliCompress' | 'deflate' | 'deflateRaw'
 
 export interface UserCompressionOptions {
   [key: string]: any
 }
 
-export type InternalCompressions = ZlibOptions | BrotliOptions
-
 export type InferDefault<T> = T extends infer K ? K : UserCompressionOptions
 
 export type CompressionOptions<T> = InferDefault<T>
 
-interface BaseCompressionPluginOptions<T> {
+interface BaseCompressionPluginOptions {
   include?: string | RegExp | Array<string | RegExp>
   exclude?: RegExp | string | Array<string | RegExp>
   threshold?: number
@@ -25,7 +21,7 @@ type InternalCompressionPluginOptions<T> = {
   compressionOptions?: CompressionOptions<T>
 }
 
-export type ViteCompressionPluginConfig<T> = BaseCompressionPluginOptions<T> & InternalCompressionPluginOptions<T>
+export type ViteCompressionPluginConfig<T> = BaseCompressionPluginOptions & InternalCompressionPluginOptions<T>
 
 interface BaseCompressMetaInfo {
   effect: boolean
