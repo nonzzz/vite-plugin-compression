@@ -1,4 +1,15 @@
+## 0.6.0
+
+# Background
+
+### Improves & Features
+
+- Algorithm will using `gzip` If user pass a error union type.
+- Update document usage.
+
 ## 0.5.0
+
+# Background
 
 ### MINOR
 
