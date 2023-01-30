@@ -4,15 +4,26 @@ import { createFilter } from '@rollup/pluginutils'
 import { len, replaceFileName, slash } from './utils'
 import { defaultCompressionOptions, ensureAlgorithm, transfer } from './compress'
 import type { Plugin } from 'vite'
-import type { AlgorithmFunction, CompressionOptions, ViteCompressionPluginConfig, CompressMetaInfo } from './interface'
+import type {
+  Algorithm,
+  AlgorithmFunction,
+  CompressionOptions,
+  ViteCompressionPluginConfig,
+  ViteCompressionPluginConfigAlgorithm,
+  ViteCompressionPluginConfigFunction,
+  CompressMetaInfo,
+  UserCompressionOptions
+} from './interface'
 
-function compression<T>(opts: ViteCompressionPluginConfig<T> = {}): Plugin {
+function compression<A extends Algorithm>(opts: ViteCompressionPluginConfigAlgorithm<A>): Plugin
+function compression<T = UserCompressionOptions>(opts: ViteCompressionPluginConfigFunction<T>): Plugin
+function compression<T, A extends Algorithm>(opts: ViteCompressionPluginConfig<T, A> = {}): Plugin {
   const {
     include,
     exclude,
     threshold = 0,
     algorithm: userAlgorithm = 'gzip',
-    filename = userAlgorithm === 'brotliCompress' ? '[path][base].br' : '[path][base].gz',
+    filename,
     compressionOptions,
     deleteOriginalAssets = false
   } = opts
@@ -29,11 +40,12 @@ function compression<T>(opts: ViteCompressionPluginConfig<T> = {}): Plugin {
   } = Object.create(null)
 
   zlib.algorithm = typeof userAlgorithm === 'string' ? ensureAlgorithm(userAlgorithm).algorithm : userAlgorithm
+  // @ts-ignore
   zlib.options =
     typeof userAlgorithm === 'function'
       ? compressionOptions
       : Object.assign(defaultCompressionOptions[userAlgorithm], compressionOptions)
-  zlib.filename = filename
+  zlib.filename = filename ?? (userAlgorithm === 'brotliCompress' ? '[path][base].br' : '[path][base].gz')
 
   return {
     name: 'vite-plugin-compression',
