@@ -16,12 +16,30 @@ interface BaseCompressionPluginOptions {
   deleteOriginalAssets?: boolean
 }
 
-type InternalCompressionPluginOptions<T> = {
-  algorithm?: Algorithm | AlgorithmFunction<T>
-  compressionOptions?: CompressionOptions<T>
+import type { ZlibOptions, BrotliOptions } from 'zlib'
+interface AlgorithmToZlib {
+  gzip: ZlibOptions
+  brotliCompress: BrotliOptions
+  deflate: ZlibOptions
+  deflateRaw: ZlibOptions
 }
 
-export type ViteCompressionPluginConfig<T> = BaseCompressionPluginOptions & InternalCompressionPluginOptions<T>
+type InternalCompressionPluginOptionsFunction<T> = {
+  algorithm?: AlgorithmFunction<T>
+  compressionOptions?: CompressionOptions<T>
+}
+type InternalCompressionPluginOptionsAlgorithm<A extends Algorithm> = {
+  algorithm?: A
+  compressionOptions?: AlgorithmToZlib[A]
+}
+
+export type ViteCompressionPluginConfigFunction<T> = BaseCompressionPluginOptions &
+  InternalCompressionPluginOptionsFunction<T>
+export type ViteCompressionPluginConfigAlgorithm<A extends Algorithm> = BaseCompressionPluginOptions &
+  InternalCompressionPluginOptionsAlgorithm<A>
+export type ViteCompressionPluginConfig<T, A extends Algorithm> =
+  | ViteCompressionPluginConfigFunction<T>
+  | ViteCompressionPluginConfigAlgorithm<A>
 
 interface BaseCompressMetaInfo {
   effect: boolean
