@@ -5,7 +5,7 @@ import fsp from 'fs/promises'
 import { build } from 'vite'
 import { compression } from '../src'
 import { len } from '../src/utils'
-import type { ViteCompressionPluginConfig } from '../src'
+import type { Algorithm, ViteCompressionPluginConfig } from '../src'
 import type { ZlibOptions } from 'zlib'
 
 const getId = () => Math.random().toString(32).slice(2, 10)
@@ -14,9 +14,12 @@ const sleep = (delay: number) => new Promise((resolve) => setTimeout(resolve, de
 
 const dist = path.join(__dirname, 'dist')
 
-async function mockBuild<T>(config?: ViteCompressionPluginConfig<T>, path?: string): Promise<string>
-async function mockBuild<T, K>(
-  config: [ViteCompressionPluginConfig<T>, ViteCompressionPluginConfig<K>],
+async function mockBuild<T = never, A extends Algorithm = never>(
+  config?: ViteCompressionPluginConfig<T, A>,
+  path?: string
+): Promise<string>
+async function mockBuild<T = never, A extends Algorithm = never, K = never, B extends Algorithm = never>(
+  config: [ViteCompressionPluginConfig<T, A>, ViteCompressionPluginConfig<K, B>],
   path?: string
 ): Promise<string>
 async function mockBuild(config: any = {}, dir = 'normal') {
@@ -146,7 +149,7 @@ test('filename', async (t) => {
 })
 
 test('multiple', async (t) => {
-  const id = await mockBuild<ZlibOptions, BrotliOptions>([
+  const id = await mockBuild<ZlibOptions, 'gzip', BrotliOptions, Exclude<Algorithm, 'gzip'>>([
     {
       algorithm: 'gzip',
       include: /\.(js)$/
