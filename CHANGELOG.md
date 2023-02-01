@@ -1,3 +1,15 @@
+## 0.6.3
+
+# Background
+
+### Patches
+
+- Fix type error (#16)
+
+### Credits
+
+@ModyQyW
+
 ## 0.6.2
 
 # Background
@@ -11,11 +23,11 @@
 ### Improves & Features
 
 - Perf function type. (Details see #12)
-- Add `named exports`.(Some user prefer like their project is full esm. #14) 
+- Add `named exports`.(Some user prefer like their project is full esm. #14)
 
 ### Credits
 
-@MZ-Dlovely  @ModyQyW 
+@MZ-Dlovely @ModyQyW
 
 ## 0.6.0
 
