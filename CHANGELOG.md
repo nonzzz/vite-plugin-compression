@@ -1,3 +1,9 @@
+## 0.6.2
+
+# Background
+
+- Fix bundle error
+
 ## 0.6.1
 
 # Background
