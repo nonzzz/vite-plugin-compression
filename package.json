@@ -30,6 +30,13 @@
     "url": "https://github.com/nonzzz/vite-compression-plugin/issues"
   },
   "homepage": "https://github.com/nonzzz/vite-compression-plugin#readme",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.js"
+    }
+  },
   "devDependencies": {
     "@types/node": "^17.0.14",
     "ava": "^5.1.1",
