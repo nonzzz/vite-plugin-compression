@@ -76,21 +76,6 @@ export default defineComponent({
   there are write (delete) operations on the bundle inside the plugin. So you should ignore the compressed chunk :) If you want delete
   the original assets you also follow the way.
 
-- In some case. You need set zlib option for its.
-
-```ts
-import { defineComponent } from 'vite'
-import { compression } from 'vite-plugin-compression2'
-import type { ZlibOptions } from 'zlib'
-
-export default defineComponent<ZlibOptions>({
-  plugins: [
-    // ...your plugin
-    compression()
-  ]
-})
-```
-
 ### LICENSE
 
 [MIT](./LICENSE)

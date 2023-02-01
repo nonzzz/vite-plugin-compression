@@ -1,3 +1,16 @@
+## 0.6.1
+
+# Background
+
+### Improves & Features
+
+- Perf function type. (Details see #12)
+- Add `named exports`.(Some user prefer like their project is full esm. #14) 
+
+### Credits
+
+@MZ-Dlovely  @ModyQyW 
+
 ## 0.6.0
 
 # Background
