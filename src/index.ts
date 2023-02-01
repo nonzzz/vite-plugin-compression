@@ -15,8 +15,9 @@ import type {
   UserCompressionOptions
 } from './interface'
 
-function compression<A extends Algorithm>(opts?: ViteCompressionPluginConfigAlgorithm<A>): Plugin
-function compression<T = UserCompressionOptions>(opts?: ViteCompressionPluginConfigFunction<T>): Plugin
+function compression(): Plugin
+function compression<A extends Algorithm>(opts: ViteCompressionPluginConfigAlgorithm<A>): Plugin
+function compression<T = UserCompressionOptions>(opts: ViteCompressionPluginConfigFunction<T>): Plugin
 function compression<T, A extends Algorithm>(opts: ViteCompressionPluginConfig<T, A> = {}): Plugin {
   const {
     include,
