@@ -3,7 +3,7 @@ import path from 'path'
 import { createFilter } from '@rollup/pluginutils'
 import { len, replaceFileName, slash } from './utils'
 import { defaultCompressionOptions, ensureAlgorithm, transfer } from './compress'
-import type { Plugin } from 'vite'
+import type { Plugin, ChunkMetadata } from 'vite'
 import type {
   Algorithm,
   AlgorithmFunction,
@@ -14,6 +14,8 @@ import type {
   CompressMetaInfo,
   UserCompressionOptions
 } from './interface'
+
+const VITE_INTERNAL_CHUNK_META = 'viteMetadata'
 
 type HandleCompressInvork = ([file, meta]: [string, CompressMetaInfo]) => Promise<void>
 
@@ -78,8 +80,19 @@ function compression<T, A extends Algorithm>(opts: ViteCompressionPluginConfig<T
         meta.effect = effect
         if (meta.effect) {
           meta.file = slash(path.join(zlib.dest, fileName))
+          if (VITE_INTERNAL_CHUNK_META in bundle) {
+            // This is a hack logic. We get all bundle file reference relation. And record them with effect.
+            // Some case like virtual module we should ignored them.
+            const { importedAssets, importedCss } = bundle[VITE_INTERNAL_CHUNK_META] as ChunkMetadata
+            // @ts-ignored
+            const imports = [...importedAssets, ...importedCss, ...bundle.dynamicImports]
+            imports.forEach((importer) => {
+              importer in bundles &&
+                schedule.set(importer, { effect: true, file: slash(path.join(zlib.dest, importer)) })
+            })
+          }
         }
-        schedule.set(fileName, meta)
+        if (!schedule.has(fileName) && bundle) schedule.set(fileName, meta)
       }
       try {
         await handleCompress(schedule, async ([file, meta]) => {
