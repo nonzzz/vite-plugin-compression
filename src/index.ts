@@ -112,11 +112,17 @@ function compression<T, A extends Algorithm>(opts: ViteCompressionPluginConfig<T
     async closeBundle() {
       await handleCompress(schedule, async ([file, meta]) => {
         if (!meta.effect) return
-        const buf = await fsp.readFile(meta.file)
-        const compressed = await transfer(buf, zlib.algorithm, zlib.options)
-        const fileName = replaceFileName(file, zlib.filename)
-        await fsp.writeFile(path.join(zlib.dest, fileName), compressed)
-        if (deleteOriginalAssets) await fsp.rm(meta.file, { recursive: true, force: true })
+        try {
+          const buf = await fsp.readFile(meta.file)
+          const compressed = await transfer(buf, zlib.algorithm, zlib.options)
+          const fileName = replaceFileName(file, zlib.filename)
+          await fsp.writeFile(path.join(zlib.dest, fileName), compressed)
+          if (deleteOriginalAssets) await fsp.rm(meta.file, { recursive: true, force: true })
+        } catch {
+          // issue #18
+          // In somecase. Like vuepress it will called vite build with parallel. But when we record the
+          // file fd. It had been changed. So that we should catch the error
+        }
       })
       schedule.clear()
     }
