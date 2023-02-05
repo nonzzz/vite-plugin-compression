@@ -1,6 +1,7 @@
 import test from 'ava'
 import path from 'path'
 import zlib, { BrotliOptions } from 'zlib'
+import fs from 'fs'
 import fsp from 'fs/promises'
 import { build } from 'vite'
 import { compression } from '../src'
@@ -173,4 +174,13 @@ test('dynamic', async (t) => {
   const r = await readAll(path.join(dist, id))
   const compressed = len(r.filter((s) => s.endsWith('.gz')))
   t.is(compressed, 4)
+})
+
+test('dynamic diff', async (t) => {
+  const ids = await Promise.all([mockBuild({ deleteOriginalAssets: true }, 'dynamic'), mockBuild({}, 'dynamic')])
+  await sleep(3000)
+  const [diff1, diff2] = await Promise.all(ids.map((id) => readAll(path.join(dist, id))))
+  const diff1Js = diff1.filter((v) => v.endsWith('.js.gz')).map((v) => zlib.unzipSync(fs.readFileSync(v)))
+  const diff2Js = diff2.filter((v) => v.endsWith('.js')).map((v) => fs.readFileSync(v))
+  t.deepEqual(diff1Js, diff2Js)
 })

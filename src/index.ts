@@ -3,7 +3,7 @@ import path from 'path'
 import { createFilter } from '@rollup/pluginutils'
 import { len, replaceFileName, slash } from './utils'
 import { defaultCompressionOptions, ensureAlgorithm, transfer } from './compress'
-import type { Plugin } from 'vite'
+import type { Plugin, ChunkMetadata } from 'vite'
 import type {
   Algorithm,
   AlgorithmFunction,
@@ -14,6 +14,15 @@ import type {
   CompressMetaInfo,
   UserCompressionOptions
 } from './interface'
+
+const VITE_INTERNAL_CHUNK_META = 'viteMetadata'
+
+type HandleCompressInvork = ([file, meta]: [string, CompressMetaInfo]) => Promise<void>
+
+async function handleCompress(tasks: Map<string, CompressMetaInfo>, invork: HandleCompressInvork) {
+  if (!tasks.size) return
+  await Promise.all(Array.from(tasks.entries()).map(invork))
+}
 
 function compression(): Plugin
 function compression<A extends Algorithm>(opts: ViteCompressionPluginConfigAlgorithm<A>): Plugin
@@ -55,60 +64,66 @@ function compression<T, A extends Algorithm>(opts: ViteCompressionPluginConfig<T
     configResolved(config) {
       zlib.dest = config.build.outDir
     },
-    // We need specify the order of the hook
-    // Becasue in vite's intenral logic it will
-    // trigger _preload logic. So that if we run the hook
-    // before vite's importAnalysisBuild function it will
-    // cause loose all of link map.
-    // Please see: https://github.com/vitejs/vite/blob/HEAD/packages/vite/src/node/plugins/index.ts#L94-L98
-    generateBundle: {
-      order: 'post',
-      async handler(_, bundles) {
-        for (const fileName in bundles) {
-          if (!filter(fileName)) continue
-          const bundle = bundles[fileName]
-          const result = bundle.type == 'asset' ? bundle.source : bundle.code
-          const size = len(result)
-          if (size < threshold) continue
-          const effect = bundle.type === 'chunk' && !!len(bundle.dynamicImports)
-          const meta: CompressMetaInfo = Object.create(null)
-          meta.effect = effect
-          if (meta.effect) {
-            meta.file = slash(path.join(zlib.dest, fileName))
-          }
-          schedule.set(fileName, meta)
-        }
-        try {
-          if (!schedule.size) return
-          await Promise.all(
-            Array.from(schedule.entries()).map(async ([file, meta]) => {
-              if (meta.effect) return
-              const bundle = bundles[file]
-              const source = bundle.type === 'asset' ? bundle.source : bundle.code
-              const compressed = await transfer(Buffer.from(source), zlib.algorithm, zlib.options)
-              const fileName = replaceFileName(file, zlib.filename)
-              this.emitFile({ type: 'asset', source: compressed, fileName })
-              if (deleteOriginalAssets) Reflect.deleteProperty(bundles, file)
-              schedule.delete(file)
+    // Unfortunately. Vite support using object as hooks to change execution order need at least 3.1.0
+    // So we should record that with side Effect bundle file. (Because file with dynamic import will trigger vite's internal importAnalysisBuild logic and it will generator vite's placeholder.)
+    // Vite importAnalysisBuild source code: https://github.com/vitejs/vite/blob/main/packages/vite/src/node/plugins/importAnalysisBuild.ts
+    // Vite's plugin order see: https://github.com/vitejs/vite/blob/HEAD/packages/vite/src/node/plugins/index.ts#L94-L98
+    async generateBundle(_, bundles) {
+      for (const fileName in bundles) {
+        if (!filter(fileName)) continue
+        const bundle = bundles[fileName]
+        const result = bundle.type == 'asset' ? bundle.source : bundle.code
+        const size = len(result)
+        if (size < threshold) continue
+        const effect = bundle.type === 'chunk' && !!len(bundle.dynamicImports)
+        const meta: CompressMetaInfo = Object.create(null)
+        meta.effect = effect
+        if (meta.effect) {
+          meta.file = slash(path.join(zlib.dest, fileName))
+          if (VITE_INTERNAL_CHUNK_META in bundle) {
+            // This is a hack logic. We get all bundle file reference relation. And record them with effect.
+            // Some case like virtual module we should ignored them.
+            const { importedAssets, importedCss } = bundle[VITE_INTERNAL_CHUNK_META] as ChunkMetadata
+            // @ts-ignored
+            const imports = [...importedAssets, ...importedCss, ...bundle.dynamicImports]
+            imports.forEach((importer) => {
+              importer in bundles &&
+                schedule.set(importer, { effect: true, file: slash(path.join(zlib.dest, importer)) })
             })
-          )
-        } catch (error) {
-          this.error(error)
+          }
         }
+        if (!schedule.has(fileName) && bundle) schedule.set(fileName, meta)
+      }
+      try {
+        await handleCompress(schedule, async ([file, meta]) => {
+          if (meta.effect) return
+          const bundle = bundles[file]
+          const source = bundle.type === 'asset' ? bundle.source : bundle.code
+          const compressed = await transfer(Buffer.from(source), zlib.algorithm, zlib.options)
+          const fileName = replaceFileName(file, zlib.filename)
+          this.emitFile({ type: 'asset', source: compressed, fileName })
+          if (deleteOriginalAssets) Reflect.deleteProperty(bundles, file)
+          schedule.delete(file)
+        })
+      } catch (error) {
+        this.error(error)
       }
     },
     async closeBundle() {
-      if (!schedule.size) return
-      await Promise.all(
-        Array.from(schedule.entries()).map(async ([file, meta]) => {
-          if (!meta.effect) return
+      await handleCompress(schedule, async ([file, meta]) => {
+        if (!meta.effect) return
+        try {
           const buf = await fsp.readFile(meta.file)
           const compressed = await transfer(buf, zlib.algorithm, zlib.options)
           const fileName = replaceFileName(file, zlib.filename)
           await fsp.writeFile(path.join(zlib.dest, fileName), compressed)
           if (deleteOriginalAssets) await fsp.rm(meta.file, { recursive: true, force: true })
-        })
-      )
+        } catch {
+          // issue #18
+          // In somecase. Like vuepress it will called vite build with `Promise.all`. But it's concurrency. when we record the
+          // file fd. It had been changed. So that we should catch the error
+        }
+      })
       schedule.clear()
     }
   }

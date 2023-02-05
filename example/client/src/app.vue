@@ -3,6 +3,7 @@
     <DynamicComponent />
     <fe-spacer :x="2" :y="2" />
     <fe-button type="success" auto size="mini">Action</fe-button>
+    <text />
   </div>
 </template>
 
