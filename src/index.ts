@@ -120,7 +120,7 @@ function compression<T, A extends Algorithm>(opts: ViteCompressionPluginConfig<T
           if (deleteOriginalAssets) await fsp.rm(meta.file, { recursive: true, force: true })
         } catch {
           // issue #18
-          // In somecase. Like vuepress it will called vite build with parallel. But when we record the
+          // In somecase. Like vuepress it will called vite build with `Promise.all`. But it's concurrency. when we record the
           // file fd. It had been changed. So that we should catch the error
         }
       })
