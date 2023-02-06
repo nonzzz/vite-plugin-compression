@@ -106,8 +106,10 @@ function compression<T, A extends Algorithm>(opts: ViteCompressionPluginConfig<T
           schedule.delete(file)
         })
       } catch (error) {
+        /* c8 ignore start */
         this.error(error)
       }
+      /* c8 ignore stop */
     },
     async closeBundle() {
       await handleCompress(schedule, async ([file, meta]) => {
@@ -119,10 +121,12 @@ function compression<T, A extends Algorithm>(opts: ViteCompressionPluginConfig<T
           await fsp.writeFile(path.join(zlib.dest, fileName), compressed)
           if (deleteOriginalAssets) await fsp.rm(meta.file, { recursive: true, force: true })
         } catch {
+          /* c8 ignore start */
           // issue #18
           // In somecase. Like vuepress it will called vite build with `Promise.all`. But it's concurrency. when we record the
           // file fd. It had been changed. So that we should catch the error
         }
+        /* c8 ignore stop */
       })
       schedule.clear()
     }
