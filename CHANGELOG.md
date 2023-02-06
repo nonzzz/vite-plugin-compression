@@ -1,3 +1,12 @@
+## 0.7.0
+
+# Background
+
+### Improves & Features
+
+- Remove hook order #20
+- Remove peerDependencies
+
 ## 0.6.3
 
 # Background

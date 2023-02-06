@@ -1,7 +1,7 @@
 {
   "name": "vite-plugin-compression2",
-  "version": "0.6.3",
-  "description": "compress souce file by stream, use it in vite.",
+  "version": "0.7.0",
+  "description": "a fast vite compression plugin",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "module": "dist/index.mjs",
