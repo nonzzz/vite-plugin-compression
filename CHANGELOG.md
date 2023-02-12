@@ -1,3 +1,11 @@
+## 0.8.0
+
+# Background
+
+### Improves & Features
+
+- Support compress public resource. #22
+
 ## 0.7.0
 
 # Background
