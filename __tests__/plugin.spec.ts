@@ -5,7 +5,7 @@ import fs from 'fs'
 import fsp from 'fs/promises'
 import { build } from 'vite'
 import { compression } from '../src'
-import { len } from '../src/utils'
+import { len, readAll } from '../src/utils'
 import type { Algorithm, ViteCompressionPluginConfig } from '../src'
 import type { ZlibOptions } from 'zlib'
 
@@ -41,21 +41,6 @@ async function mockBuild(config: any = {}, dir = 'normal') {
 test.after(async () => {
   await fsp.rm(dist, { recursive: true })
 })
-
-const readAll = async (entry: string) => {
-  const final = []
-  const readAllImpl = async (entry: string) =>
-    Promise.all(
-      (await fsp.readdir(entry)).map(async (dir) => {
-        const p = path.join(entry, dir)
-        if ((await fsp.stat(p)).isDirectory()) return readAllImpl(p)
-        final.push(p)
-        return p
-      })
-    )
-  await readAllImpl(entry)
-  return final as string[]
-}
 
 test('vite-plugin-compression2', async (t) => {
   const id = await mockBuild()
@@ -183,4 +168,12 @@ test('dynamic diff', async (t) => {
   const diff1Js = diff1.filter((v) => v.endsWith('.js.gz')).map((v) => zlib.unzipSync(fs.readFileSync(v)))
   const diff2Js = diff2.filter((v) => v.endsWith('.js')).map((v) => fs.readFileSync(v))
   t.deepEqual(diff1Js, diff2Js)
+})
+
+test('public assets', async (t) => {
+  const id = await mockBuild({ deleteOriginalAssets: true, exclude: /\.(html)$/ }, 'public-assets')
+  await sleep(3000)
+  const r = await readAll(path.join(dist, id))
+  const compressed = len(r.filter((s) => s.endsWith('.gz')))
+  t.is(compressed, 2)
 })
