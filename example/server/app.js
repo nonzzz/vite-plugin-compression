@@ -19,7 +19,7 @@ function createServer() {
       })
     }
 
-    if (req.url.indexOf('/assets/') !== -1) {
+    if (req.url.indexOf('/assets/') !== -1 || req.url.indexOf('/js/') !== -1) {
       const target = req.url + '.gz'
       fs.readFile(path.join(originalPath, target), (err, data) => {
         if (err) {

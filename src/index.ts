@@ -1,7 +1,8 @@
 import fsp from 'fs/promises'
+import fs from 'fs'
 import path from 'path'
 import { createFilter } from '@rollup/pluginutils'
-import { len, replaceFileName, slash } from './utils'
+import { len, replaceFileName, slash, readAll } from './utils'
 import { defaultCompressionOptions, ensureAlgorithm, transfer } from './compress'
 import type { Plugin, ChunkMetadata } from 'vite'
 import type {
@@ -16,6 +17,7 @@ import type {
 } from './interface'
 
 const VITE_INTERNAL_CHUNK_META = 'viteMetadata'
+const VITE_COPY_PUBLIC_DIR = 'copyPublicDir'
 
 type HandleCompressInvork = ([file, meta]: [string, CompressMetaInfo]) => Promise<void>
 
@@ -61,8 +63,19 @@ function compression<T, A extends Algorithm>(opts: ViteCompressionPluginConfig<T
     name: 'vite-plugin-compression',
     apply: 'build',
     enforce: 'post',
-    configResolved(config) {
+    async configResolved(config) {
       zlib.dest = config.build.outDir
+      // Vite's pubic build: https://github.com/vitejs/vite/blob/HEAD/packages/vite/src/node/build.ts#L704-L709
+      // copyPublicDir minimum version 3.2+
+      const baseCondit = VITE_COPY_PUBLIC_DIR in config.build ? config.build.copyPublicDir : true
+      if (config.publicDir && baseCondit && fs.existsSync(config.publicDir)) {
+        const staticAssets = await readAll(config.publicDir)
+        const publicPath = path.join(config.root, path.relative(config.root, config.publicDir))
+        staticAssets.forEach((assets) => {
+          const file = path.relative(publicPath, assets)
+          schedule.set(slash(file), { effect: true, file: slash(path.join(zlib.dest, file)) })
+        })
+      }
     },
     // Unfortunately. Vite support using object as hooks to change execution order need at least 3.1.0
     // So we should record that with side Effect bundle file. (Because file with dynamic import will trigger vite's internal importAnalysisBuild logic and it will generator vite's placeholder.)
