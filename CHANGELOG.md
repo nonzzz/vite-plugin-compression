@@ -1,3 +1,12 @@
+## 0.8.1
+
+# Background
+
+### Patches
+
+- Fix public assets can't work with filter
+
+
 ## 0.8.0
 
 # Background
