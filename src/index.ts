@@ -73,6 +73,7 @@ function compression<T, A extends Algorithm>(opts: ViteCompressionPluginConfig<T
         const publicPath = path.join(config.root, path.relative(config.root, config.publicDir))
         staticAssets.forEach((assets) => {
           const file = path.relative(publicPath, assets)
+          if (!filter(file)) return
           schedule.set(slash(file), { effect: true, file: slash(path.join(zlib.dest, file)) })
         })
       }
