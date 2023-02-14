@@ -177,3 +177,18 @@ test('public assets', async (t) => {
   const compressed = len(r.filter((s) => s.endsWith('.gz')))
   t.is(compressed, 2)
 })
+
+test('public assets nest', async (t) => {
+  const id = await mockBuild({ deleteOriginalAssets: true, exclude: /\.(html)$/ }, 'public-assets-nest')
+  await sleep(3000)
+  const r = await readAll(path.join(dist, id))
+  const compressed = len(r.filter((s) => s.endsWith('.gz')))
+  t.is(compressed, 6)
+  const nestJs1 = path.join(dist, id, 'js/nest1', 'index.js.gz')
+  const nestJs2 = path.join(dist, id, 'js/nest2', 'index.js.gz')
+  const nestCss1 = path.join(dist, id, 'theme/dark', 'dark.css.gz')
+  const nestCss2 = path.join(dist, id, 'theme/light', 'light.css.gz')
+  const Js = path.join(dist, id, 'normal.js.gz')
+  const fianl = [nestCss1, nestCss2, nestJs1, nestJs2, Js]
+  fianl.forEach((p) => t.is(fs.existsSync(p), true))
+})

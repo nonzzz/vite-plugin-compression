@@ -6,13 +6,13 @@ export function len<T>(source?: T[] | string | Uint8Array) {
 }
 
 // [path][base].ext
+// [path] is replaced with the directories to the original asset, included trailing
+// [base] is replaced with the base ([name] + [ext]) of the original asset (image.png)
 export function replaceFileName(staticPath: string, rule: string | ((id: string) => string)) {
-  const series = staticPath.split('/')
-  const base = series.pop()
-  const fileNameTempalte = typeof rule === 'function' ? rule(staticPath) : rule
-  let path = series.filter((_, idx) => idx === len(series) - 1).join('/')
-  if (len(path)) path = path + '/'
-  return fileNameTempalte.replace(/\[path\]/, path).replace(/\[base\]/, base)
+  let template = typeof rule === 'function' ? rule(staticPath) : rule
+  const { dir, base } = path.parse(staticPath)
+  const p = dir ? dir + '/' : ''
+  return template.replace(/\[path\]/, p).replace(/\[base\]/, base)
 }
 
 export function slash(path: string) {
