@@ -1,3 +1,12 @@
+## 0.8.2
+
+# Background
+
+### Patches
+
+- Fix nesting public assets can't work normal. #23
+
+
 ## 0.8.1
 
 # Background
