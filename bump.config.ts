@@ -1,4 +1,5 @@
 import { define } from 'no-bump'
+import cleanUp from 'rollup-plugin-cleanup'
 
 export default define({
   input: 'src/index.ts',
@@ -6,5 +7,6 @@ export default define({
     dts: true,
     exports: 'named'
   },
-  clean: true
+  clean: true,
+  plugins: [cleanUp({ extensions: ['.ts'] })]
 })
