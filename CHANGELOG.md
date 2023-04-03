@@ -1,3 +1,10 @@
+## 0.8.3
+
+# Background
+
+- Reduce bundle size.
+- Perf ReadAll func.
+
 ## 0.8.2
 
 # Background
@@ -6,7 +13,6 @@
 
 - Fix nesting public assets can't work normal. #23
 
-
 ## 0.8.1
 
 # Background
@@ -14,7 +20,6 @@
 ### Patches
 
 - Fix public assets can't work with filter
-
 
 ## 0.8.0
 
