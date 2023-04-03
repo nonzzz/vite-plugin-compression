@@ -51,7 +51,7 @@ export default defineConfig({
 
 > Why vite-plugin-compression2
 
-- `vite-plugin-compression` has minimal dependencies and better performance.
+- `vite-plugin-compression2` has minimal dependencies and better performance.
 
 > Can i custom the compression algorithm?
 
