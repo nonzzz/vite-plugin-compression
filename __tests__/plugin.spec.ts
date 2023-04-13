@@ -192,3 +192,11 @@ test('public assets nest', async (t) => {
   const fianl = [nestCss1, nestCss2, nestJs1, nestJs2, Js]
   fianl.forEach((p) => t.is(fs.existsSync(p), true))
 })
+
+test('exclude-assets', async (t) => {
+  const id = await mockBuild({ exclude: [/\.(gif)$/] }, 'exclude-assets')
+  await sleep(3000)
+  const r = await readAll(path.join(dist, id))
+  const compressed = len(r.filter((s) => s.endsWith('.gz')))
+  t.is(compressed, 2)
+})

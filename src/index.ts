@@ -101,6 +101,7 @@ function compression<T, A extends Algorithm>(opts: ViteCompressionPluginConfig<T
             // @ts-ignored
             const imports = [...importedAssets, ...importedCss, ...bundle.dynamicImports]
             imports.forEach((importer) => {
+              if (!filter(filter)) return
               importer in bundles &&
                 schedule.set(importer, { effect: true, file: slash(path.join(zlib.dest, importer)) })
             })
