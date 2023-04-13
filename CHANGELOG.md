@@ -1,3 +1,11 @@
+## 0.8.4
+
+# Background
+
+### Patches
+
+- Fix filter can't work with dynamic source. #25
+
 ## 0.8.3
 
 # Background
