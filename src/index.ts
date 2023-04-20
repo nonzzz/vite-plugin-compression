@@ -175,7 +175,6 @@ function compression<T, A extends Algorithm>(opts: ViteCompressionPluginConfig<T
     },
     async closeBundle() {
       const queue: Array<{ file: string; meta: CompressMetaInfo }> = []
-      let index = 0
 
       const handle = async (file: string, meta: CompressMetaInfo) => {
         if (!meta.effect) return
@@ -190,12 +189,6 @@ function compression<T, A extends Algorithm>(opts: ViteCompressionPluginConfig<T
         }
       }
 
-      const next = () => {
-        if (index >= len(queue)) return
-        const { file, meta } = queue[index]
-        index++
-        handle(file, meta).then(next)
-      }
       try {
         for (const [file, meta] of schedule) {
           queue.push({ file, meta })
