@@ -1,3 +1,9 @@
+## 0.9.0
+
+# Background
+
+- Support multiple process. #27
+
 ## 0.8.4
 
 # Background
