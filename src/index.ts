@@ -4,7 +4,7 @@ import path from 'path'
 import { createFilter } from '@rollup/pluginutils'
 import { len, replaceFileName, slash, readAll } from './utils'
 import { defaultCompressionOptions, ensureAlgorithm, transfer } from './compress'
-import type { Plugin, ChunkMetadata } from 'vite'
+import type { Plugin, ChunkMetadata, ResolvedConfig } from 'vite'
 import type {
   Algorithm,
   AlgorithmFunction,
@@ -18,12 +18,30 @@ import type {
 
 const VITE_INTERNAL_CHUNK_META = 'viteMetadata'
 const VITE_COPY_PUBLIC_DIR = 'copyPublicDir'
+const MAX_CONCURRENT = 10
 
 type HandleCompressInvork = ([file, meta]: [string, CompressMetaInfo]) => Promise<void>
+
+interface OutputOptions {
+  dest: string
+}
 
 async function handleCompress(tasks: Map<string, CompressMetaInfo>, invork: HandleCompressInvork) {
   if (!tasks.size) return
   await Promise.all(Array.from(tasks.entries()).map(invork))
+}
+
+function handleOutputOption(conf: ResolvedConfig, outputs: OutputOptions[]) {
+  if (conf.build.rollupOptions?.output) {
+    const outputOptions = Array.isArray(conf.build.rollupOptions.output)
+      ? conf.build.rollupOptions.output
+      : [conf.build.rollupOptions.output]
+    outputOptions.forEach((opt) => {
+      outputs.push({ dest: opt.dir || conf.build.outDir })
+    })
+    return
+  }
+  outputs.push({ dest: conf.build.outDir })
 }
 
 function compression(): Plugin
@@ -44,11 +62,12 @@ function compression<T, A extends Algorithm>(opts: ViteCompressionPluginConfig<T
 
   const schedule = new Map<string, CompressMetaInfo>()
 
+  const normalizedOutputs: OutputOptions[] = []
+
   const zlib: {
     algorithm: AlgorithmFunction<T>
     filename: string | ((id: string) => string)
     options: CompressionOptions<T>
-    dest: string
   } = Object.create(null)
 
   zlib.algorithm = typeof userAlgorithm === 'string' ? ensureAlgorithm(userAlgorithm).algorithm : userAlgorithm
@@ -64,7 +83,11 @@ function compression<T, A extends Algorithm>(opts: ViteCompressionPluginConfig<T
     apply: 'build',
     enforce: 'post',
     async configResolved(config) {
-      zlib.dest = config.build.outDir
+      // issue #26
+      // https://github.com/vitejs/vite/blob/716286ef21f4d59786f21341a52a81ee5db58aba/packages/vite/src/node/build.ts#L566-L611
+      // Unfortunately. Vite follow rollup option as first and the configResolved Hook don't expose merged conf for user. :(
+      // Someone who like using rollupOption. `config.build.outDir` will not as expected.
+      handleOutputOption(config, normalizedOutputs)
       // Vite's pubic build: https://github.com/vitejs/vite/blob/HEAD/packages/vite/src/node/build.ts#L704-L709
       // copyPublicDir minimum version 3.2+
       const baseCondit = VITE_COPY_PUBLIC_DIR in config.build ? config.build.copyPublicDir : true
@@ -74,7 +97,13 @@ function compression<T, A extends Algorithm>(opts: ViteCompressionPluginConfig<T
         staticAssets.forEach((assets) => {
           const file = path.relative(publicPath, assets)
           if (!filter(file)) return
-          schedule.set(slash(file), { effect: true, file: slash(path.join(zlib.dest, file)) })
+          normalizedOutputs.forEach((output) =>
+            schedule.set(slash(file), {
+              effect: true,
+              file: [slash(path.join(output.dest, file))],
+              dest: [output.dest]
+            })
+          )
         })
       }
     },
@@ -91,9 +120,15 @@ function compression<T, A extends Algorithm>(opts: ViteCompressionPluginConfig<T
         if (size < threshold) continue
         const effect = bundle.type === 'chunk' && !!len(bundle.dynamicImports)
         const meta: CompressMetaInfo = Object.create(null)
+        // File without siede Effect will be automatically generator by vite processing.
         meta.effect = effect
         if (meta.effect) {
-          meta.file = slash(path.join(zlib.dest, fileName))
+          meta.file = []
+          meta.dest = []
+          normalizedOutputs.forEach((output) => {
+            meta.file.push(slash(path.join(output.dest, fileName)))
+            meta.dest.push(output.dest)
+          })
           if (VITE_INTERNAL_CHUNK_META in bundle) {
             // This is a hack logic. We get all bundle file reference relation. And record them with effect.
             // Some case like virtual module we should ignored them.
@@ -102,11 +137,23 @@ function compression<T, A extends Algorithm>(opts: ViteCompressionPluginConfig<T
             const imports = [...importedAssets, ...importedCss, ...bundle.dynamicImports]
             imports.forEach((importer) => {
               if (!filter(filter)) return
-              importer in bundles &&
-                schedule.set(importer, { effect: true, file: slash(path.join(zlib.dest, importer)) })
+              if (importer in bundles) {
+                const files = []
+                const dest = []
+                normalizedOutputs.forEach((output) => {
+                  files.push(slash(path.join(output.dest, importer)))
+                  dest.push(output.dest)
+                })
+                schedule.set(importer, {
+                  effect: true,
+                  file: files,
+                  dest
+                })
+              }
             })
           }
         }
+
         if (!schedule.has(fileName) && bundle) schedule.set(fileName, meta)
       }
       try {
@@ -127,22 +174,44 @@ function compression<T, A extends Algorithm>(opts: ViteCompressionPluginConfig<T
       /* c8 ignore stop */
     },
     async closeBundle() {
-      await handleCompress(schedule, async ([file, meta]) => {
+      const queue: Array<{ file: string; meta: CompressMetaInfo }> = []
+      let index = 0
+
+      const handle = async (file: string, meta: CompressMetaInfo) => {
         if (!meta.effect) return
-        try {
-          const buf = await fsp.readFile(meta.file)
-          const compressed = await transfer(buf, zlib.algorithm, zlib.options)
-          const fileName = replaceFileName(file, zlib.filename)
-          await fsp.writeFile(path.join(zlib.dest, fileName), compressed)
-          if (deleteOriginalAssets) await fsp.rm(meta.file, { recursive: true, force: true })
-        } catch {
-          /* c8 ignore start */
-          // issue #18
-          // In somecase. Like vuepress it will called vite build with `Promise.all`. But it's concurrency. when we record the
-          // file fd. It had been changed. So that we should catch the error
+        for (const dest of meta.dest) {
+          for (const f of meta.file) {
+            const buf = await fsp.readFile(f)
+            const compressed = await transfer(buf, zlib.algorithm, zlib.options)
+            const fileName = replaceFileName(file, zlib.filename)
+            await fsp.writeFile(path.join(dest, fileName), compressed)
+            if (deleteOriginalAssets) await fsp.rm(f, { recursive: true, force: true })
+          }
         }
+      }
+
+      const next = () => {
+        if (index >= len(queue)) return
+        const { file, meta } = queue[index]
+        index++
+        handle(file, meta).then(next)
+      }
+      try {
+        for (const [file, meta] of schedule) {
+          queue.push({ file, meta })
+          if (queue.length === MAX_CONCURRENT) {
+            await Promise.all(queue.map(({ file, meta }) => handle(file, meta)))
+            queue.length = 0
+          }
+        }
+        await Promise.all(queue.map(({ file, meta }) => handle(file, meta)))
+      } catch (error) {
+        /* c8 ignore start */
+        // issue #18
+        // In somecase. Like vuepress it will called vite build with `Promise.all`. But it's concurrency. when we record the
+        // file fd. It had been changed. So that we should catch the error
         /* c8 ignore stop */
-      })
+      }
       schedule.clear()
     }
   }
