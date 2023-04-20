@@ -51,7 +51,8 @@ interface NormalCompressMetaInfo extends BaseCompressMetaInfo {
 
 interface DyanmiCompressMetaInfo extends BaseCompressMetaInfo {
   effect: true
-  file: string
+  file: string[]
+  dest: string[]
 }
 
 export type CompressMetaInfo = NormalCompressMetaInfo | DyanmiCompressMetaInfo
