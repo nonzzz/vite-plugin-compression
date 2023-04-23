@@ -38,6 +38,7 @@
     }
   },
   "devDependencies": {
+    "@playwright/test": "^1.32.3",
     "@types/node": "^17.0.14",
     "ava": "^5.2.0",
     "c8": "^7.13.0",

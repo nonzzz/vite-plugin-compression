@@ -1,0 +1,7 @@
+{
+  "name": "vite-plugin-compression2-e2e-vite4",
+  "private": "true",
+  "dependencies": {
+    "vite": "^2"
+  }
+}
