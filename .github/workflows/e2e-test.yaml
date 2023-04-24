@@ -6,7 +6,7 @@ jobs:
   run-e2e-test:
     strategy:
       matrix:
-        version: [14, 16, 18]
+        version: [16, 18]
         os: [ubuntu-latest, windows-latest]
     runs-on: ${{  matrix.os }}
     steps:
