@@ -1,0 +1,24 @@
+name: E2e test
+
+on: [push, pull_request]
+
+jobs:
+  run-e2e-test:
+    strategy:
+      matrix:
+        version: [16, 18]
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{  matrix.os }}
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          node-version: ${{ matrix.version  }}
+
+      - name: install dependices
+        run: yarn
+
+      - name: prepare e2e
+        run: yarn prepare:e2e
+
+      - name: run e2e test
+        run: yarn e2e
