@@ -3,6 +3,8 @@ import './theme.css'
 const insertButton = document.querySelector('.button--insert') as HTMLButtonElement
 
 insertButton.addEventListener('click', () => {
-  const uuId = new Date().getTime()
-  import(`./dynamic?t=${uuId}`)
+  import('./dynamic').then((module) => module.insertChildToLines())
+  console.log('append child')
 })
+
+console.log('load main process')
