@@ -98,7 +98,18 @@ async function expectTestCase(taskName: string, page: Awaited<Page>) {
     page.on('console', (message) => resolve(message.text()))
   })
 
+  const expect2 = new Promise(async (resolve) => {
+    page.on('console', (message) => {
+      if (message.type() === 'log' && message.text() === 'append child') {
+        resolve(message.text())
+      }
+    })
+    await page.click('.button--insert')
+    await page.waitForSelector('text=Insert', { timeout: 5000 })
+  })
+
   test(`${taskName} page first load`, async (t) => t.is(await expect1, 'load main process'))
+  test(`${taskName} insert line`, async (t) => t.is(await expect2, 'append child'))
 }
 
 export async function runTest(taskName: string, options: TestOptions) {
