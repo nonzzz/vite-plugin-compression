@@ -102,8 +102,9 @@ async function expectTestCase(taskName: string, page: Awaited<Page>) {
 }
 
 export async function runTest(taskName: string, options: TestOptions) {
-  const { server } = createServer(taskName)
   await prepareAssets(taskName, options)
+  await new Promise((resolve) => setTimeout(resolve, 5000))
+  const { server } = createServer(taskName)
   const { page } = await createChromeBrowser(server)
   await expectTestCase(taskName, page)
 }
