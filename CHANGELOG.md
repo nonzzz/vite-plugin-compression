@@ -1,3 +1,17 @@
+## 0.9.1
+
+# Background
+
+### Improve
+
+- Reduce unnecessary io (Currently, We don't handle viteMetaData.Becasue vite has already process them)
+- Add queue to optimize task processing.
+
+### Patches
+
+- Fix that the file with side effect can't be filterd.
+- Static assets can't handle correctly.
+
 ## 0.9.0
 
 # Background
