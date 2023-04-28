@@ -4,7 +4,7 @@ import path from 'path'
 import { createFilter } from '@rollup/pluginutils'
 import { len, replaceFileName, slash, readAll } from './utils'
 import { defaultCompressionOptions, ensureAlgorithm, transfer } from './compress'
-import type { Plugin, ChunkMetadata, ResolvedConfig } from 'vite'
+import type { Plugin, ResolvedConfig } from 'vite'
 import type {
   Algorithm,
   AlgorithmFunction,
@@ -15,20 +15,13 @@ import type {
   CompressMetaInfo,
   UserCompressionOptions
 } from './interface'
+import { createConcurrentQueue } from './task'
 
-const VITE_INTERNAL_CHUNK_META = 'viteMetadata'
 const VITE_COPY_PUBLIC_DIR = 'copyPublicDir'
 const MAX_CONCURRENT = 10
 
-type HandleCompressInvork = ([file, meta]: [string, CompressMetaInfo]) => Promise<void>
-
 interface OutputOptions {
   dest: string
-}
-
-async function handleCompress(tasks: Map<string, CompressMetaInfo>, invork: HandleCompressInvork) {
-  if (!tasks.size) return
-  await Promise.all(Array.from(tasks.entries()).map(invork))
 }
 
 function handleOutputOption(conf: ResolvedConfig, outputs: OutputOptions[]) {
@@ -42,6 +35,16 @@ function handleOutputOption(conf: ResolvedConfig, outputs: OutputOptions[]) {
     return
   }
   outputs.push({ dest: conf.build.outDir })
+}
+
+function makeOutputs(outputs: OutputOptions[], file: string) {
+  const dests = []
+  const files = []
+  outputs.forEach(({ dest }) => {
+    dests.push(dest)
+    files.push(slash(path.join(dest, file)))
+  })
+  return { dests, files }
 }
 
 function compression(): Plugin
@@ -60,7 +63,7 @@ function compression<T, A extends Algorithm>(opts: ViteCompressionPluginConfig<T
 
   const filter = createFilter(include, exclude)
 
-  const schedule = new Map<string, CompressMetaInfo>()
+  const stores = new Map<string, CompressMetaInfo>()
 
   const normalizedOutputs: OutputOptions[] = []
 
@@ -97,13 +100,12 @@ function compression<T, A extends Algorithm>(opts: ViteCompressionPluginConfig<T
         staticAssets.forEach((assets) => {
           const file = path.relative(publicPath, assets)
           if (!filter(file)) return
-          normalizedOutputs.forEach((output) =>
-            schedule.set(slash(file), {
-              effect: true,
-              file: [slash(path.join(output.dest, file))],
-              dest: [output.dest]
-            })
-          )
+          const { files, dests } = makeOutputs(normalizedOutputs, file)
+          stores.set(slash(file), {
+            effect: true,
+            file: files,
+            dest: dests
+          })
         })
       }
     },
@@ -118,55 +120,52 @@ function compression<T, A extends Algorithm>(opts: ViteCompressionPluginConfig<T
         const result = bundle.type == 'asset' ? bundle.source : bundle.code
         const size = len(result)
         if (size < threshold) continue
-        const effect = bundle.type === 'chunk' && !!len(bundle.dynamicImports)
+        // const effect = bundle.type === 'chunk' && !!len(bundle.dynamicImports)
         const meta: CompressMetaInfo = Object.create(null)
         // File without siede Effect will be automatically generator by vite processing.
-        meta.effect = effect
-        if (meta.effect) {
-          meta.file = []
-          meta.dest = []
-          normalizedOutputs.forEach((output) => {
-            meta.file.push(slash(path.join(output.dest, fileName)))
-            meta.dest.push(output.dest)
-          })
-          if (VITE_INTERNAL_CHUNK_META in bundle) {
-            // This is a hack logic. We get all bundle file reference relation. And record them with effect.
-            // Some case like virtual module we should ignored them.
-            const { importedAssets, importedCss } = bundle[VITE_INTERNAL_CHUNK_META] as ChunkMetadata
-            // @ts-ignored
-            const imports = [...importedAssets, ...importedCss, ...bundle.dynamicImports]
-            imports.forEach((importer) => {
-              if (!filter(filter)) return
-              if (importer in bundles) {
-                const files = []
-                const dest = []
-                normalizedOutputs.forEach((output) => {
-                  files.push(slash(path.join(output.dest, importer)))
-                  dest.push(output.dest)
-                })
-                schedule.set(importer, {
-                  effect: true,
-                  file: files,
-                  dest
-                })
-              }
-            })
+        // I don't think css and assets have side effect. So we only handle dynamic Imports is enough.
+        // Because vite already handle those.
+        if (bundle.type === 'chunk' && len(bundle.dynamicImports)) {
+          meta.effect = true
+          const { dests, files } = makeOutputs(normalizedOutputs, fileName)
+          if (meta.effect) {
+            meta.dest = dests
+            meta.file = files
           }
+          const imports = bundle.dynamicImports
+          imports.forEach((importer) => {
+            if (!filter(importer)) return
+            if (importer in bundles) {
+              const { dests, files } = makeOutputs(normalizedOutputs, importer)
+              stores.set(importer, {
+                effect: true,
+                file: files,
+                dest: dests
+              })
+            }
+          })
+        } else {
+          meta.effect = false
         }
 
-        if (!schedule.has(fileName) && bundle) schedule.set(fileName, meta)
+        if (!stores.has(fileName) && bundle) stores.set(fileName, meta)
+      }
+      const queue = createConcurrentQueue(MAX_CONCURRENT)
+      const handle = async (file: string, meta: CompressMetaInfo) => {
+        if (meta.effect) return
+        const bundle = bundles[file]
+        const source = bundle.type === 'asset' ? bundle.source : bundle.code
+        const compressed = await transfer(Buffer.from(source), zlib.algorithm, zlib.options)
+        const fileName = replaceFileName(file, zlib.filename)
+        this.emitFile({ type: 'asset', source: compressed, fileName })
+        if (deleteOriginalAssets) Reflect.deleteProperty(bundles, file)
+        stores.delete(file)
       }
       try {
-        await handleCompress(schedule, async ([file, meta]) => {
-          if (meta.effect) return
-          const bundle = bundles[file]
-          const source = bundle.type === 'asset' ? bundle.source : bundle.code
-          const compressed = await transfer(Buffer.from(source), zlib.algorithm, zlib.options)
-          const fileName = replaceFileName(file, zlib.filename)
-          this.emitFile({ type: 'asset', source: compressed, fileName })
-          if (deleteOriginalAssets) Reflect.deleteProperty(bundles, file)
-          schedule.delete(file)
-        })
+        for (const [file, meta] of stores) {
+          queue.enqueue(() => handle(file, meta))
+        }
+        await queue.wait()
       } catch (error) {
         /* c8 ignore start */
         this.error(error)
@@ -174,30 +173,25 @@ function compression<T, A extends Algorithm>(opts: ViteCompressionPluginConfig<T
       /* c8 ignore stop */
     },
     async closeBundle() {
-      const queue: Array<{ file: string; meta: CompressMetaInfo }> = []
+      const queue = createConcurrentQueue(MAX_CONCURRENT)
 
       const handle = async (file: string, meta: CompressMetaInfo) => {
         if (!meta.effect) return
-        for (const dest of meta.dest) {
-          for (const f of meta.file) {
-            const buf = await fsp.readFile(f)
-            const compressed = await transfer(buf, zlib.algorithm, zlib.options)
-            const fileName = replaceFileName(file, zlib.filename)
-            await fsp.writeFile(path.join(dest, fileName), compressed)
-            if (deleteOriginalAssets) await fsp.rm(f, { recursive: true, force: true })
-          }
+        for (const [pos, dest] of meta.dest.entries()) {
+          const f = meta.file[pos]
+          const buf = await fsp.readFile(f)
+          const compressed = await transfer(buf, zlib.algorithm, zlib.options)
+          const fileName = replaceFileName(file, zlib.filename)
+          await fsp.writeFile(path.join(dest, fileName), compressed)
+          if (deleteOriginalAssets) await fsp.rm(f, { recursive: true, force: true })
         }
       }
 
       try {
-        for (const [file, meta] of schedule) {
-          queue.push({ file, meta })
-          if (queue.length === MAX_CONCURRENT) {
-            await Promise.all(queue.map(({ file, meta }) => handle(file, meta)))
-            queue.length = 0
-          }
+        for (const [file, meta] of stores) {
+          queue.enqueue(() => handle(file, meta))
         }
-        await Promise.all(queue.map(({ file, meta }) => handle(file, meta)))
+        await queue.wait()
       } catch (error) {
         /* c8 ignore start */
         // issue #18
@@ -205,7 +199,7 @@ function compression<T, A extends Algorithm>(opts: ViteCompressionPluginConfig<T
         // file fd. It had been changed. So that we should catch the error
         /* c8 ignore stop */
       }
-      schedule.clear()
+      stores.clear()
     }
   }
 }

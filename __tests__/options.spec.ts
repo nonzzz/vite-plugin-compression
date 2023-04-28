@@ -60,7 +60,18 @@ test('rollupOptions First', async (t) => {
 test('rollupOptions with single output', async (t) => {
   const id = await mockBuild({ deleteOriginalAssets: true, include: /\.(html)$/ }, 'dynamic', true)
   await sleep(3000)
-  const r = readAll(path.join(tmplPath, id))
-  const gz = (await r).filter((v) => v.endsWith('.gz'))
+  const r = await readAll(path.join(tmplPath, id))
+  const gz = r.filter((v) => v.endsWith('.gz'))
   t.is(gz.length, 1)
+})
+
+test('rollupOptions with multiple outputs', async (t) => {
+  const id = await mockBuild({ deleteOriginalAssets: true, exclude: /\.(html)$/ }, 'public-assets-nest')
+  await sleep(3000)
+  const r = await readAll(path.join(tmplPath, id))
+  const gz = r.filter((v) => v.endsWith('.gz'))
+  t.is(gz.length, 6)
+  const r2 = await readAll(path.join(tempPath, id))
+  const gz2 = r2.filter((v) => v.endsWith('.gz'))
+  t.is(gz2.length, 6)
 })
