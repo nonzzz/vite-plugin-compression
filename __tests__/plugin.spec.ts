@@ -96,8 +96,8 @@ test('algorithm', async (t) => {
 
 test('custom alorithm', async (t) => {
   const id = await mockBuild<ZlibOptions>({
-    algorithm(buf, opt, invork) {
-      return zlib.gzip(buf, opt, invork)
+    algorithm(buf, opt, invoke) {
+      return zlib.gzip(buf, opt, invoke)
     },
     compressionOptions: {
       level: 9
