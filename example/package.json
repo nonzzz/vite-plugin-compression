@@ -6,8 +6,9 @@
     "preview": "node ./server/app.js"
   },
   "devDependencies": {
-    "vite": "3.0.9",
     "@vitejs/plugin-vue": "^3.1.2",
+    "vite": "3.0.9",
+    "vite-plugin-cdn2": "^0.4.0",
     "vite-plugin-compression2": "file:../"
   },
   "dependencies": {

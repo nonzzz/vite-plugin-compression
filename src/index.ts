@@ -122,7 +122,7 @@ function compression<T, A extends Algorithm>(opts: ViteCompressionPluginConfig<T
         if (size < threshold) continue
         // const effect = bundle.type === 'chunk' && !!len(bundle.dynamicImports)
         const meta: CompressMetaInfo = Object.create(null)
-        // File without siede Effect will be automatically generator by vite processing.
+        // File without side Effect will be automatically generator by vite processing.
         // I don't think css and assets have side effect. So we only handle dynamic Imports is enough.
         // Because vite already handle those.
         if (bundle.type === 'chunk' && len(bundle.dynamicImports)) {
