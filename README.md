@@ -76,6 +76,11 @@ export default defineComponent({
   there are write (delete) operations on the bundle inside the plugin. So you should ignore the compressed chunk :) If you want delete
   the original assets you also follow the way.
 
+
+### Others
+
+If you want to further optimize the bundle size. You can take a look [vite-plugin-cdn2](https://github.com/nonzzz/vite-plugin-cdn)
+
 ### LICENSE
 
 [MIT](./LICENSE)

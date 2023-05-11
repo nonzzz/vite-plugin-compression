@@ -13,7 +13,7 @@ import type {
   ViteCompressionPluginConfigAlgorithm,
   ViteCompressionPluginConfigFunction,
   CompressMetaInfo,
-  UserCompressionOptions
+  UserCompressionOptions,
 } from './interface'
 import { createConcurrentQueue } from './task'
 
@@ -58,7 +58,7 @@ function compression<T, A extends Algorithm>(opts: ViteCompressionPluginConfig<T
     algorithm: userAlgorithm = 'gzip',
     filename,
     compressionOptions,
-    deleteOriginalAssets = false
+    deleteOriginalAssets = false,
   } = opts
 
   const filter = createFilter(include, exclude)
@@ -74,9 +74,10 @@ function compression<T, A extends Algorithm>(opts: ViteCompressionPluginConfig<T
   } = Object.create(null)
 
   zlib.algorithm = typeof userAlgorithm === 'string' ? ensureAlgorithm(userAlgorithm).algorithm : userAlgorithm
+  // eslint-disable-next-line @typescript-eslint/ban-ts-comment
   // @ts-ignore
-  zlib.options =
-    typeof userAlgorithm === 'function'
+  zlib.options
+    = typeof userAlgorithm === 'function'
       ? compressionOptions
       : Object.assign(defaultCompressionOptions[userAlgorithm], compressionOptions)
   zlib.filename = filename ?? (userAlgorithm === 'brotliCompress' ? '[path][base].br' : '[path][base].gz')
@@ -104,7 +105,7 @@ function compression<T, A extends Algorithm>(opts: ViteCompressionPluginConfig<T
           stores.set(slash(file), {
             effect: true,
             file: files,
-            dest: dests
+            dest: dests,
           })
         })
       }
@@ -117,7 +118,7 @@ function compression<T, A extends Algorithm>(opts: ViteCompressionPluginConfig<T
       for (const fileName in bundles) {
         if (!filter(fileName)) continue
         const bundle = bundles[fileName]
-        const result = bundle.type == 'asset' ? bundle.source : bundle.code
+        const result = bundle.type === 'asset' ? bundle.source : bundle.code
         const size = len(result)
         if (size < threshold) continue
         // const effect = bundle.type === 'chunk' && !!len(bundle.dynamicImports)
@@ -140,7 +141,7 @@ function compression<T, A extends Algorithm>(opts: ViteCompressionPluginConfig<T
               stores.set(importer, {
                 effect: true,
                 file: files,
-                dest: dests
+                dest: dests,
               })
             }
           })
@@ -200,7 +201,7 @@ function compression<T, A extends Algorithm>(opts: ViteCompressionPluginConfig<T
         /* c8 ignore stop */
       }
       stores.clear()
-    }
+    },
   }
 }
 

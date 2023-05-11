@@ -32,8 +32,8 @@ async function mockBuild(config: any = {}, dir = 'normal') {
     configFile: false,
     logLevel: 'silent',
     build: {
-      outDir: path.join(__dirname, 'dist', id)
-    }
+      outDir: path.join(__dirname, 'dist', id),
+    },
   })
   return id
 }
@@ -51,7 +51,7 @@ test('vite-plugin-compression2', async (t) => {
 
 test('include js only', async (t) => {
   const id = await mockBuild({
-    include: /\.(js)$/
+    include: /\.(js)$/,
   })
   const r = await readAll(path.join(dist, id))
   const compressed = len(r.filter((s) => s.endsWith('.gz')))
@@ -60,7 +60,7 @@ test('include js only', async (t) => {
 
 test('include css and js', async (t) => {
   const id = await mockBuild({
-    include: [/\.(js)$/, /\.(css)$/]
+    include: [/\.(js)$/, /\.(css)$/],
   })
   const r = await readAll(path.join(dist, id))
   const compressed = len(r.filter((s) => s.endsWith('.gz')))
@@ -69,7 +69,7 @@ test('include css and js', async (t) => {
 
 test('exlucde html', async (t) => {
   const id = await mockBuild({
-    exclude: /\.(html)$/
+    exclude: /\.(html)$/,
   })
   const r = await readAll(path.join(dist, id))
   const compressed = len(r.filter((s) => s.endsWith('.gz')))
@@ -78,7 +78,7 @@ test('exlucde html', async (t) => {
 
 test('threshold', async (t) => {
   const id = await mockBuild({
-    threshold: 100
+    threshold: 100,
   })
   const r = await readAll(path.join(dist, id))
   const compressed = len(r.filter((s) => s.endsWith('.gz')))
@@ -87,7 +87,7 @@ test('threshold', async (t) => {
 
 test('algorithm', async (t) => {
   const id = await mockBuild({
-    algorithm: 'gzip'
+    algorithm: 'gzip',
   })
   const r = await readAll(path.join(dist, id))
   const compressed = len(r.filter((s) => s.endsWith('.gz')))
@@ -100,8 +100,8 @@ test('custom alorithm', async (t) => {
       return zlib.gzip(buf, opt, invoke)
     },
     compressionOptions: {
-      level: 9
-    }
+      level: 9,
+    },
   })
   const r = await readAll(path.join(dist, id))
   const compressed = len(r.filter((s) => s.endsWith('.gz')))
@@ -110,7 +110,7 @@ test('custom alorithm', async (t) => {
 
 test('deleteOriginalAssets', async (t) => {
   const id = await mockBuild({
-    deleteOriginalAssets: true
+    deleteOriginalAssets: true,
   })
   const r = await readAll(path.join(dist, id))
   t.is(len(r), 3)
@@ -118,7 +118,7 @@ test('deleteOriginalAssets', async (t) => {
 
 test('brotliCompress', async (t) => {
   const id = await mockBuild({
-    algorithm: 'brotliCompress'
+    algorithm: 'brotliCompress',
   })
   const r = await readAll(path.join(dist, id))
   const compressed = len(r.filter((s) => s.endsWith('.br')))
@@ -127,7 +127,7 @@ test('brotliCompress', async (t) => {
 
 test('filename', async (t) => {
   const id = await mockBuild({
-    filename: 'fake/[base].gz'
+    filename: 'fake/[base].gz',
   })
   const r = await readAll(path.join(dist, id, 'fake'))
   const compressed = len(r.filter((s) => s.endsWith('.gz')))
@@ -138,12 +138,12 @@ test('multiple', async (t) => {
   const id = await mockBuild<ZlibOptions, 'gzip', BrotliOptions, Exclude<Algorithm, 'gzip'>>([
     {
       algorithm: 'gzip',
-      include: /\.(js)$/
+      include: /\.(js)$/,
     },
     {
       algorithm: 'brotliCompress',
-      include: /\.(css)$/
-    }
+      include: /\.(css)$/,
+    },
   ])
 
   const r = await readAll(path.join(dist, id))

@@ -9,7 +9,7 @@ export function len<T extends ArrayLike<unknown>>(source: T) {
 // [path] is replaced with the directories to the original asset, included trailing
 // [base] is replaced with the base ([name] + [ext]) of the original asset (image.png)
 export function replaceFileName(staticPath: string, rule: string | ((id: string) => string)) {
-  let template = typeof rule === 'function' ? rule(staticPath) : rule
+  const template = typeof rule === 'function' ? rule(staticPath) : rule
   const { dir, base } = path.parse(staticPath)
   const p = dir ? dir + '/' : ''
   return template.replace(/\[path\]/, p).replace(/\[base\]/, base)
@@ -30,10 +30,7 @@ export async function readAll(entry: string) {
     const stat = await fsp.stat(dir)
     if (stat.isDirectory()) {
       const dirs = await fsp.readdir(dir)
-      paths.push.apply(
-        paths,
-        dirs.map((sub) => path.join(dir, sub))
-      )
+      paths.push(...dirs.map((sub) => path.join(dir, sub)))
     }
     if (stat.isFile()) {
       result.push(dir)

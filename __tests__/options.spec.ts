@@ -13,7 +13,7 @@ const sleep = (delay: number) => new Promise((resolve) => setTimeout(resolve, de
 async function mockBuild<T extends Algorithm = never>(
   conf: ViteCompressionPluginConfigAlgorithm<T>,
   dir: string,
-  single = false
+  single = false,
 ) {
   const id = getId()
   await build({
@@ -21,21 +21,21 @@ async function mockBuild<T extends Algorithm = never>(
       rollupOptions: {
         output: !single
           ? [
-              {
-                dir: path.join(__dirname, 'temp', id)
-              },
-              {
-                dir: path.join(__dirname, '.tmpl', id)
-              }
-            ]
+            {
+              dir: path.join(__dirname, 'temp', id),
+            },
+            {
+              dir: path.join(__dirname, '.tmpl', id),
+            },
+          ]
           : {
-              dir: path.join(__dirname, '.tmpl', id)
-            }
-      }
+            dir: path.join(__dirname, '.tmpl', id),
+          },
+      },
     },
     root: path.join(__dirname, 'fixtures', dir),
     plugins: [compression(conf)],
-    logLevel: 'silent'
+    logLevel: 'silent',
   })
   return id
 }

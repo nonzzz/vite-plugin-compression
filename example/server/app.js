@@ -29,7 +29,7 @@ function createServer() {
         }
         res.writeHead(200, {
           'Content-Type': req.url.endsWith('.css') ? 'text/css' : 'text/javascript',
-          'Content-Encoding': 'gzip'
+          'Content-Encoding': 'gzip',
         })
         res.write(data)
         res.end()
@@ -38,13 +38,13 @@ function createServer() {
   })
 
   server.listen(0, () => {
-    const port = server.address().port
+    const { port } = server.address()
     console.log(`server run on http://localhost:${port}`)
   })
 }
 
 function main() {
-  if (!fs.existsSync(originalPath)) throw new Error("Please check your're already run 'npm run build'")
+  if (!fs.existsSync(originalPath)) throw new Error('Please check your\'re already run \'npm run build\'')
 
   createServer()
 }

@@ -15,9 +15,10 @@ test('transer', async (t) => {
 })
 
 test('transfer with error', async (t) => {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const msg = await t.throwsAsync(mockTransfer('gzip', 123 as any))
   t.is(
     msg.message,
-    'The "chunk" argument must be of type string or an instance of Buffer or Uint8Array. Received type number (123)'
+    'The "chunk" argument must be of type string or an instance of Buffer or Uint8Array. Received type number (123)',
   )
 })
