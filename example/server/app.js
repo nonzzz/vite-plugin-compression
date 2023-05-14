@@ -29,7 +29,7 @@ function createServer() {
         }
         res.writeHead(200, {
           'Content-Type': req.url.endsWith('.css') ? 'text/css' : 'text/javascript',
-          'Content-Encoding': 'gzip',
+          'Content-Encoding': 'gzip'
         })
         res.write(data)
         res.end()

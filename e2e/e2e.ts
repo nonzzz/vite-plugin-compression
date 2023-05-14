@@ -13,13 +13,18 @@ import type { Vite4Instance } from './vite4/interface'
 
 type ViteInstance = Vite2Instance | Vite3Instance | Vite4Instance
 
+export interface TestOptions {
+  vite: ViteInstance
+  compressOption?: Parameters<typeof compression>[number]
+}
+
 type Server = http.Server & {
   ip: string
 }
 
 function createGetter<T>(obj: T, key: string, getter: ()=>unknown) {
   Object.defineProperty(obj, key, {
-    get: getter,
+    get: getter
   })
 }
 
@@ -31,10 +36,10 @@ function prepareAssets(taskName: string, options: TestOptions) {
   vite.build({
     root: defaultWd,
     build: {
-      outDir: path.join(defaultWd, 'dist', taskName),
+      outDir: path.join(defaultWd, 'dist', taskName)
     },
     logLevel: 'silent',
-    plugins: [compression(compressOption) as any],
+    plugins: [compression(compressOption) as any]
   })
 }
 
@@ -43,11 +48,11 @@ function createServer(taskName: string) {
   const mime = {
     '.html': 'text/html',
     '.css': 'text/css',
-    '.js': 'text/javascript',
+    '.js': 'text/javascript'
   }
   const handleRequest = async (req: http.IncomingMessage, res: http.ServerResponse) => {
-    const fullPath
-      = req.url === '/'
+    const fullPath =
+      req.url === '/'
         ? path.join(defaultWd, 'dist', taskName, 'index.html')
         : path.join(defaultWd, 'dist', taskName, req.url)
 
@@ -88,27 +93,23 @@ async function createChromeBrowser(server: Server) {
   return { page }
 }
 
-export interface TestOptions {
-  vite: ViteInstance
-  compressOption?: Parameters<typeof compression>[number]
-}
+
 
 async function expectTestCase(taskName: string, page: Awaited<Page>) {
   const expect1 = new Promise((resolve) => {
     page.on('console', (message) => resolve(message.text()))
   })
 
-  const expect2 = new Promise( (resolve) => {
+  const expect2 = new Promise((resolve) => {
     page.on('console', (message) => {
       if (message.type() === 'log' && message.text() === 'append child') {
         resolve(message.text())
       }
     })
-    ;(async()=>{
+    ;(async () => {
       await page.click('.button--insert')
       await page.waitForSelector('text=Insert', { timeout: 5000 })
     })()
-  
   })
 
   test(`${taskName} page first load`, async (t) => t.is(await expect1, 'load main process'))

@@ -1062,10 +1062,13 @@ escape-string-regexp@^4.0.0:
   resolved "https://registry.yarnpkg.com/escape-string-regexp/-/escape-string-regexp-4.0.0.tgz#14ba83a5d373e3d311e5afca29cf5bfad965bf34"
   integrity sha512-TtpcNJ3XAzx3Gq8sWRzJaVajRs0uVxA2YAkdb1jm2YkPz4G6egUFAyA3n5vtEIZefPk5Wa4UXbKuS5fKkJWdgA==
 
-eslint-config-kagura@^1.0.3:
-  version "1.0.3"
-  resolved "https://registry.yarnpkg.com/eslint-config-kagura/-/eslint-config-kagura-1.0.3.tgz#3a45aa8054a8e1772237e98fac42119e2663d7de"
-  integrity sha512-6MpdUqLMkiih3uOULF9T/kAUd0fjfC1gvidYl30+MYObw7pBpQEeSYPWemB3DnMKL3I+IrsaYEXEopVEn98Zmw==
+eslint-config-kagura@^1.1.0:
+  version "1.1.0"
+  resolved "https://registry.yarnpkg.com/eslint-config-kagura/-/eslint-config-kagura-1.1.0.tgz#c751a4055c68d22cda8d54039c3b958446f14099"
+  integrity sha512-DMGEnDE4FoWtS1E7SemQid8NDCxmInE1ekW1fQFXiq7ZebFx91GrKDFDgAcLW/DtcVPZ58kkMxsE+SImadhXkA==
+  dependencies:
+    "@typescript-eslint/eslint-plugin" "^5.59.5"
+    "@typescript-eslint/parser" "^5.59.5"
 
 eslint-scope@^5.1.1:
   version "5.1.1"

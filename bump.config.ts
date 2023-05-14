@@ -5,8 +5,8 @@ export default define({
   input: 'src/index.ts',
   output: {
     dts: true,
-    exports: 'named',
+    exports: 'named'
   },
   clean: true,
-  plugins: [cleanUp({ extensions: ['.ts'] })],
+  plugins: [cleanUp({ extensions: ['.ts'] })]
 })

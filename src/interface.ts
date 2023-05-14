@@ -24,6 +24,10 @@ interface AlgorithmToZlib {
   deflateRaw: ZlibOptions
 }
 
+export interface AlgorithmFunction<T> {
+  (buf: Buffer, options: CompressionOptions<T>, callback: (err: Error | null, result: Buffer) => void)
+}
+
 type InternalCompressionPluginOptionsFunction<T> = {
   algorithm?: AlgorithmFunction<T>
   compressionOptions?: CompressionOptions<T>
@@ -56,7 +60,3 @@ interface DyanmiCompressMetaInfo extends BaseCompressMetaInfo {
 }
 
 export type CompressMetaInfo = NormalCompressMetaInfo | DyanmiCompressMetaInfo
-
-export interface AlgorithmFunction<T> {
-  (buf: Buffer, options: CompressionOptions<T>, callback: (err: Error | null, result: Buffer) => void)
-}

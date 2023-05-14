@@ -6,7 +6,7 @@ export default (async function () {
   runTest(name, {
     vite,
     compressOption: {
-      deleteOriginalAssets: true,
-    },
+      deleteOriginalAssets: true
+    }
   })
 })()
