@@ -22,6 +22,11 @@ type Server = http.Server & {
   ip: string
 }
 
+export interface TestOptions {
+  vite: ViteInstance
+  compressOption?: Parameters<typeof compression>[number]
+}
+
 function createGetter<T>(obj: T, key: string, getter: ()=>unknown) {
   Object.defineProperty(obj, key, {
     get: getter

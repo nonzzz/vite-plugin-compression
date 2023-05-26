@@ -4,6 +4,7 @@ import path from 'path'
 import { createFilter } from '@rollup/pluginutils'
 import { len, replaceFileName, slash, readAll } from './utils'
 import { defaultCompressionOptions, ensureAlgorithm, transfer } from './compress'
+import { createConcurrentQueue } from './task'
 import type { Plugin, ResolvedConfig } from 'vite'
 import type {
   Algorithm,
@@ -15,7 +16,6 @@ import type {
   CompressMetaInfo,
   UserCompressionOptions
 } from './interface'
-import { createConcurrentQueue } from './task'
 
 const VITE_COPY_PUBLIC_DIR = 'copyPublicDir'
 const MAX_CONCURRENT = 10
@@ -81,6 +81,7 @@ function compression<T, A extends Algorithm>(opts: ViteCompressionPluginConfig<T
       ? compressionOptions
       : Object.assign(defaultCompressionOptions[userAlgorithm], compressionOptions)
   zlib.filename = filename ?? (userAlgorithm === 'brotliCompress' ? '[path][base].br' : '[path][base].gz')
+  const queue = createConcurrentQueue(MAX_CONCURRENT)
 
   return {
     name: 'vite-plugin-compression',
@@ -121,7 +122,6 @@ function compression<T, A extends Algorithm>(opts: ViteCompressionPluginConfig<T
         const result = bundle.type === 'asset' ? bundle.source : bundle.code
         const size = len(result)
         if (size < threshold) continue
-        // const effect = bundle.type === 'chunk' && !!len(bundle.dynamicImports)
         const meta: CompressMetaInfo = Object.create(null)
         // File without side Effect will be automatically generator by vite processing.
         // I don't think css and assets have side effect. So we only handle dynamic Imports is enough.
@@ -151,7 +151,6 @@ function compression<T, A extends Algorithm>(opts: ViteCompressionPluginConfig<T
 
         if (!stores.has(fileName) && bundle) stores.set(fileName, meta)
       }
-      const queue = createConcurrentQueue(MAX_CONCURRENT)
       const handle = async (file: string, meta: CompressMetaInfo) => {
         if (meta.effect) return
         const bundle = bundles[file]
@@ -174,8 +173,6 @@ function compression<T, A extends Algorithm>(opts: ViteCompressionPluginConfig<T
       /* c8 ignore stop */
     },
     async closeBundle() {
-      const queue = createConcurrentQueue(MAX_CONCURRENT)
-
       const handle = async (file: string, meta: CompressMetaInfo) => {
         if (!meta.effect) return
         for (const [pos, dest] of meta.dest.entries()) {

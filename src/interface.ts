@@ -16,6 +16,11 @@ interface BaseCompressionPluginOptions {
   deleteOriginalAssets?: boolean
 }
 
+export interface AlgorithmFunction<T> {
+  (buf: Buffer, options: CompressionOptions<T>, callback: (err: Error | null, result: Buffer) => void)
+}
+
+
 import type { ZlibOptions, BrotliOptions } from 'zlib'
 interface AlgorithmToZlib {
   gzip: ZlibOptions
