@@ -156,9 +156,9 @@ function compression<T, A extends Algorithm>(opts: ViteCompressionPluginConfig<T
         const bundle = bundles[file]
         const source = bundle.type === 'asset' ? bundle.source : bundle.code
         const compressed = await transfer(Buffer.from(source), zlib.algorithm, zlib.options)
+        if (deleteOriginalAssets) Reflect.deleteProperty(bundles, file)
         const fileName = replaceFileName(file, zlib.filename)
         this.emitFile({ type: 'asset', source: compressed, fileName })
-        if (deleteOriginalAssets) Reflect.deleteProperty(bundles, file)
         stores.delete(file)
       }
       try {
