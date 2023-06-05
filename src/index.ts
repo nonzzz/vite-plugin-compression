@@ -156,6 +156,7 @@ function compression<T, A extends Algorithm>(opts: ViteCompressionPluginConfig<T
         const bundle = bundles[file]
         const source = bundle.type === 'asset' ? bundle.source : bundle.code
         const compressed = await transfer(Buffer.from(source), zlib.algorithm, zlib.options)
+        // #issue 30
         if (deleteOriginalAssets) Reflect.deleteProperty(bundles, file)
         const fileName = replaceFileName(file, zlib.filename)
         this.emitFile({ type: 'asset', source: compressed, fileName })
@@ -180,8 +181,10 @@ function compression<T, A extends Algorithm>(opts: ViteCompressionPluginConfig<T
           const buf = await fsp.readFile(f)
           const compressed = await transfer(buf, zlib.algorithm, zlib.options)
           const fileName = replaceFileName(file, zlib.filename)
-          await fsp.writeFile(path.join(dest, fileName), compressed)
-          if (deleteOriginalAssets) await fsp.rm(f, { recursive: true, force: true })
+          // issue #30
+          const outputPath = path.join(dest, fileName)
+          if (deleteOriginalAssets && outputPath !== f) await fsp.rm(f, { recursive: true, force: true })
+          await fsp.writeFile(outputPath, compressed)
         }
       }
 
