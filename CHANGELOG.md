@@ -1,3 +1,15 @@
+## 0.9.2
+
+# Background
+
+### Patches
+
+- Fix `filename` same as bundle source name can't work. #30
+
+### Credits
+
+@jglee96 @nonzzz
+
 ## 0.9.1
 
 # Background
