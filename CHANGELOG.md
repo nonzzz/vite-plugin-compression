@@ -1,3 +1,11 @@
+## 0.9.3
+
+# Background
+
+### Improve
+
+- Static Directory support size check.
+
 ## 0.9.2
 
 # Background
