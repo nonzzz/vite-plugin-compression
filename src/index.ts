@@ -90,7 +90,7 @@ function compression<T, A extends Algorithm>(opts: ViteCompressionPluginConfig<T
     async configResolved(config) {
       // issue #26
       // https://github.com/vitejs/vite/blob/716286ef21f4d59786f21341a52a81ee5db58aba/packages/vite/src/node/build.ts#L566-L611
-      // Unfortunately. Vite follow rollup option as first and the configResolved Hook don't expose merged conf for user. :(
+      // Vite follow rollup option as first and the configResolved Hook don't expose merged conf for user. :(
       // Someone who like using rollupOption. `config.build.outDir` will not as expected.
       handleOutputOption(config, normalizedOutputs)
       // Vite's pubic build: https://github.com/vitejs/vite/blob/HEAD/packages/vite/src/node/build.ts#L704-L709
@@ -99,19 +99,21 @@ function compression<T, A extends Algorithm>(opts: ViteCompressionPluginConfig<T
       if (config.publicDir && baseCondit && fs.existsSync(config.publicDir)) {
         const staticAssets = await readAll(config.publicDir)
         const publicPath = path.join(config.root, path.relative(config.root, config.publicDir))
-        staticAssets.forEach((assets) => {
+        Promise.all(staticAssets.map(async (assets) => {
+          if (!filter(assets)) return
+          const { size } = await fsp.stat(assets)
+          if (size < threshold) return
           const file = path.relative(publicPath, assets)
-          if (!filter(file)) return
           const { files, dests } = makeOutputs(normalizedOutputs, file)
           stores.set(slash(file), {
             effect: true,
             file: files,
             dest: dests
           })
-        })
+        }))
       }
     },
-    // Unfortunately. Vite support using object as hooks to change execution order need at least 3.1.0
+    // Vite support using object as hooks to change execution order need at least 3.1.0
     // So we should record that with side Effect bundle file. (Because file with dynamic import will trigger vite's internal importAnalysisBuild logic and it will generator vite's placeholder.)
     // Vite importAnalysisBuild source code: https://github.com/vitejs/vite/blob/main/packages/vite/src/node/plugins/importAnalysisBuild.ts
     // Vite's plugin order see: https://github.com/vitejs/vite/blob/HEAD/packages/vite/src/node/plugins/index.ts#L94-L98

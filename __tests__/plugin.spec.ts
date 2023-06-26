@@ -193,6 +193,14 @@ test('public assets nest', async (t) => {
   fianl.forEach((p) => t.is(fs.existsSync(p), true))
 })
 
+test('public assets threshold', async (t) => {
+  const id = await mockBuild({ deleteOriginalAssets: true, exclude: /\.(html)$/, threshold: 1024 * 2 }, 'public-assets-nest')
+  await sleep(3000)
+  const r = await readAll(path.join(dist, id))
+  const compressed = len(r.filter((s) => s.endsWith('.gz')))
+  t.is(compressed, 0)
+})
+
 test('exclude-assets', async (t) => {
   const id = await mockBuild({ exclude: [/\.(gif)$/] }, 'exclude-assets')
   await sleep(3000)
