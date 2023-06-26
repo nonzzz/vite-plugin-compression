@@ -58,7 +58,8 @@ function compression<T, A extends Algorithm>(opts: ViteCompressionPluginConfig<T
     algorithm: userAlgorithm = 'gzip',
     filename,
     compressionOptions,
-    deleteOriginalAssets = false
+    deleteOriginalAssets = false,
+    skipIfLargerOrEqual = true
   } = opts
 
   const filter = createFilter(include, exclude)
@@ -156,8 +157,9 @@ function compression<T, A extends Algorithm>(opts: ViteCompressionPluginConfig<T
       const handle = async (file: string, meta: CompressMetaInfo) => {
         if (meta.effect) return
         const bundle = bundles[file]
-        const source = bundle.type === 'asset' ? bundle.source : bundle.code
-        const compressed = await transfer(Buffer.from(source), zlib.algorithm, zlib.options)
+        const source = Buffer.from(bundle.type === 'asset' ? bundle.source : bundle.code)
+        const compressed = await transfer(source, zlib.algorithm, zlib.options)
+        if (skipIfLargerOrEqual && len(compressed) >= len(source)) return
         // #issue 30
         if (deleteOriginalAssets) Reflect.deleteProperty(bundles, file)
         const fileName = replaceFileName(file, zlib.filename)
@@ -182,6 +184,7 @@ function compression<T, A extends Algorithm>(opts: ViteCompressionPluginConfig<T
           const f = meta.file[pos]
           const buf = await fsp.readFile(f)
           const compressed = await transfer(buf, zlib.algorithm, zlib.options)
+          if (skipIfLargerOrEqual && len(compressed) >= len(buf)) continue
           const fileName = replaceFileName(file, zlib.filename)
           // issue #30
           const outputPath = path.join(dest, fileName)
