@@ -75,3 +75,11 @@ test('rollupOptions with multiple outputs', async (t) => {
   const gz2 = r2.filter((v) => v.endsWith('.gz'))
   t.is(gz2.length, 6)
 })
+
+test('skipIfLargerOrEqual', async (t) => {
+  const id = await mockBuild({ deleteOriginalAssets: true, exclude: /\.(html)$/, skipIfLargerOrEqual: true }, 'optimization')
+  await sleep(3000)
+  const r = await readAll(path.join(tmplPath, id))
+  const gz = r.filter((v) => v.endsWith('.gz'))
+  t.is(gz.length, 2)
+})

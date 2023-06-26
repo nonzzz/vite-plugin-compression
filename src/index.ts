@@ -59,7 +59,7 @@ function compression<T, A extends Algorithm>(opts: ViteCompressionPluginConfig<T
     filename,
     compressionOptions,
     deleteOriginalAssets = false,
-    skipIfLargerOrEqual = true
+    skipIfLargerOrEqual = false
   } = opts
 
   const filter = createFilter(include, exclude)

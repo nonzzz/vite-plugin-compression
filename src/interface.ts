@@ -14,6 +14,7 @@ interface BaseCompressionPluginOptions {
   threshold?: number
   filename?: string | ((id: string) => string)
   deleteOriginalAssets?: boolean
+  skipIfLargerOrEqual?: boolean
 }
 
 export interface AlgorithmFunction<T> {
