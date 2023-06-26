@@ -41,6 +41,7 @@ export default defineConfig({
 | `algorithm`            | `string\| function`                           | `gzip`            | The compression algorithm                                      |
 | `compressionOptions`   | `Record<string,any>`                          | `{}`              | Compression options for `algorithm`(details see `zlib module`) |
 | `deleteOriginalAssets` | `boolean`                                     | `false`           | Whether to delete the original assets or not                   |
+| `skipIfLargerOrEqual`  | `boolean`                                     | `true`            | Whether to skip the compression if the result is larger than or equal to the original file |
 | `filename`             | `string`                                      | `[path][base].gz` | The target asset filename                                      |
 
 ### Q & A
@@ -72,7 +73,7 @@ export default defineComponent({
 })
 ```
 
-- You should set `exclude` for the latest compression plugin. ( Becasue in the full bundle process. Bundle chunk is shared. And
+- You should set `exclude` for the latest compression plugin. ( Because in the full bundle process. Bundle chunk is shared. And
   there are write (delete) operations on the bundle inside the plugin. So you should ignore the compressed chunk :) If you want delete
   the original assets you also follow the way.
 
