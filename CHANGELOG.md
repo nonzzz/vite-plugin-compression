@@ -1,3 +1,16 @@
+## 0.10.0
+
+# Background
+
+### Improve & Features
+
+- Add `skipIfLargerOrEqual` option. #32
+
+### Credits
+
+@vHeemstra @nonzzz
+
+
 ## 0.9.3
 
 # Background
