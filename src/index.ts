@@ -126,9 +126,9 @@ function compression<T, A extends Algorithm>(opts: ViteCompressionPluginConfig<T
         const size = len(result)
         if (size < threshold) continue
         const meta: CompressMetaInfo = Object.create(null)
-        // File without side Effect will be automatically generator by vite processing.
-        // I don't think css and assets have side effect. So we only handle dynamic Imports is enough.
-        // Because vite already handle those.
+        // we think dynamic imports have side effect. 
+        // In vite intenral logic, vite will set a placeholder and consume it after all plugin work done. 
+        // We only process chunk is enough. Other assets will be automatically generator by vite.
         if (bundle.type === 'chunk' && len(bundle.dynamicImports)) {
           meta.effect = true
           const { dests, files } = makeOutputs(normalizedOutputs, fileName)
@@ -140,6 +140,9 @@ function compression<T, A extends Algorithm>(opts: ViteCompressionPluginConfig<T
           imports.forEach((importer) => {
             if (!filter(importer)) return
             if (importer in bundles) {
+              const bundle = bundles[importer]
+              const chunk  = bundle.type === 'asset' ? bundle.source : bundle.code
+              if (len(chunk) < threshold) return
               const { dests, files } = makeOutputs(normalizedOutputs, importer)
               stores.set(importer, {
                 effect: true,
