@@ -1,3 +1,10 @@
+## 0.10.1
+
+# Background
+### Patches
+
+- Fix chunk with side effect can't work with `threshold` #33
+
 ## 0.10.0
 
 # Background
