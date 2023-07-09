@@ -1,3 +1,11 @@
+## 0.10.2
+
+# Background
+
+### Patches
+
+- Fix option `filename` called result same as bundle filename can't work. #31
+
 ## 0.10.1
 
 # Background

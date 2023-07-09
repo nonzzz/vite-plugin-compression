@@ -1,6 +1,6 @@
 {
   "name": "vite-plugin-compression2",
-  "version": "0.10.1",
+  "version": "0.10.2",
   "description": "a fast vite compression plugin",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
