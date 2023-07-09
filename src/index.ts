@@ -160,12 +160,19 @@ function compression<T, A extends Algorithm>(opts: ViteCompressionPluginConfig<T
       const handle = async (file: string, meta: CompressMetaInfo) => {
         if (meta.effect) return
         const bundle = bundles[file]
+        const fileName = replaceFileName(file, zlib.filename)
+        // #issue 31 
+        // we should pass the handle. Because if we process it . vite internal plugin can't work well
+        if (file === fileName && bundle.type === 'chunk') {
+          const { dests, files } = makeOutputs(normalizedOutputs, fileName)
+          stores.set(file, { effect: true, file: files, dest: dests })
+          return
+        }
         const source = Buffer.from(bundle.type === 'asset' ? bundle.source : bundle.code)
         const compressed = await transfer(source, zlib.algorithm, zlib.options)
         if (skipIfLargerOrEqual && len(compressed) >= len(source)) return
         // #issue 30
         if (deleteOriginalAssets) Reflect.deleteProperty(bundles, file)
-        const fileName = replaceFileName(file, zlib.filename)
         this.emitFile({ type: 'asset', source: compressed, fileName })
         stores.delete(file)
       }
