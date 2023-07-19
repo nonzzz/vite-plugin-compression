@@ -25,11 +25,15 @@ interface OutputOptions {
 }
 
 function handleOutputOption(conf: ResolvedConfig, outputs: OutputOptions[]) {
+  // issue #39
+  // In some case like vite-plugin-legacy will set an empty output item
+  // we should skip it.
   if (conf.build.rollupOptions?.output) {
     const outputOptions = Array.isArray(conf.build.rollupOptions.output)
       ? conf.build.rollupOptions.output
       : [conf.build.rollupOptions.output]
     outputOptions.forEach((opt) => {
+      if (typeof opt === 'object' && !len(Object.keys(opt))) return
       outputs.push({ dest: opt.dir || conf.build.outDir })
     })
     return
