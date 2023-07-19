@@ -1,3 +1,11 @@
+## 0.10.3
+
+# Background
+
+### Patches
+
+- Fix output option duplicate. #39
+
 ## 0.10.2
 
 # Background
