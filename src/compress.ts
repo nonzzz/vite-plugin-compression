@@ -1,6 +1,6 @@
 import zlib from 'zlib'
-import type { ZlibOptions, BrotliOptions } from 'zlib'
-import type { Algorithm, CompressionOptions, AlgorithmFunction } from './interface'
+import type { BrotliOptions, ZlibOptions } from 'zlib'
+import type { Algorithm, AlgorithmFunction, CompressionOptions } from './interface'
 
 export function ensureAlgorithm(userAlgorithm: Algorithm) {
   const algorithm = userAlgorithm in zlib ? userAlgorithm : 'gzip'

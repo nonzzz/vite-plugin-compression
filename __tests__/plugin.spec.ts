@@ -1,13 +1,13 @@
-import test from 'ava'
 import path from 'path'
 import zlib, { BrotliOptions } from 'zlib'
 import fs from 'fs'
 import fsp from 'fs/promises'
+import type { ZlibOptions } from 'zlib'
+import test from 'ava'
 import { build } from 'vite'
 import { compression } from '../src'
 import { len, readAll } from '../src/utils'
 import type { Algorithm, ViteCompressionPluginConfig } from '../src'
-import type { ZlibOptions } from 'zlib'
 
 const getId = () => Math.random().toString(32).slice(2, 10)
 

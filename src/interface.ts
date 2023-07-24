@@ -1,3 +1,5 @@
+import type { BrotliOptions, ZlibOptions } from 'zlib'
+
 export type Algorithm = 'gzip' | 'brotliCompress' | 'deflate' | 'deflateRaw'
 
 export interface UserCompressionOptions {
@@ -12,12 +14,10 @@ interface BaseCompressionPluginOptions {
   include?: string | RegExp | Array<string | RegExp>
   exclude?: RegExp | string | Array<string | RegExp>
   threshold?: number
-  filename?: string | ((id: string) => string)
+  filename?: string | ((id: string)=> string)
   deleteOriginalAssets?: boolean
   skipIfLargerOrEqual?: boolean
 }
-
-import type { ZlibOptions, BrotliOptions } from 'zlib'
 interface AlgorithmToZlib {
   gzip: ZlibOptions
   brotliCompress: BrotliOptions
@@ -26,7 +26,7 @@ interface AlgorithmToZlib {
 }
 
 export type AlgorithmFunction<T> =
-  (buf: Buffer, options: CompressionOptions<T>, callback: (err: Error | null, result: Buffer) => void) => void
+  (buf: Buffer, options: CompressionOptions<T>, callback: (err: Error | null, result: Buffer)=> void)=> void
 
 
 type InternalCompressionPluginOptionsFunction<T> = {

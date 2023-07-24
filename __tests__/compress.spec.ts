@@ -1,5 +1,5 @@
-import test from 'ava'
 import { Buffer } from 'buffer'
+import test from 'ava'
 import { ensureAlgorithm, transfer } from '../src/compress'
 import type { Algorithm } from '../src/interface'
 

@@ -2,19 +2,19 @@ import fsp from 'fs/promises'
 import fs from 'fs'
 import path from 'path'
 import { createFilter } from '@rollup/pluginutils'
-import { len, replaceFileName, slash, readAll } from './utils'
+import type { Plugin, ResolvedConfig } from 'vite'
+import { len, readAll, replaceFileName, slash } from './utils'
 import { defaultCompressionOptions, ensureAlgorithm, transfer } from './compress'
 import { createConcurrentQueue } from './task'
-import type { Plugin, ResolvedConfig } from 'vite'
 import type {
   Algorithm,
   AlgorithmFunction,
+  CompressMetaInfo,
   CompressionOptions,
+  UserCompressionOptions,
   ViteCompressionPluginConfig,
   ViteCompressionPluginConfigAlgorithm,
-  ViteCompressionPluginConfigFunction,
-  CompressMetaInfo,
-  UserCompressionOptions
+  ViteCompressionPluginConfigFunction
 } from './interface'
 
 const VITE_COPY_PUBLIC_DIR = 'copyPublicDir'
@@ -74,7 +74,7 @@ function compression<T, A extends Algorithm>(opts: ViteCompressionPluginConfig<T
 
   const zlib: {
     algorithm: AlgorithmFunction<T>
-    filename: string | ((id: string) => string)
+    filename: string | ((id: string)=> string)
     options: CompressionOptions<T>
   } = Object.create(null)
 

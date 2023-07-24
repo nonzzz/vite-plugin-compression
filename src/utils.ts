@@ -8,7 +8,7 @@ export function len<T extends ArrayLike<unknown>>(source: T) {
 // [path][base].ext
 // [path] is replaced with the directories to the original asset, included trailing
 // [base] is replaced with the base ([name] + [ext]) of the original asset (image.png)
-export function replaceFileName(staticPath: string, rule: string | ((id: string) => string)) {
+export function replaceFileName(staticPath: string, rule: string | ((id: string)=> string)) {
   const template = typeof rule === 'function' ? rule(staticPath) : rule
   const { dir, base } = path.parse(staticPath)
   const p = dir ? dir + '/' : ''

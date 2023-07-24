@@ -4,19 +4,14 @@ import fs from 'fs'
 import http from 'http'
 import test from 'ava'
 import { chromium } from 'playwright'
+import type { Page } from 'playwright'
 import { compression } from '../src'
 
-import type { Page } from 'playwright'
 import type { Vite2Instance } from './vite2/interface'
 import type { Vite3Instance } from './vite3/interface'
 import type { Vite4Instance } from './vite4/interface'
 
 type ViteInstance = Vite2Instance | Vite3Instance | Vite4Instance
-
-export interface TestOptions {
-  vite: ViteInstance
-  compressOption?: Parameters<typeof compression>[number]
-}
 
 type Server = http.Server & {
   ip: string
@@ -27,7 +22,7 @@ export interface TestOptions {
   compressOption?: Parameters<typeof compression>[number]
 }
 
-function createGetter<T>(obj: T, key: string, getter: ()=>unknown) {
+function createGetter<T>(obj: T, key: string, getter: ()=> unknown) {
   Object.defineProperty(obj, key, {
     get: getter
   })

@@ -2,7 +2,7 @@
 
 class Queue {
   maxConcurrent: number
-  queue: Array<() => Promise<void>>
+  queue: Array<()=> Promise<void>>
   running: number
   constructor(maxConcurrent: number) {
     this.maxConcurrent = maxConcurrent
