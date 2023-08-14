@@ -20,11 +20,9 @@ import type {
 const VITE_COPY_PUBLIC_DIR = 'copyPublicDir'
 const MAX_CONCURRENT = 10
 
-interface OutputOptions {
-  dest: string
-}
+type OutputOption = string
 
-function handleOutputOption(conf: ResolvedConfig, outputs: OutputOptions[]) {
+function handleOutputOption(conf: ResolvedConfig, outputs: Set<OutputOption>) {
   // issue #39
   // In some case like vite-plugin-legacy will set an empty output item
   // we should skip it.
@@ -34,17 +32,17 @@ function handleOutputOption(conf: ResolvedConfig, outputs: OutputOptions[]) {
       : [conf.build.rollupOptions.output]
     outputOptions.forEach((opt) => {
       if (typeof opt === 'object' && !len(Object.keys(opt))) return
-      outputs.push({ dest: opt.dir || conf.build.outDir })
+      outputs.add(opt.dir || conf.build.outDir)
     })
     return
   }
-  outputs.push({ dest: conf.build.outDir })
+  outputs.add(conf.build.outDir)
 }
 
-function makeOutputs(outputs: OutputOptions[], file: string) {
+function makeOutputs(outputs: Set<OutputOption>, file: string) {
   const dests = []
   const files = []
-  outputs.forEach(({ dest }) => {
+  outputs.forEach((dest) => {
     dests.push(dest)
     files.push(slash(path.join(dest, file)))
   })
@@ -70,7 +68,7 @@ function compression<T, A extends Algorithm>(opts: ViteCompressionPluginConfig<T
 
   const stores = new Map<string, CompressMetaInfo>()
 
-  const normalizedOutputs: OutputOptions[] = []
+  const normalizedOutputs: Set<OutputOption> = new Set()
 
   const zlib: {
     algorithm: AlgorithmFunction<T>
