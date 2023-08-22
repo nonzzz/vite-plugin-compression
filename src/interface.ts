@@ -1,4 +1,5 @@
 import type { BrotliOptions, ZlibOptions } from 'zlib'
+import type { FilterPattern } from '@rollup/pluginutils'
 
 export type Algorithm = 'gzip' | 'brotliCompress' | 'deflate' | 'deflateRaw'
 
@@ -11,8 +12,8 @@ export type InferDefault<T> = T extends infer K ? K : UserCompressionOptions
 export type CompressionOptions<T> = InferDefault<T>
 
 interface BaseCompressionPluginOptions {
-  include?: string | RegExp | Array<string | RegExp>
-  exclude?: RegExp | string | Array<string | RegExp>
+  include?: FilterPattern
+  exclude?: FilterPattern
   threshold?: number
   filename?: string | ((id: string)=> string)
   deleteOriginalAssets?: boolean
