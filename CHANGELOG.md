@@ -1,3 +1,9 @@
+## 0.10.4
+
+# Background
+
+- Make options happy
+
 ## 0.10.3
 
 # Background
