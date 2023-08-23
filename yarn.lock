@@ -253,6 +253,11 @@
     "@nodelib/fs.scandir" "2.1.5"
     fastq "^1.6.0"
 
+"@nolyfill/shared@1.0.14":
+  version "1.0.14"
+  resolved "https://registry.yarnpkg.com/@nolyfill/shared/-/shared-1.0.14.tgz#f4ffd84e0f6368ad0ca96cba44efc7affe82f5a5"
+  integrity sha512-LiFjeoJ8l6j02L/nxk+j/pW9vQjEat4hcgQKsBrPzWtBW/f4vSdpkTavR03dSzx/OGTId+9y1OOXhLsybCmOug==
+
 "@rollup/plugin-alias@^4.0.2":
   version "4.0.2"
   resolved "https://registry.yarnpkg.com/@rollup/plugin-alias/-/plugin-alias-4.0.2.tgz#fec6c6aff8dd6fce580ae6bc5345084cd702bb62"
@@ -1343,10 +1348,10 @@ fsevents@~2.3.2:
   resolved "https://registry.yarnpkg.com/fsevents/-/fsevents-2.3.2.tgz#8a526f78b8fdf4623b709e0b975c52c24c02fd1a"
   integrity sha512-xiqMQR4xAeHTuB9uWm+fFRcIOgKBMiOBP+eXiyT7jsgVCq1bkVygt00oASowB7EdtpOHaaPgKt812P9ab+DDKA==
 
-function-bind@^1.1.1:
-  version "1.1.1"
-  resolved "https://registry.yarnpkg.com/function-bind/-/function-bind-1.1.1.tgz#a56899d3ea3c9bab874bb9773b7c5ede92f4895d"
-  integrity sha512-yIovAzMX49sF8Yl58fSCWJ5svSLuaibPxXQJFLmBObTuCr0Mf1KiPopGM9NiFjiYBCbfaa2Fh6breQ6ANVTI0A==
+"function-bind@npm:@nolyfill/function-bind@latest":
+  version "1.0.14"
+  resolved "https://registry.yarnpkg.com/@nolyfill/function-bind/-/function-bind-1.0.14.tgz#3cdb1c10b640672516c4eee665cbe929484c658d"
+  integrity sha512-8tGSwWghGdprFF1fUfU6cf3x/TkM/k2/MCjRjvNNEgFel1vqSFCe8LpZLaKj1Q8PNrmntwq/DNXyTYZbVOOLiw==
 
 get-caller-file@^2.0.5:
   version "2.0.5"
@@ -1452,12 +1457,12 @@ has-flag@^4.0.0:
   resolved "https://registry.yarnpkg.com/has-flag/-/has-flag-4.0.0.tgz#944771fd9c81c81265c4d6941860da06bb59479b"
   integrity sha512-EykJT/Q1KjTWctppgIAgfSO0tKVuZUjhgMr17kqTumMl6Afv3EISleU7qZUzoXDFTAHTDC4NOoG/ZxU3EvlMPQ==
 
-has@^1.0.3:
-  version "1.0.3"
-  resolved "https://registry.yarnpkg.com/has/-/has-1.0.3.tgz#722d7cbfc1f6aa8241f16dd814e011e1f41e8796"
-  integrity sha512-f2dvO0VU6Oej7RkWJGrehjbzMAjFp5/VKPp5tTpWIV4JHHZK1/BxbFRtf/siA2SWTe09caDmVtYYzWEIbBS4zw==
+has@^1.0.3, "has@npm:@nolyfill/has@latest":
+  version "1.0.14"
+  resolved "https://registry.yarnpkg.com/@nolyfill/has/-/has-1.0.14.tgz#329f7e6ca4cb106d6fc19cb8c47eaefd1b9fb413"
+  integrity sha512-iElQvWO1HdyyurSquJj67lHXdxjfR0RA4k9as4as/sxnjixc0thuQc/kWbfKInUGh0rqwJWmlIE+86ijy/xEVA==
   dependencies:
-    function-bind "^1.1.1"
+    "@nolyfill/shared" "1.0.14"
 
 html-escaper@^2.0.0:
   version "2.0.2"
