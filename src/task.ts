@@ -1,12 +1,15 @@
-// This is a very simple task limit
+import AggregateError from '@nolyfill/es-aggregate-error'
+import { len } from './utils'
 
 class Queue {
   maxConcurrent: number
   queue: Array<()=> Promise<void>>
   running: number
+  errors: Array<Error>
   constructor(maxConcurrent: number) {
     this.maxConcurrent = maxConcurrent
     this.queue = []
+    this.errors = []
     this.running = 0
   }
 
@@ -21,6 +24,8 @@ class Queue {
       this.running++
       try {
         await task()
+      } catch (error) {
+        this.errors.push(error)
       } finally {
         this.running--
         this.run()
@@ -32,6 +37,7 @@ class Queue {
     while (this.running) {
       await new Promise((resolve) => setTimeout(resolve, 0))
     }
+    if (len(this.errors)) throw new AggregateError(this.errors, 'task failed')
   }
 }
 

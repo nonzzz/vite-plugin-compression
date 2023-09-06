@@ -1,5 +1,6 @@
 import fsp from 'fs/promises'
 import fs from 'fs'
+import os from 'os'
 import path from 'path'
 import { createFilter } from '@rollup/pluginutils'
 import type { Plugin, ResolvedConfig } from 'vite'
@@ -18,7 +19,11 @@ import type {
 } from './interface'
 
 const VITE_COPY_PUBLIC_DIR = 'copyPublicDir'
-const MAX_CONCURRENT = 10
+const MAX_CONCURRENT = (() => {
+  const cpus = os.cpus() || { length: 1 }
+  if (cpus.length === 1) return 10
+  return Math.max(1, cpus.length - 1)
+})()
 
 type OutputOption = string
 
@@ -178,16 +183,8 @@ function compression<T, A extends Algorithm>(opts: ViteCompressionPluginConfig<T
         this.emitFile({ type: 'asset', source: compressed, fileName })
         stores.delete(file)
       }
-      try {
-        for (const [file, meta] of stores) {
-          queue.enqueue(() => handle(file, meta))
-        }
-        await queue.wait()
-      } catch (error) {
-        /* c8 ignore start */
-        this.error(error)
-      }
-      /* c8 ignore stop */
+      stores.forEach((meta, file) => queue.enqueue(() => handle(file, meta)))
+      await queue.wait().catch(this.error)
     },
     async closeBundle() {
       const handle = async (file: string, meta: CompressMetaInfo) => {
@@ -204,19 +201,11 @@ function compression<T, A extends Algorithm>(opts: ViteCompressionPluginConfig<T
           await fsp.writeFile(outputPath, compressed)
         }
       }
-
-      try {
-        for (const [file, meta] of stores) {
-          queue.enqueue(() => handle(file, meta))
-        }
-        await queue.wait()
-      } catch (error) {
-        /* c8 ignore start */
-        // issue #18
-        // In somecase. Like vuepress it will called vite build with `Promise.all`. But it's concurrency. when we record the
-        // file fd. It had been changed. So that we should catch the error
-        /* c8 ignore stop */
-      }
+      stores.forEach((meta, file) => queue.enqueue(() => handle(file, meta)))
+      // issue #18
+      // In somecase. Like vuepress it will called vite build with `Promise.all`. But it's concurrency. when we record the
+      // file fd. It had been changed. So that we should catch the error
+      await queue.wait().catch(e => e)
       stores.clear()
     }
   }

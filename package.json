@@ -6,8 +6,8 @@
   "types": "dist/index.d.ts",
   "module": "dist/index.mjs",
   "scripts": {
-    "build": "bump",
-    "dev": "bump -w",
+    "build": "tsup",
+    "dev": "tsup --watch src",
     "test": "c8 -r=lcov ava __tests__/*.spec.ts",
     "lint": "eslint . --fix",
     "prepare:e2e": "cd e2e && npm run installer",
@@ -46,15 +46,14 @@
     "c8": "^7.13.0",
     "eslint": "^8.40.0",
     "eslint-config-kagura": "^1.2.0",
-    "no-bump": "^0.7.1",
     "playwright": "^1.32.3",
-    "rollup-plugin-cleanup": "^3.2.1",
-    "rollup-plugin-dts": "^5.0.0",
     "ts-node": "^10.9.1",
+    "tsup": "^7.2.0",
     "typescript": "^5.1.6",
     "vite": "^4.0.4"
   },
   "dependencies": {
+    "@nolyfill/es-aggregate-error": "^1.0.21",
     "@rollup/pluginutils": "^5.0.2"
   },
   "ava": {
