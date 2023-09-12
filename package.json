@@ -41,13 +41,13 @@
     }
   },
   "devDependencies": {
+    "@esbuild-kit/cjs-loader": "^2.4.2",
     "@types/node": "^17.0.14",
     "ava": "^5.2.0",
     "c8": "^7.13.0",
     "eslint": "^8.40.0",
     "eslint-config-kagura": "^1.2.0",
     "playwright": "^1.32.3",
-    "ts-node": "^10.9.1",
     "tsup": "^7.2.0",
     "typescript": "^5.1.6",
     "vite": "^4.0.4"
@@ -65,7 +65,7 @@
       "ts"
     ],
     "require": [
-      "ts-node/register"
+      "@esbuild-kit/cjs-loader"
     ]
   },
   "resolutions": {
