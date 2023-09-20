@@ -31,17 +31,26 @@ function handleOutputOption(conf: ResolvedConfig, outputs: Set<OutputOption>) {
   // issue #39
   // In some case like vite-plugin-legacy will set an empty output item
   // we should skip it.
+
+  // Using full path. I find if we using like `dist` or others path it can't
+  // work on monorepo
+  // eg:
+  // yarn --cwd @pkg/website build
+  // At this time we will point to root directory. So that file with side effect
+  // can't process.
+  const prepareAbsPath = (root: string, sub: string) => path.resolve(root, sub)
+
   if (conf.build.rollupOptions?.output) {
     const outputOptions = Array.isArray(conf.build.rollupOptions.output)
       ? conf.build.rollupOptions.output
       : [conf.build.rollupOptions.output]
     outputOptions.forEach((opt) => {
       if (typeof opt === 'object' && !len(Object.keys(opt))) return
-      outputs.add(opt.dir || conf.build.outDir)
+      outputs.add(prepareAbsPath(conf.root, opt.dir || conf.build.outDir))
     })
     return
   }
-  outputs.add(conf.build.outDir)
+  outputs.add(prepareAbsPath(conf.root, conf.build.outDir))
 }
 
 function makeOutputs(outputs: Set<OutputOption>, file: string) {
