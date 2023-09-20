@@ -1,3 +1,16 @@
+## 0.10.5
+
+# Background
+
+
+### Improves
+
+- Reduce bundle size.
+### Patches
+
+- Fix can't work at monorepo.
+
+
 ## 0.10.4
 
 # Background
