@@ -1,23 +1,22 @@
-name: Unit test
+name: test
 
 on: [push, pull_request]
 
 jobs:
-  run-test:
+  test:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
-
-      - name: setup node environment
-        uses: actions/setup-node@v3
+      - uses: actions/checkout@v4
+      - name: Install berry
+        run: corepack enable
+      - uses: actions/setup-node@v3
         with:
-          node-version: '16.x'
+          node-version: 18
+      - name: Install Dependices
+        run: yarn install
 
-      - name: install dependices
-        run: yarn
-
-      - name: run test
+      - name: Run Test
         run: yarn test
 
-      - name: report coverage
+      - name: Report Coverage
         uses: codecov/codecov-action@v2

@@ -1,16 +1,20 @@
 {
   "name": "vite-plugin-compression2",
+  "packageManager": "yarn@3.6.3",
   "version": "0.10.5",
   "description": "a fast vite compression plugin",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "module": "dist/index.mjs",
+  "workspaces": [
+    "example",
+    "e2e/*"
+  ],
   "scripts": {
     "build": "tsup",
     "dev": "tsup --watch src",
     "test": "c8 -r=lcov ava __tests__/*.spec.ts",
     "lint": "eslint . --fix",
-    "prepare:e2e": "cd e2e && npm run installer",
     "e2e": "ava e2e/**/*.spec.ts"
   },
   "files": [
@@ -42,18 +46,22 @@
   },
   "devDependencies": {
     "@esbuild-kit/cjs-loader": "^2.4.2",
+    "@nolyfill/es-aggregate-error": "^1.0.21",
     "@types/node": "^17.0.14",
+    "@typescript-eslint/eslint-plugin": "^6.4.1",
+    "@typescript-eslint/parser": "^6.4.1",
     "ava": "^5.2.0",
     "c8": "^7.13.0",
     "eslint": "^8.40.0",
     "eslint-config-kagura": "^1.2.0",
+    "eslint-plugin-import": "npm:eslint-plugin-i@2.28.0-2",
     "playwright": "^1.32.3",
+    "sirv": "^2.0.3",
     "tsup": "^7.2.0",
     "typescript": "^5.1.6",
-    "vite": "^4.0.4"
+    "vite": "^4.4.9"
   },
   "dependencies": {
-    "@nolyfill/es-aggregate-error": "^1.0.21",
     "@rollup/pluginutils": "^5.0.2"
   },
   "ava": {

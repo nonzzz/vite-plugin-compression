@@ -1,8 +1,7 @@
 import path from 'path'
-import fsp from 'fs/promises'
-import fs from 'fs'
 import http from 'http'
 import test from 'ava'
+import sirv from 'sirv'
 import { chromium } from 'playwright'
 import type { Page } from 'playwright'
 import { compression } from '../src'
@@ -45,34 +44,14 @@ function prepareAssets(taskName: string, options: TestOptions) {
 
 function createServer(taskName: string) {
   const server = http.createServer()
-  const mime = {
-    '.html': 'text/html',
-    '.css': 'text/css',
-    '.js': 'text/javascript'
-  }
+  const publicPath = path.join(defaultWd, 'dist', taskName)
+  const assets = sirv(publicPath, { gzip: true })
+
   const handleRequest = async (req: http.IncomingMessage, res: http.ServerResponse) => {
-    const fullPath =
-      req.url === '/'
-        ? path.join(defaultWd, 'dist', taskName, 'index.html')
-        : path.join(defaultWd, 'dist', taskName, req.url)
-
-    const gzFilePath = fullPath + '.gz'
-
-    try {
-      const file = await fsp.stat(gzFilePath)
-      if (file.isFile()) {
-        const contentType = mime[path.extname(fullPath)] || 'text/plain'
-        const readStream = fs.createReadStream(gzFilePath)
-        res.setHeader('Content-Type', contentType)
-        res.setHeader('Content-Encoding', 'gzip')
-        res.statusCode = 200
-        readStream.pipe(res)
-        return
-      }
-    } catch (error) {
+    assets(req, res, () => {
       res.statusCode = 404
       res.end(`404 Not Found: ${req.url}`)
-    }
+    })
   }
   server.on('request', handleRequest)
   createGetter(server, 'ip', () => {

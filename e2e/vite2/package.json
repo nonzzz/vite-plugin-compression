@@ -1,8 +1,7 @@
 {
   "name": "vite-plugin-compression2-e2e-vite2",
-  "private": "true",
   "dependencies": {
-    "vite": "^2"
+    "vite": "2.9.15"
   },
   "devDependencies": {
     "patch-package": "^6.5.1",

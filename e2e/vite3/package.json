@@ -1,6 +1,5 @@
 {
   "name": "vite-plugin-compression2-e2e-vite3",
-  "private": "true",
   "dependencies": {
     "vite": "^3"
   }

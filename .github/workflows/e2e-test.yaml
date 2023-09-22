@@ -8,17 +8,16 @@ jobs:
       matrix:
         version: [16, 18]
         os: [ubuntu-latest, windows-latest]
-    runs-on: ${{  matrix.os }}
+    runs-on: ${{ matrix.os }}
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           node-version: ${{ matrix.version  }}
+      - name: Install berry
+        run: corepack enable
 
       - name: install dependices
         run: yarn
-
-      - name: prepare e2e
-        run: yarn prepare:e2e
-
+      
       - name: run e2e test
         run: yarn e2e

@@ -1,7 +1,4 @@
 {
   "name": "vite-plugin-compression2-e2e",
-  "private": "true",
-  "scripts": {
-    "installer": "yarn --cwd vite2 && yarn --cwd vite3 && yarn --cwd vite4"
-  }
+  "private": "true"
 }
