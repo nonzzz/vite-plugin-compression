@@ -1,5 +1,6 @@
 import type { BrotliOptions, ZlibOptions } from 'zlib'
 import type { FilterPattern } from '@rollup/pluginutils'
+import { Pretty } from './utils'
 
 export type Algorithm = 'gzip' | 'brotliCompress' | 'deflate' | 'deflateRaw'
 
@@ -26,21 +27,26 @@ interface AlgorithmToZlib {
   deflateRaw: ZlibOptions
 }
 
-export type AlgorithmFunction<T> =
-  (buf: Buffer, options: CompressionOptions<T>, callback: (err: Error | null, result: Buffer)=> void)=> void
+export type AlgorithmFunction<T extends UserCompressionOptions> =
+  (buf: Buffer, options: T, callback: (err: Error | null, result: Buffer)=> void)=> void
 
 
-type InternalCompressionPluginOptionsFunction<T> = {
+type InternalCompressionPluginOptionsFunction<T> =  {
   algorithm?: AlgorithmFunction<T>
-  compressionOptions?: CompressionOptions<T>
+  compressionOptions: T
+}
+type InternalWithoutCompressionPluginOptionsFunction =  {
+  algorithm?: AlgorithmFunction<undefined>
 }
 type InternalCompressionPluginOptionsAlgorithm<A extends Algorithm> = {
   algorithm?: A
-  compressionOptions?: AlgorithmToZlib[A]
+  compressionOptions?: Pretty<AlgorithmToZlib[A]>
 }
 
-export type ViteCompressionPluginConfigFunction<T> = BaseCompressionPluginOptions &
+export type ViteCompressionPluginConfigFunction<T extends UserCompressionOptions> = BaseCompressionPluginOptions &
   InternalCompressionPluginOptionsFunction<T>
+export type ViteWithoutCompressionPluginConfigFunction = Pretty<BaseCompressionPluginOptions &
+InternalWithoutCompressionPluginOptionsFunction>
 export type ViteCompressionPluginConfigAlgorithm<A extends Algorithm> = BaseCompressionPluginOptions &
   InternalCompressionPluginOptionsAlgorithm<A>
 export type ViteCompressionPluginConfig<T, A extends Algorithm> =

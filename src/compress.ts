@@ -1,6 +1,6 @@
 import zlib from 'zlib'
 import type { BrotliOptions, ZlibOptions } from 'zlib'
-import type { Algorithm, AlgorithmFunction, CompressionOptions } from './interface'
+import type { Algorithm, AlgorithmFunction, UserCompressionOptions } from './interface'
 
 export function ensureAlgorithm(userAlgorithm: Algorithm) {
   const algorithm = userAlgorithm in zlib ? userAlgorithm : 'gzip'
@@ -9,10 +9,10 @@ export function ensureAlgorithm(userAlgorithm: Algorithm) {
   }
 }
 
-export function transfer<T>(
+export function transfer<T extends UserCompressionOptions | undefined>(
   buf: Buffer,
   compress: AlgorithmFunction<T>,
-  options: CompressionOptions<T>
+  options: T
 ): Promise<Buffer> {
   return new Promise((resolve, reject) => {
     compress(buf, options, (err, bf) => {

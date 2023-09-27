@@ -4,7 +4,7 @@ import os from 'os'
 import path from 'path'
 import { createFilter } from '@rollup/pluginutils'
 import type { Plugin, ResolvedConfig } from 'vite'
-import { len, readAll, replaceFileName, slash } from './utils'
+import { Pretty, len, readAll, replaceFileName, slash } from './utils'
 import { defaultCompressionOptions, ensureAlgorithm, transfer } from './compress'
 import { createConcurrentQueue } from './task'
 import type {
@@ -15,7 +15,8 @@ import type {
   UserCompressionOptions,
   ViteCompressionPluginConfig,
   ViteCompressionPluginConfigAlgorithm,
-  ViteCompressionPluginConfigFunction
+  ViteCompressionPluginConfigFunction,
+  ViteWithoutCompressionPluginConfigFunction
 } from './interface'
 
 const VITE_COPY_PUBLIC_DIR = 'copyPublicDir'
@@ -64,9 +65,10 @@ function makeOutputs(outputs: Set<OutputOption>, file: string) {
 }
 
 function compression(): Plugin
-function compression<A extends Algorithm>(opts: ViteCompressionPluginConfigAlgorithm<A>): Plugin
-function compression<T = UserCompressionOptions>(opts: ViteCompressionPluginConfigFunction<T>): Plugin
-function compression<T, A extends Algorithm>(opts: ViteCompressionPluginConfig<T, A> = {}): Plugin {
+function compression<A extends Algorithm>(opts: Pretty<ViteCompressionPluginConfigAlgorithm<A>>): Plugin
+function compression<T extends UserCompressionOptions={}>(opts: Pretty<ViteCompressionPluginConfigFunction<T>>): Plugin
+function compression(opts: ViteWithoutCompressionPluginConfigFunction): Plugin
+function compression<T extends UserCompressionOptions, A extends Algorithm>(opts: ViteCompressionPluginConfig<T, A> = {}): Plugin {
   const {
     include,
     exclude,
@@ -87,12 +89,11 @@ function compression<T, A extends Algorithm>(opts: ViteCompressionPluginConfig<T
   const zlib: {
     algorithm: AlgorithmFunction<T>
     filename: string | ((id: string)=> string)
-    options: CompressionOptions<T>
+    options: UserCompressionOptions
   } = Object.create(null)
 
   zlib.algorithm = typeof userAlgorithm === 'string' ? ensureAlgorithm(userAlgorithm).algorithm : userAlgorithm
-  // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-  // @ts-ignore
+
   zlib.options =
     typeof userAlgorithm === 'function'
       ? compressionOptions
