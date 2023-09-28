@@ -10,13 +10,13 @@ export function ensureAlgorithm(userAlgorithm: Algorithm) {
   }
 }
 
-export function compress<T extends UserCompressionOptions | undefined>(
+export async function compress<T extends UserCompressionOptions | undefined>(
   buf: Buffer,
   compress: AlgorithmFunction<T>,
   options: T
 ) {
   try {
-    const res = compress(buf, options)
+    const res = await compress(buf, options)
     if (Buffer.isBuffer(res)) return res
     return Buffer.from(res as any)
   } catch (error) {
