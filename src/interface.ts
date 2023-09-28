@@ -11,6 +11,13 @@ export type InferDefault<T> = T extends infer K ? K : UserCompressionOptions
 
 export type CompressionOptions<T> = InferDefault<T>
 
+export type Pretty<T> = {
+  [key in keyof T]:
+  T[key] extends (...args: any[])=> any
+  ? (...args: Parameters<T[key]>)=> ReturnType<T[key]>
+  : T[key] & NonNullable<unknown>
+} & NonNullable<unknown>
+
 interface BaseCompressionPluginOptions {
   include?: FilterPattern
   exclude?: FilterPattern
@@ -26,21 +33,26 @@ interface AlgorithmToZlib {
   deflateRaw: ZlibOptions
 }
 
-export type AlgorithmFunction<T> =
-  (buf: Buffer, options: CompressionOptions<T>, callback: (err: Error | null, result: Buffer)=> void)=> void
+export type AlgorithmFunction<T extends UserCompressionOptions> =
+  (buf: Buffer, options: T)=> Promise<Buffer>
 
 
-type InternalCompressionPluginOptionsFunction<T> = {
+type InternalCompressionPluginOptionsFunction<T> =  {
   algorithm?: AlgorithmFunction<T>
-  compressionOptions?: CompressionOptions<T>
+  compressionOptions: T
+}
+type InternalWithoutCompressionPluginOptionsFunction =  {
+  algorithm?: AlgorithmFunction<undefined>
 }
 type InternalCompressionPluginOptionsAlgorithm<A extends Algorithm> = {
   algorithm?: A
-  compressionOptions?: AlgorithmToZlib[A]
+  compressionOptions?: Pretty<AlgorithmToZlib[A]>
 }
 
-export type ViteCompressionPluginConfigFunction<T> = BaseCompressionPluginOptions &
+export type ViteCompressionPluginConfigFunction<T extends UserCompressionOptions> = BaseCompressionPluginOptions &
   InternalCompressionPluginOptionsFunction<T>
+export type ViteWithoutCompressionPluginConfigFunction = Pretty<BaseCompressionPluginOptions &
+InternalWithoutCompressionPluginOptionsFunction>
 export type ViteCompressionPluginConfigAlgorithm<A extends Algorithm> = BaseCompressionPluginOptions &
   InternalCompressionPluginOptionsAlgorithm<A>
 export type ViteCompressionPluginConfig<T, A extends Algorithm> =
@@ -62,3 +74,5 @@ interface DyanmiCompressMetaInfo extends BaseCompressMetaInfo {
 }
 
 export type CompressMetaInfo = NormalCompressMetaInfo | DyanmiCompressMetaInfo
+
+

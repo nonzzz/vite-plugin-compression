@@ -2,6 +2,7 @@ import path from 'path'
 import zlib, { BrotliOptions } from 'zlib'
 import fs from 'fs'
 import fsp from 'fs/promises'
+import util from 'util'
 import type { ZlibOptions } from 'zlib'
 import test from 'ava'
 import { build } from 'vite'
@@ -96,8 +97,8 @@ test('algorithm', async (t) => {
 
 test('custom alorithm', async (t) => {
   const id = await mockBuild<ZlibOptions>({
-    algorithm(buf, opt, invoke) {
-      return zlib.gzip(buf, opt, invoke)
+    algorithm(buf, opt) {
+      return util.promisify(zlib.gzip)(buf, opt)
     },
     compressionOptions: {
       level: 9

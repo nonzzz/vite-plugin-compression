@@ -1,33 +1,27 @@
 import zlib from 'zlib'
+import util from 'util'
 import type { BrotliOptions, ZlibOptions } from 'zlib'
-import type { Algorithm, AlgorithmFunction, CompressionOptions } from './interface'
+import type { Algorithm, AlgorithmFunction, UserCompressionOptions } from './interface'
 
 export function ensureAlgorithm(userAlgorithm: Algorithm) {
   const algorithm = userAlgorithm in zlib ? userAlgorithm : 'gzip'
   return {
-    algorithm: zlib[algorithm]
+    algorithm: util.promisify(zlib[algorithm])
   }
 }
 
-export function transfer<T>(
+export async function compress<T extends UserCompressionOptions | undefined>(
   buf: Buffer,
   compress: AlgorithmFunction<T>,
-  options: CompressionOptions<T>
-): Promise<Buffer> {
-  return new Promise((resolve, reject) => {
-    compress(buf, options, (err, bf) => {
-      if (err) {
-        reject(err)
-        return
-      }
-
-      if (!Buffer.isBuffer(bf)) {
-        resolve(Buffer.from(bf))
-      } else {
-        resolve(bf)
-      }
-    })
-  })
+  options: T
+) {
+  try {
+    const res = await compress(buf, options)
+    if (Buffer.isBuffer(res)) return res
+    return Buffer.from(res as any)
+  } catch (error) {
+    return Promise.reject(error)
+  }
 }
 
 export const defaultCompressionOptions: {
