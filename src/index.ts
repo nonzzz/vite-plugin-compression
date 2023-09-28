@@ -66,7 +66,7 @@ function makeOutputs(outputs: Set<OutputOption>, file: string) {
 
 function compression(): Plugin
 function compression<A extends Algorithm>(opts: Pretty<ViteCompressionPluginConfigAlgorithm<A>>): Plugin
-function compression<T extends UserCompressionOptions = object>(opts: Pretty<ViteCompressionPluginConfigFunction<T>>): Plugin
+function compression<T extends UserCompressionOptions = NonNullable<unknown>>(opts: Pretty<ViteCompressionPluginConfigFunction<T>>): Plugin
 function compression(opts: ViteWithoutCompressionPluginConfigFunction): Plugin
 function compression<T extends UserCompressionOptions, A extends Algorithm>(opts: ViteCompressionPluginConfig<T, A> = {}): Plugin {
   const {
