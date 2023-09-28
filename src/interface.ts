@@ -11,6 +11,13 @@ export type InferDefault<T> = T extends infer K ? K : UserCompressionOptions
 
 export type CompressionOptions<T> = InferDefault<T>
 
+export type Pretty<T> = {
+  [key in keyof T]:
+  T[key] extends (...args: any[])=> any
+  ? (...args: Parameters<T[key]>)=> ReturnType<T[key]>
+  : T[key] & NonNullable<unknown>
+} & NonNullable<unknown>
+
 interface BaseCompressionPluginOptions {
   include?: FilterPattern
   exclude?: FilterPattern
@@ -27,7 +34,7 @@ interface AlgorithmToZlib {
 }
 
 export type AlgorithmFunction<T extends UserCompressionOptions> =
-  (buf: Buffer, options: T, callback: (err: Error | null, result: Buffer)=> void)=> void
+  (buf: Buffer, options: T)=> Promise<Buffer>
 
 
 type InternalCompressionPluginOptionsFunction<T> =  {
@@ -68,9 +75,4 @@ interface DyanmiCompressMetaInfo extends BaseCompressMetaInfo {
 
 export type CompressMetaInfo = NormalCompressMetaInfo | DyanmiCompressMetaInfo
 
-export type Pretty<T> = {
-  [key in keyof T]:
-  T[key] extends (...args: any[])=> any
-  ? (...args: Parameters<T[key]>)=> ReturnType<T[key]>
-  : T[key] & NonNullable<unknown>
-} & NonNullable<unknown>
+

@@ -5,13 +5,12 @@ import path from 'path'
 import { createFilter } from '@rollup/pluginutils'
 import type { Plugin, ResolvedConfig } from 'vite'
 import { len, readAll, replaceFileName, slash } from './utils'
-import { defaultCompressionOptions, ensureAlgorithm, transfer } from './compress'
+import { compress, defaultCompressionOptions, ensureAlgorithm } from './compress'
 import { createConcurrentQueue } from './task'
 import type {
   Algorithm,
   AlgorithmFunction,
   CompressMetaInfo,
-  CompressionOptions,
   Pretty,
   UserCompressionOptions,
   ViteCompressionPluginConfig,
@@ -67,7 +66,7 @@ function makeOutputs(outputs: Set<OutputOption>, file: string) {
 
 function compression(): Plugin
 function compression<A extends Algorithm>(opts: Pretty<ViteCompressionPluginConfigAlgorithm<A>>): Plugin
-function compression<T extends UserCompressionOptions={}>(opts: Pretty<ViteCompressionPluginConfigFunction<T>>): Plugin
+function compression<T extends UserCompressionOptions = object>(opts: Pretty<ViteCompressionPluginConfigFunction<T>>): Plugin
 function compression(opts: ViteWithoutCompressionPluginConfigFunction): Plugin
 function compression<T extends UserCompressionOptions, A extends Algorithm>(opts: ViteCompressionPluginConfig<T, A> = {}): Plugin {
   const {
@@ -187,7 +186,7 @@ function compression<T extends UserCompressionOptions, A extends Algorithm>(opts
           return
         }
         const source = Buffer.from(bundle.type === 'asset' ? bundle.source : bundle.code)
-        const compressed = await transfer(source, zlib.algorithm, zlib.options)
+        const compressed = await compress(source, zlib.algorithm, zlib.options)
         if (skipIfLargerOrEqual && len(compressed) >= len(source)) return
         // #issue 30
         if (deleteOriginalAssets) Reflect.deleteProperty(bundles, file)
@@ -203,7 +202,7 @@ function compression<T extends UserCompressionOptions, A extends Algorithm>(opts
         for (const [pos, dest] of meta.dest.entries()) {
           const f = meta.file[pos]
           const buf = await fsp.readFile(f)
-          const compressed = await transfer(buf, zlib.algorithm, zlib.options)
+          const compressed = await compress(buf, zlib.algorithm, zlib.options)
           if (skipIfLargerOrEqual && len(compressed) >= len(buf)) continue
           const fileName = replaceFileName(file, zlib.filename)
           // issue #30
