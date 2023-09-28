@@ -4,7 +4,7 @@ import os from 'os'
 import path from 'path'
 import { createFilter } from '@rollup/pluginutils'
 import type { Plugin, ResolvedConfig } from 'vite'
-import { Pretty, len, readAll, replaceFileName, slash } from './utils'
+import { len, readAll, replaceFileName, slash } from './utils'
 import { defaultCompressionOptions, ensureAlgorithm, transfer } from './compress'
 import { createConcurrentQueue } from './task'
 import type {
@@ -12,6 +12,7 @@ import type {
   AlgorithmFunction,
   CompressMetaInfo,
   CompressionOptions,
+  Pretty,
   UserCompressionOptions,
   ViteCompressionPluginConfig,
   ViteCompressionPluginConfigAlgorithm,

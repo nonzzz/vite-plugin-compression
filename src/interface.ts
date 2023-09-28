@@ -1,6 +1,5 @@
 import type { BrotliOptions, ZlibOptions } from 'zlib'
 import type { FilterPattern } from '@rollup/pluginutils'
-import { Pretty } from './utils'
 
 export type Algorithm = 'gzip' | 'brotliCompress' | 'deflate' | 'deflateRaw'
 
@@ -68,3 +67,10 @@ interface DyanmiCompressMetaInfo extends BaseCompressMetaInfo {
 }
 
 export type CompressMetaInfo = NormalCompressMetaInfo | DyanmiCompressMetaInfo
+
+export type Pretty<T> = {
+  [key in keyof T]:
+  T[key] extends (...args: any[])=> any
+  ? (...args: Parameters<T[key]>)=> ReturnType<T[key]>
+  : T[key] & NonNullable<unknown>
+} & NonNullable<unknown>
