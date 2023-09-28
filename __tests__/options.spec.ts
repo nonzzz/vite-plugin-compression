@@ -2,7 +2,7 @@ import path from 'path'
 import fsp from 'fs/promises'
 import test from 'ava'
 import { build } from 'vite'
-import type { ViteCompressionPluginConfigAlgorithm } from '../src/interface'
+import type { Pretty, ViteCompressionPluginConfigAlgorithm } from '../src/interface'
 import { compression } from '../src'
 import { readAll } from '../src/utils'
 import type { Algorithm } from '../src'
@@ -11,7 +11,7 @@ const getId = () => Math.random().toString(32).slice(2, 10)
 const sleep = (delay: number) => new Promise((resolve) => setTimeout(resolve, delay))
 
 async function mockBuild<T extends Algorithm = never>(
-  conf: ViteCompressionPluginConfigAlgorithm<T>,
+  conf: Pretty<ViteCompressionPluginConfigAlgorithm<T>>,
   dir: string,
   single = false
 ) {
