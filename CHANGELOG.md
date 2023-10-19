@@ -1,3 +1,13 @@
+## 0.10.6
+
+# Background
+
+### Improves
+
+- Perf types.
+- Reduce unnecessary installation packages.
+
+
 ## 0.10.5
 
 # Background

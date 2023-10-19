@@ -1,7 +1,7 @@
 {
   "name": "vite-plugin-compression2",
   "packageManager": "yarn@3.6.3",
-  "version": "0.10.5",
+  "version": "0.10.6",
   "description": "a fast vite compression plugin",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
