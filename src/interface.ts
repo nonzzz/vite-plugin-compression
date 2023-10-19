@@ -13,16 +13,16 @@ export type CompressionOptions<T> = InferDefault<T>
 
 export type Pretty<T> = {
   [key in keyof T]:
-  T[key] extends (...args: any[])=> any
-  ? (...args: Parameters<T[key]>)=> ReturnType<T[key]>
-  : T[key] & NonNullable<unknown>
+  T[key] extends (...args: any[]) => any
+    ? (...args: Parameters<T[key]>) => ReturnType<T[key]>
+    : T[key] & NonNullable<unknown>
 } & NonNullable<unknown>
 
 interface BaseCompressionPluginOptions {
   include?: FilterPattern
   exclude?: FilterPattern
   threshold?: number
-  filename?: string | ((id: string)=> string)
+  filename?: string | ((id: string) => string)
   deleteOriginalAssets?: boolean
   skipIfLargerOrEqual?: boolean
 }
@@ -34,14 +34,13 @@ interface AlgorithmToZlib {
 }
 
 export type AlgorithmFunction<T extends UserCompressionOptions> =
-  (buf: Buffer, options: T)=> Promise<Buffer>
+  (buf: Buffer, options: T) => Promise<Buffer>
 
-
-type InternalCompressionPluginOptionsFunction<T> =  {
+type InternalCompressionPluginOptionsFunction<T> = {
   algorithm?: AlgorithmFunction<T>
   compressionOptions: T
 }
-type InternalWithoutCompressionPluginOptionsFunction =  {
+type InternalWithoutCompressionPluginOptionsFunction = {
   algorithm?: AlgorithmFunction<undefined>
 }
 type InternalCompressionPluginOptionsAlgorithm<A extends Algorithm> = {
@@ -50,11 +49,11 @@ type InternalCompressionPluginOptionsAlgorithm<A extends Algorithm> = {
 }
 
 export type ViteCompressionPluginConfigFunction<T extends UserCompressionOptions> = BaseCompressionPluginOptions &
-  InternalCompressionPluginOptionsFunction<T>
+InternalCompressionPluginOptionsFunction<T>
 export type ViteWithoutCompressionPluginConfigFunction = Pretty<BaseCompressionPluginOptions &
 InternalWithoutCompressionPluginOptionsFunction>
 export type ViteCompressionPluginConfigAlgorithm<A extends Algorithm> = BaseCompressionPluginOptions &
-  InternalCompressionPluginOptionsAlgorithm<A>
+InternalCompressionPluginOptionsAlgorithm<A>
 export type ViteCompressionPluginConfig<T, A extends Algorithm> =
   | ViteCompressionPluginConfigFunction<T>
   | ViteCompressionPluginConfigAlgorithm<A>
@@ -74,5 +73,3 @@ interface DyanmiCompressMetaInfo extends BaseCompressMetaInfo {
 }
 
 export type CompressMetaInfo = NormalCompressMetaInfo | DyanmiCompressMetaInfo
-
-

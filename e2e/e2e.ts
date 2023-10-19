@@ -21,7 +21,7 @@ export interface TestOptions {
   compressOption?: Parameters<typeof compression>[number]
 }
 
-function createGetter<T>(obj: T, key: string, getter: ()=> unknown) {
+function createGetter<T>(obj: T, key: string, getter: () => unknown) {
   Object.defineProperty(obj, key, {
     get: getter
   })
@@ -71,8 +71,6 @@ async function createChromeBrowser(server: Server) {
 
   return { page }
 }
-
-
 
 async function expectTestCase(taskName: string, page: Awaited<Page>) {
   const expect1 = new Promise((resolve) => {

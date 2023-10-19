@@ -19,7 +19,6 @@ function createServer() {
     })
   })
 
-
   server.listen(0, () => {
     const { port } = server.address()
     console.log(`server run on http://localhost:${port}`)

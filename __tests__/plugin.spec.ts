@@ -216,7 +216,7 @@ test('aws s3', async (t) => {
   const r = await readAll(path.join(dist, id))
   const compressed = len(r.filter((s) => s.endsWith('.gz')))
   t.is(compressed, 0)
-  // eslint-disable-next-line padded-blocks
+   
   const css = r.filter(v => v.endsWith('.css'))[0]
   const bf = zlib.unzipSync(fs.readFileSync(css))
   t.is(bf.toString(), '.pr{padding-right:30px}.pl{padding-left:30px}.mt{margin-top:30px}\n')

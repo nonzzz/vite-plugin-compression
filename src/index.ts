@@ -88,7 +88,7 @@ function compression<T extends UserCompressionOptions, A extends Algorithm>(opts
 
   const zlib: {
     algorithm: AlgorithmFunction<T>
-    filename: string | ((id: string)=> string)
+    filename: string | ((id: string) => string)
     options: UserCompressionOptions
   } = Object.create(null)
 
@@ -158,7 +158,7 @@ function compression<T extends UserCompressionOptions, A extends Algorithm>(opts
             if (!filter(importer)) return
             if (importer in bundles) {
               const bundle = bundles[importer]
-              const chunk  = bundle.type === 'asset' ? bundle.source : bundle.code
+              const chunk = bundle.type === 'asset' ? bundle.source : bundle.code
               if (len(chunk) < threshold) return
               const { dests, files } = makeOutputs(normalizedOutputs, importer)
               stores.set(importer, {

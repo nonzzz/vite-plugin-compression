@@ -3,7 +3,7 @@ import { len } from './utils'
 
 class Queue {
   maxConcurrent: number
-  queue: Array<()=> Promise<void>>
+  queue: Array<() => Promise<void>>
   running: number
   errors: Array<Error>
   constructor(maxConcurrent: number) {
