@@ -1,3 +1,9 @@
+## 0.11.0
+
+# Background
+
+- Details see #41
+
 ## 0.10.6
 
 # Background
