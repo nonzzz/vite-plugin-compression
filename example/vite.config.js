@@ -9,8 +9,7 @@ export default defineConfig({
     cdn({ modules: ['vue', '@fect-ui/vue'] }),
     compression({
       include: [/\.(js)$/, /\.(css)$/],
-      deleteOriginalAssets: true,
-      filename: '[path][base]'
+      deleteOriginalAssets: true
     })
   ]
 })
