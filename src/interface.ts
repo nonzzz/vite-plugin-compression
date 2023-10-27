@@ -1,4 +1,5 @@
 import type { BrotliOptions, ZlibOptions } from 'zlib'
+import type { HookHandler, Plugin } from 'vite'
 import type { FilterPattern } from '@rollup/pluginutils'
 
 export type Algorithm = 'gzip' | 'brotliCompress' | 'deflate' | 'deflateRaw'
@@ -58,18 +59,4 @@ export type ViteCompressionPluginConfig<T, A extends Algorithm> =
   | ViteCompressionPluginConfigFunction<T>
   | ViteCompressionPluginConfigAlgorithm<A>
 
-interface BaseCompressMetaInfo {
-  effect: boolean
-}
-
-interface NormalCompressMetaInfo extends BaseCompressMetaInfo {
-  effect: false
-}
-
-interface DyanmiCompressMetaInfo extends BaseCompressMetaInfo {
-  effect: true
-  file: string[]
-  dest: string[]
-}
-
-export type CompressMetaInfo = NormalCompressMetaInfo | DyanmiCompressMetaInfo
+export type GenerateBundle = HookHandler<Plugin['generateBundle']>

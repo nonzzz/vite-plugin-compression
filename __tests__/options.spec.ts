@@ -15,6 +15,7 @@ async function mockBuild<T extends Algorithm = never>(
   dir: string,
   single = false
 ) {
+  conf.skipIfLargerOrEqual = conf.skipIfLargerOrEqual ?? false
   const id = getId()
   await build({
     build: {
