@@ -41,7 +41,7 @@ export default defineConfig({
 | `algorithm`            | `string\| function`                           | `gzip`            | The compression algorithm                                      |
 | `compressionOptions`   | `Record<string,any>`                          | `{}`              | Compression options for `algorithm`(details see `zlib module`) |
 | `deleteOriginalAssets` | `boolean`                                     | `false`           | Whether to delete the original assets or not                   |
-| `skipIfLargerOrEqual`  | `boolean`                                     | `false`            | Whether to skip the compression if the result is larger than or equal to the original file |
+| `skipIfLargerOrEqual`  | `boolean`                                     | `true`            | Whether to skip the compression if the result is larger than or equal to the original file |
 | `filename`             | `string`                                      | `[path][base].gz` | The target asset filename                                      |
 
 ## Q & A
