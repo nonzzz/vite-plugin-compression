@@ -82,7 +82,7 @@ function compression<T extends UserCompressionOptions, A extends Algorithm>(opts
     filename,
     compressionOptions,
     deleteOriginalAssets = false,
-    skipIfLargerOrEqual = false
+    skipIfLargerOrEqual = true
   } = opts
 
   const filter = createFilter(include, exclude)
