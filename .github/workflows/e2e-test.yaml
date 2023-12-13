@@ -3,7 +3,7 @@ name: E2e test
 on: [push, pull_request]
 
 jobs:
-  run-e2e-test:
+  run-e2e-test-vite2.x-4:
     strategy:
       matrix:
         version: [16, 18]
@@ -19,6 +19,26 @@ jobs:
       - name: install dependices
         run: yarn
       
-      - name: run e2e test range vite2-4
-        run: ava e2e/vite[2-4]/**/*.spec.ts
+      - name: test vite2.x -4.x
+        run: yarn ava e2e/vite[2-4]/**/*.spec.ts
+  run-e2e-test-vite5.x:
+    strategy:
+      martrix:
+        version: [18,20]
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          node-version: ${{ matrix.version  }}
+      - name: Install berry
+        run: corepack enable
+
+      - name: install dependices
+        run: yarn
+      
+      - name: test 5.x
+        run: yarn ava e2e/vite5/**/*.spec.ts
+
+
       
