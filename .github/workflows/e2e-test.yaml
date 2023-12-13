@@ -19,5 +19,26 @@ jobs:
       - name: install dependices
         run: yarn
       
-      - name: run e2e test
-        run: yarn e2e
+      - name: test 2.x to 4.x
+        run: yarn ava e2e/vite[2-4]/**/*.spec.ts
+  run-stable-e2e-test:
+    strategy:
+      matrix:
+        version: [18,20]
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          node-version: ${{ matrix.version  }}
+      - name: Install berry
+        run: corepack enable
+
+      - name: install dependices
+        run: yarn
+      
+      - name: test 5.x
+        run: yarn ava e2e/vite5/**/*.spec.ts
+
+
+      

@@ -51,11 +51,11 @@
     "ava": "^5.2.0",
     "c8": "^7.13.0",
     "eslint": "^8.40.0",
-    "eslint-config-kagura": "^2.0.0",
+    "eslint-config-kagura": "^2.1.1",
     "playwright": "^1.32.3",
     "sirv": "^2.0.3",
     "tsup": "^7.2.0",
-    "typescript": "^5.1.6",
+    "typescript": "^5.3.3",
     "vite": "^4.4.9"
   },
   "dependencies": {
