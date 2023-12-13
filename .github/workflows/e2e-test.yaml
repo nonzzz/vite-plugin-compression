@@ -19,5 +19,6 @@ jobs:
       - name: install dependices
         run: yarn
       
-      - name: run e2e test
-        run: yarn e2e
+      - name: run e2e test range vite2-4
+        run: ava e2e/vite[2-4]/**/*.spec.ts
+      

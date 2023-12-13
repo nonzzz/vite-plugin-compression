@@ -9,8 +9,9 @@ import { compression } from '../src'
 import type { Vite2Instance } from './vite2/interface'
 import type { Vite3Instance } from './vite3/interface'
 import type { Vite4Instance } from './vite4/interface'
+import type { Vite5Instance } from './vite5/interface'
 
-type ViteInstance = Vite2Instance | Vite3Instance | Vite4Instance
+type ViteInstance = Vite2Instance | Vite3Instance | Vite4Instance | Vite5Instance
 
 type Server = http.Server & {
   ip: string
