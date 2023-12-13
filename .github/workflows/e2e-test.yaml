@@ -3,7 +3,7 @@ name: E2e test
 on: [push, pull_request]
 
 jobs:
-  run-e2e-test-vite2.x-4:
+  run-e2e-test:
     strategy:
       matrix:
         version: [16, 18]
@@ -19,11 +19,11 @@ jobs:
       - name: install dependices
         run: yarn
       
-      - name: test vite2.x -4.x
+      - name: test 2.x to 4.x
         run: yarn ava e2e/vite[2-4]/**/*.spec.ts
-  run-e2e-test-vite5.x:
+  run-stable-e2e-test:
     strategy:
-      martrix:
+      matrix:
         version: [18,20]
         os: [ubuntu-latest, windows-latest]
     runs-on: ${{ matrix.os }}
