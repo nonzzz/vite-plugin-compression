@@ -45,7 +45,6 @@
     }
   },
   "devDependencies": {
-    "@esbuild-kit/cjs-loader": "^2.4.2",
     "@nolyfill/es-aggregate-error": "^1.0.21",
     "@types/node": "^17.0.14",
     "ava": "^5.2.0",
@@ -55,6 +54,7 @@
     "playwright": "^1.32.3",
     "sirv": "^2.0.3",
     "tsup": "^7.2.0",
+    "tsx": "^4.7.0",
     "typescript": "^5.3.3",
     "vite": "^4.4.9"
   },
@@ -70,7 +70,7 @@
       "ts"
     ],
     "require": [
-      "@esbuild-kit/cjs-loader"
+      "tsx/cjs"
     ]
   },
   "resolutions": {
