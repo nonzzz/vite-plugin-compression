@@ -24,7 +24,7 @@ export function slash(path: string) {
 export async function readAll(entry: string) {
   const paths = await Promise.all((await fsp.readdir(entry)).map((dir) => path.join(entry, dir)))
   let pos = 0
-  const result = []
+  const result: string[] = []
   while (pos !== len(paths)) {
     const dir = paths[pos]
     const stat = await fsp.stat(dir)

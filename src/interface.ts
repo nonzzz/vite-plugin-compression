@@ -60,3 +60,13 @@ export type ViteCompressionPluginConfig<T, A extends Algorithm> =
   | ViteCompressionPluginConfigAlgorithm<A>
 
 export type GenerateBundle = HookHandler<Plugin['generateBundle']>
+
+export interface ViteCpPluginOptions {
+  dest: string,
+  zlib?: ZlibOptions
+}
+
+export interface StaticContent {
+  content: Buffer,
+  filename: string
+}

@@ -5,17 +5,19 @@ import path from 'path'
 import { createFilter } from '@rollup/pluginutils'
 import type { Plugin, ResolvedConfig } from 'vite'
 import { len, readAll, replaceFileName, slash } from './utils'
-import { compress, defaultCompressionOptions, ensureAlgorithm } from './compress'
+import { compress, createArchive, defaultCompressionOptions, ensureAlgorithm } from './compress'
 import { createConcurrentQueue } from './task'
 import type {
   Algorithm,
   AlgorithmFunction,
   GenerateBundle,
   Pretty,
+  StaticContent,
   UserCompressionOptions,
   ViteCompressionPluginConfig,
   ViteCompressionPluginConfigAlgorithm,
   ViteCompressionPluginConfigFunction,
+  ViteCpPluginOptions,
   ViteWithoutCompressionPluginConfigFunction
 } from './interface'
 
@@ -65,6 +67,58 @@ async function hijackGenerateBundle(plugin: Plugin, afterHook: GenerateBundle) {
     plugin.generateBundle = async function (this, ...args: any) {
       await hook.apply(this, args)
       await afterHook.apply(this, args)
+    }
+  }
+}
+
+function cp(opts: ViteCpPluginOptions): Plugin {
+  const { dest, zlib = defaultCompressionOptions.gzip } = opts
+  const statics: Map<string, StaticContent> = new Map()
+  const outputs: string[] = []
+  let root = process.cwd()
+  return {
+    name: 'vite-plugin-cp',
+    enforce: 'post',
+    buildStart() {
+      statics.clear()
+      if (!dest) {
+        this.error('vite-plugin-cp loose option `dest`')
+      }
+    },
+    async configResolved(config) {
+      outputs.push(...handleOutputOption(config))
+      root = config.root
+      const baseCondit = VITE_COPY_PUBLIC_DIR in config.build ? config.build.copyPublicDir : true
+      if (config.publicDir && baseCondit && fs.existsSync(config.publicDir)) {
+        const staticAssets = await readAll(config.publicDir)
+        const publicPath = path.join(config.root, path.relative(config.root, config.publicDir))
+        Promise.all(staticAssets.map(async (assets) => {
+          const content = await fsp.readFile(assets)
+          const file = slash(path.relative(publicPath, assets))
+          if (!statics.has(file)) {
+            statics.set(file, { content, filename: file })
+          }
+        }))
+      }
+      const plugin = config.plugins.find(p => p.name === VITE_INTERNAL_ANALYSIS_PLUGIN)
+      if (!plugin) throw new Error('vite-plugin-cp can\'t be work in versions lower than vite2.0.0')
+      hijackGenerateBundle(plugin, function (_, bundles) {
+        for (const fileName in bundles) {
+          const bundle = bundles[fileName]
+          if (!statics.has(fileName)) {
+            statics.set(fileName, { content: Buffer.from(bundle.type === 'asset' ? bundle.source : bundle.code), filename: fileName })
+          }
+        }
+      })
+    },
+    async closeBundle() {
+      const archive = createArchive({ zlib: typeof zlib === 'boolean' ? defaultCompressionOptions.gzip : zlib, root, dest })
+      // eslint-disable-next-line no-unused-vars
+      for (const [_, { filename, content }] of statics) {
+        archive.add(filename, content)
+      }
+      await archive.wait()
+      statics.clear()
     }
   }
 }
@@ -176,8 +230,8 @@ function compression<T extends UserCompressionOptions, A extends Algorithm>(opts
   }
 }
 
-export { compression }
+export { compression, cp }
 
 export default compression
 
-export type { CompressionOptions, Algorithm, ViteCompressionPluginConfig } from './interface'
+export type { CompressionOptions, Algorithm, ViteCompressionPluginConfig, ViteCpPluginOptions } from './interface'
