@@ -77,6 +77,21 @@ export default defineComponent({
   there are write (delete) operations on the bundle inside the plugin. So you should ignore the compressed chunk :) If you want delete
   the original assets you also follow the way.
 
+> Can i create a tarball for all of chunks after compressed?
+- Yes, you can import `cp` plugin from this package(>=12.0.0)
+```js
+import { defineComponent } from 'vite'
+import { compression, cp } from 'vite-plugin-compression2'
+
+export default defineComponent({
+  plugins: [
+    // ...your plugin
+    compression(),
+    cp({ dest: './xzy' })
+  ]
+})
+
+```
 
 ### Others
 
