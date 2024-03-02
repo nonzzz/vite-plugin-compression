@@ -1,15 +1,15 @@
-import { Buffer } from 'buffer'
+import type { InputType } from 'zlib'
 import test from 'ava'
 import { compress, ensureAlgorithm } from '../src/compress'
 import type { Algorithm } from '../src/interface'
 
-const mockCompress = async (userAlgorithm: Algorithm, buf: Buffer) => {
+const mockCompress = async (userAlgorithm: Algorithm, buf: InputType) => {
   const { algorithm } = ensureAlgorithm(userAlgorithm)
   return compress(buf, algorithm, {})
 }
 
 test('transer', async (t) => {
-  const fake = Buffer.alloc(4, 'test')
+  const fake = new TextEncoder().encode('test')
   await mockCompress('gzip', fake)
   t.pass()
 })

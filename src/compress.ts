@@ -3,10 +3,11 @@ import util from 'util'
 import fs from 'fs'
 import fsp from 'fs/promises'
 import path from 'path'
-import type { BrotliOptions, ZlibOptions } from 'zlib'
-import archiver from 'archiver'
+import type { BrotliOptions, InputType, ZlibOptions } from 'zlib'
+import tar from 'tar-stream'
+import gunzip from 'gunzip-maybe'
 import type { Algorithm, AlgorithmFunction, UserCompressionOptions } from './interface'
-import { slash } from './utils'
+import { slash, stringToBytes } from './utils'
 
 export function ensureAlgorithm(userAlgorithm: Algorithm) {
   const algorithm = userAlgorithm in zlib ? userAlgorithm : 'gzip'
@@ -16,14 +17,13 @@ export function ensureAlgorithm(userAlgorithm: Algorithm) {
 }
 
 export async function compress<T extends UserCompressionOptions | undefined>(
-  buf: Buffer,
+  buf: InputType,
   compress: AlgorithmFunction<T>,
   options: T
 ) {
   try {
     const res = await compress(buf, options)
-    if (Buffer.isBuffer(res)) return res
-    return Buffer.from(res as any)
+    return res
   } catch (error) {
     return Promise.reject(error)
   }
@@ -48,43 +48,44 @@ export const defaultCompressionOptions: {
   }
 }
 
-interface ArchiveOptions {
-  zlib: ZlibOptions
+interface TarballOptions {
+  dests: string[],
   root: string
-  dest: string
 }
 
-// https://github.com/archiverjs/node-archiver/blob/master/examples/pack-tgz.js
-export function createArchive(options: ArchiveOptions) {
-  const { root, zlib } = options
-  const pack = archiver('tar', { zlib })
-  return {
-    add(filename: string, content: Buffer) {
-      pack.append(content, { name: filename, mode: 0o755, date: new Date() })
-    },
-    async wait() {
-      if (!path.extname(options.dest)) {
-        options.dest = `${options.dest}.tar.gz`
-      }
-      const expected = slash(path.resolve(root, options.dest))
-      if (!fs.existsSync(expected)) {
-        const parent = slash(path.dirname(expected))
-        if (root !== parent) {
-          await fsp.mkdir(parent, { recursive: true })
-        }
+export function createTarBall() {
+  const pack = tar.pack()
+
+  const options: TarballOptions = {
+    dests: [],
+    root: ''
+  }
+
+  const setOptions = (tarballOPtions: TarballOptions) => Object.assign(options, tarballOPtions)
+
+  const add = (fileName: string, content: string | Uint8Array) => {
+    pack.entry({ name: fileName }, Buffer.from(stringToBytes(content)))
+  }
+
+  const write = async () => {
+    // no more entries
+    pack.finalize()
+    await Promise.all((options.dests).map(async (dest) => {
+      const expected = slash(path.resolve(options.root, dest + '.tar.gz'))
+      const parent = slash(path.dirname(expected))
+      if (options.root !== parent) {
+        await fsp.mkdir(parent, { recursive: true })
       }
       const output = fs.createWriteStream(expected)
-      pack.pipe(output)
-      await new Promise((resolve, reject) => {
-        pack.finalize()
-        pack.on('finish', resolve)
-        pack.on('error', reject)
-        pack.on('warning', (err) => {
-          if (err.code !== 'ENOENT') {
-            reject(err)
-          }
-        })
-      })
-    }
+      pack.pipe(gunzip()).pipe(output)
+    }))
   }
+
+  const context = {
+    add,
+    write,
+    setOptions
+  }
+
+  return context
 }

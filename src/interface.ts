@@ -1,4 +1,4 @@
-import type { BrotliOptions, ZlibOptions } from 'zlib'
+import type { BrotliOptions, InputType, ZlibOptions } from 'zlib'
 import type { HookHandler, Plugin } from 'vite'
 import type { FilterPattern } from '@rollup/pluginutils'
 
@@ -35,7 +35,7 @@ interface AlgorithmToZlib {
 }
 
 export type AlgorithmFunction<T extends UserCompressionOptions> =
-  (buf: Buffer, options: T) => Promise<Buffer>
+  (buf: InputType, options: T) => Promise<Buffer>
 
 type InternalCompressionPluginOptionsFunction<T> = {
   algorithm?: AlgorithmFunction<T>
@@ -62,11 +62,5 @@ export type ViteCompressionPluginConfig<T, A extends Algorithm> =
 export type GenerateBundle = HookHandler<Plugin['generateBundle']>
 
 export interface ViteCpPluginOptions {
-  dest: string,
-  zlib?: ZlibOptions
-}
-
-export interface StaticContent {
-  content: Buffer,
-  filename: string
+  dest?: string,
 }

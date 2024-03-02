@@ -4,15 +4,14 @@ import os from 'os'
 import path from 'path'
 import { createFilter } from '@rollup/pluginutils'
 import type { Plugin, ResolvedConfig } from 'vite'
-import { len, readAll, replaceFileName, slash } from './utils'
-import { compress, createArchive, defaultCompressionOptions, ensureAlgorithm } from './compress'
+import { len, readAll, replaceFileName, slash, stringToBytes } from './utils'
+import { compress, createTarBall, defaultCompressionOptions, ensureAlgorithm } from './compress'
 import { createConcurrentQueue } from './task'
 import type {
   Algorithm,
   AlgorithmFunction,
   GenerateBundle,
   Pretty,
-  StaticContent,
   UserCompressionOptions,
   ViteCompressionPluginConfig,
   ViteCompressionPluginConfigAlgorithm,
@@ -28,6 +27,10 @@ const MAX_CONCURRENT = (() => {
   if (cpus.length === 1) return 10
   return Math.max(1, cpus.length - 1)
 })()
+
+interface CompressionPluginAPI {
+  staticOutputs: Set<string>
+}
 
 function handleOutputOption(conf: ResolvedConfig) {
   // issue #39
@@ -71,54 +74,62 @@ async function hijackGenerateBundle(plugin: Plugin, afterHook: GenerateBundle) {
   }
 }
 
-function cp(opts: ViteCpPluginOptions): Plugin {
-  const { dest, zlib = defaultCompressionOptions.gzip } = opts
-  const statics: Map<string, StaticContent> = new Map()
-  const outputs: string[] = []
+async function handleStaticFiles(config: ResolvedConfig, callback: (file: string, assets: string) => Promise<void>) {
+  const baseCondit = VITE_COPY_PUBLIC_DIR in config.build ? config.build.copyPublicDir : true
+  if (config.publicDir && baseCondit && fs.existsSync(config.publicDir)) {
+    const staticAssets = await readAll(config.publicDir)
+    const publicPath = path.join(config.root, path.relative(config.root, config.publicDir))
+    Promise.all(staticAssets.map(async (assets) => {
+      const file = slash(path.relative(publicPath, assets))
+      await callback(file, assets)
+    }))
+  }
+}
+
+function cp(opts: ViteCpPluginOptions = {}): Plugin {
+  const { dest: userDest } = opts
+  const statics: string[] = []
+  let outputs: string[] = []
   let root = process.cwd()
+  const tarball = createTarBall()
+  const queue = createConcurrentQueue(MAX_CONCURRENT)
   return {
     name: 'vite-plugin-cp',
     enforce: 'post',
-    buildStart() {
-      statics.clear()
-      if (!dest) {
-        this.error('vite-plugin-cp loose option `dest`')
-      }
-    },
     async configResolved(config) {
       outputs.push(...handleOutputOption(config))
       root = config.root
-      const baseCondit = VITE_COPY_PUBLIC_DIR in config.build ? config.build.copyPublicDir : true
-      if (config.publicDir && baseCondit && fs.existsSync(config.publicDir)) {
-        const staticAssets = await readAll(config.publicDir)
-        const publicPath = path.join(config.root, path.relative(config.root, config.publicDir))
-        Promise.all(staticAssets.map(async (assets) => {
-          const content = await fsp.readFile(assets)
-          const file = slash(path.relative(publicPath, assets))
-          if (!statics.has(file)) {
-            statics.set(file, { content, filename: file })
-          }
-        }))
+      outputs = userDest ? [userDest] : outputs
+      tarball.setOptions({ dests: outputs, root })
+      // No need to add source to pack in configResolved stage 
+      // If we do at the start stage. The build task will be slow.
+      const ctx = compression.getPluginAPI(config.plugins)
+      if (ctx && ctx.staticOutputs) {
+        statics.push(...ctx.staticOutputs)
+      } else {
+        handleStaticFiles(config, async (file) => { statics.push(file) })
       }
       const plugin = config.plugins.find(p => p.name === VITE_INTERNAL_ANALYSIS_PLUGIN)
       if (!plugin) throw new Error('vite-plugin-cp can\'t be work in versions lower than vite2.0.0')
-      hijackGenerateBundle(plugin, function (_, bundles) {
-        for (const fileName in bundles) {
-          const bundle = bundles[fileName]
-          if (!statics.has(fileName)) {
-            statics.set(fileName, { content: Buffer.from(bundle.type === 'asset' ? bundle.source : bundle.code), filename: fileName })
-          }
-        }
-      })
+    },
+    async writeBundle(_, bundles) {
+      for (const fileName in bundles) {
+        const bundle = bundles[fileName]
+        tarball.add(fileName, bundle.type === 'asset' ? bundle.source : bundle.code)
+      }
     },
     async closeBundle() {
-      const archive = createArchive({ zlib: typeof zlib === 'boolean' ? defaultCompressionOptions.gzip : zlib, root, dest })
-      // eslint-disable-next-line no-unused-vars
-      for (const [_, { filename, content }] of statics) {
-        archive.add(filename, content)
+      for (const dest of outputs) {
+        for (const file of statics) {
+          queue.enqueue(async () => {
+            const p = path.join(dest, file)
+            const buf = await fsp.readFile(p)
+            tarball.add(file, buf)
+          })
+        }
       }
-      await archive.wait()
-      statics.clear()
+      await queue.wait().catch(e => e)
+      await tarball.write()
     }
   }
 }
@@ -141,7 +152,8 @@ function compression<T extends UserCompressionOptions, A extends Algorithm>(opts
 
   const filter = createFilter(include, exclude)
 
-  const statics: Array<{ file: string, dests: string[] }> = []
+  const statics: string[] = []
+  const outputs: string[] = []
 
   const zlib: {
     algorithm: AlgorithmFunction<T>
@@ -162,12 +174,12 @@ function compression<T extends UserCompressionOptions, A extends Algorithm>(opts
     for (const fileName in bundles) {
       if (!filter(fileName)) continue
       const bundle = bundles[fileName]
-      const source = bundle.type === 'asset' ? bundle.source : bundle.code
+      const source = stringToBytes(bundle.type === 'asset' ? bundle.source : bundle.code)
       const size = len(source)
       if (size < threshold) continue
       queue.enqueue(async () => {
         const name = replaceFileName(fileName, zlib.filename)
-        const compressed = await compress(Buffer.from(source), zlib.algorithm, zlib.options)
+        const compressed = await compress(source, zlib.algorithm, zlib.options)
         if (skipIfLargerOrEqual && len(compressed) >= size) return
         // #issue 30 31
         // https://rollupjs.org/plugin-development/#this-emitfile
@@ -176,52 +188,53 @@ function compression<T extends UserCompressionOptions, A extends Algorithm>(opts
       })
     }
     await queue.wait().catch(this.error)
-  } 
+  }
+
+  const pluginContext: CompressionPluginAPI = {
+    staticOutputs: new Set()
+  }
 
   return {
     name: 'vite-plugin-compression',
     apply: 'build',
     enforce: 'post',
+    api: pluginContext,
     async configResolved(config) {
       // hijack vite's internal `vite:build-import-analysis` plugin.So we won't need process us chunks at closeBundle anymore.
       // issue #26
       // https://github.com/vitejs/vite/blob/716286ef21f4d59786f21341a52a81ee5db58aba/packages/vite/src/node/build.ts#L566-L611
       // Vite follow rollup option as first and the configResolved Hook don't expose merged conf for user. :(
       // Someone who like using rollupOption. `config.build.outDir` will not as expected.
-      const normalizedOutputs = handleOutputOption(config)
+      outputs.push(...handleOutputOption(config))
       // Vite's pubic build: https://github.com/vitejs/vite/blob/HEAD/packages/vite/src/node/build.ts#L704-L709
       // copyPublicDir minimum version 3.2+
-      const baseCondit = VITE_COPY_PUBLIC_DIR in config.build ? config.build.copyPublicDir : true
-      if (config.publicDir && baseCondit && fs.existsSync(config.publicDir)) {
-        const staticAssets = await readAll(config.publicDir)
-        const publicPath = path.join(config.root, path.relative(config.root, config.publicDir))
-        Promise.all(staticAssets.map(async (assets) => {
-          if (!filter(assets)) return
-          const { size } = await fsp.stat(assets)
-          if (size < threshold) return
-          const file = slash(path.relative(publicPath, assets))
-          statics.push({ file, dests: [...normalizedOutputs] })
-        }))
-      }
+      await handleStaticFiles(config, async (file, assets) => {
+        if (!filter(assets)) return
+        const { size } = await fsp.stat(assets)
+        if (size > threshold) statics.push(file)
+      })
       const plugin = config.plugins.find(p => p.name === VITE_INTERNAL_ANALYSIS_PLUGIN)
       if (!plugin) throw new Error('vite-plugin-compression can\'t be work in versions lower than vite2.0.0')
-      // we won't need define sideEffect anymore.
       hijackGenerateBundle(plugin, generateBundle)
     },
     async closeBundle() {
-      statics.forEach(({ file, dests }) => queue.enqueue(async () => {
-        await Promise.all(dests.map(async (dest) => {
-          const p = path.join(dest, file)
-          const buf = await fsp.readFile(p)
-          const compressed = await compress(buf, zlib.algorithm, zlib.options)
-          if (skipIfLargerOrEqual && len(compressed) >= len(buf)) return
-          const fileName = replaceFileName(file, zlib.filename)
-          // issue #30
-          const outputPath = path.join(dest, fileName)
-          if (deleteOriginalAssets && outputPath !== p) await fsp.rm(p, { recursive: true, force: true })
-          await fsp.writeFile(outputPath, compressed)
-        }))
-      }))
+      // parallel run
+      for (const dest of outputs) {
+        for (const file of statics) {
+          queue.enqueue(async () => {
+            const p = path.join(dest, file)
+            const buf = await fsp.readFile(p)
+            const compressed = await compress(buf, zlib.algorithm, zlib.options)
+            if (skipIfLargerOrEqual && len(compressed) >= len(buf)) return
+            const fileName = replaceFileName(file, zlib.filename)
+            if (!pluginContext.staticOutputs.has(fileName)) pluginContext.staticOutputs.add(fileName)
+            // issue #30
+            const outputPath = path.join(dest, fileName)
+            if (deleteOriginalAssets && outputPath !== p) await fsp.rm(p, { recursive: true, force: true })
+            await fsp.writeFile(outputPath, compressed)
+          })
+        }
+      }
       // issue #18
       // In somecase. Like vuepress it will called vite build with `Promise.all`. But it's concurrency. when we record the
       // file fd. It had been changed. So that we should catch the error
@@ -229,6 +242,9 @@ function compression<T extends UserCompressionOptions, A extends Algorithm>(opts
     }
   }
 }
+
+compression.getPluginAPI = (plugins: readonly Plugin[]): CompressionPluginAPI | undefined => 
+  plugins.find(p => p.name === 'vite-plugin-compression')?.api
 
 export { compression, cp }
 

@@ -39,3 +39,8 @@ export async function readAll(entry: string) {
   }
   return result
 }
+
+export function stringToBytes(b: string | Uint8Array) {
+  if (typeof b === 'string') return new TextEncoder().encode(b)
+  return b
+}
