@@ -61,6 +61,6 @@ export type ViteCompressionPluginConfig<T, A extends Algorithm> =
 
 export type GenerateBundle = HookHandler<Plugin['generateBundle']>
 
-export interface ViteCpPluginOptions {
+export interface ViteTarballPluginOptions {
   dest?: string,
 }

@@ -16,11 +16,12 @@ import type {
   ViteCompressionPluginConfig,
   ViteCompressionPluginConfigAlgorithm,
   ViteCompressionPluginConfigFunction,
-  ViteCpPluginOptions,
+  ViteTarballPluginOptions,
   ViteWithoutCompressionPluginConfigFunction
 } from './interface'
 
 const VITE_INTERNAL_ANALYSIS_PLUGIN = 'vite:build-import-analysis'
+const VITE_COMPRESSION_PLUGIN = 'vite-plugin-compression'
 const VITE_COPY_PUBLIC_DIR = 'copyPublicDir'
 const MAX_CONCURRENT = (() => {
   const cpus = os.cpus() || { length: 1 }
@@ -86,21 +87,22 @@ async function handleStaticFiles(config: ResolvedConfig, callback: (file: string
   }
 }
 
-function cp(opts: ViteCpPluginOptions = {}): Plugin {
+function tarball(opts: ViteTarballPluginOptions = {}): Plugin {
   const { dest: userDest } = opts
   const statics: string[] = []
-  let outputs: string[] = []
+  const outputs: string[] = []
+  let dests: string[] = []
   let root = process.cwd()
   const tarball = createTarBall()
   const queue = createConcurrentQueue(MAX_CONCURRENT)
   return {
-    name: 'vite-plugin-cp',
+    name: 'vite-plugin-tarball',
     enforce: 'post',
     async configResolved(config) {
       outputs.push(...handleOutputOption(config))
       root = config.root
-      outputs = userDest ? [userDest] : outputs
-      tarball.setOptions({ dests: outputs, root })
+      dests = userDest ? [userDest] : outputs
+      tarball.setOptions({ dests, root })
       // No need to add source to pack in configResolved stage 
       // If we do at the start stage. The build task will be slow.
       const ctx = compression.getPluginAPI(config.plugins)
@@ -128,7 +130,7 @@ function cp(opts: ViteCpPluginOptions = {}): Plugin {
           })
         }
       }
-      await queue.wait().catch(e => e)
+      await queue.wait()
       await tarball.write()
     }
   }
@@ -195,7 +197,7 @@ function compression<T extends UserCompressionOptions, A extends Algorithm>(opts
   }
 
   return {
-    name: 'vite-plugin-compression',
+    name: VITE_COMPRESSION_PLUGIN,
     apply: 'build',
     enforce: 'post',
     api: pluginContext,
@@ -244,10 +246,10 @@ function compression<T extends UserCompressionOptions, A extends Algorithm>(opts
 }
 
 compression.getPluginAPI = (plugins: readonly Plugin[]): CompressionPluginAPI | undefined => 
-  plugins.find(p => p.name === 'vite-plugin-compression')?.api
+  plugins.find(p => p.name === VITE_COMPRESSION_PLUGIN)?.api
 
-export { compression, cp }
+export { compression, tarball }
 
 export default compression
 
-export type { CompressionOptions, Algorithm, ViteCompressionPluginConfig, ViteCpPluginOptions } from './interface'
+export type { CompressionOptions, Algorithm, ViteCompressionPluginConfig, ViteTarballPluginOptions } from './interface'
