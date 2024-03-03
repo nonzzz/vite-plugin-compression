@@ -964,12 +964,12 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@nolyfill/es-aggregate-error@npm:^1.0.21":
-  version: 1.0.21
-  resolution: "@nolyfill/es-aggregate-error@npm:1.0.21"
+"@nolyfill/es-aggregate-error@npm:^1.0.28":
+  version: 1.0.28
+  resolution: "@nolyfill/es-aggregate-error@npm:1.0.28"
   dependencies:
-    "@nolyfill/shared": "npm:1.0.21"
-  checksum: 10/eb36211cd1328dbe868483827937431f4514fa27ab96af794a086f18730c514dbfe9da4ab1cabb68b974c0fffeefe4d4fa818705303b890ae0de8a052195c04d
+    "@nolyfill/shared": "npm:1.0.28"
+  checksum: 10/7b7b5871dd417f434ea9174fe901fc2533e30b319a5f25ed6762657bfcef1da682568fbcef75483dfb9b8657c19a278bb3a1693b6ec407f98a7f17600f60ffdc
   languageName: node
   linkType: hard
 
@@ -977,6 +977,13 @@ __metadata:
   version: 1.0.21
   resolution: "@nolyfill/shared@npm:1.0.21"
   checksum: 10/6b0a3044bdc2c5b50cfb5a83ba29e78a0012d0321256b728c6f78b5ed3dff247112ea942ca49c38d0c9a8680adbe662eac3d8007cf27f143f0b600f4910100be
+  languageName: node
+  linkType: hard
+
+"@nolyfill/shared@npm:1.0.28":
+  version: 1.0.28
+  resolution: "@nolyfill/shared@npm:1.0.28"
+  checksum: 10/395261f73688e2a58f78c34238a13176feb2b79b0a331d9bcf6bfdb9d8473115934468e73eefe89614a0e5cb0b896d900c0e738de452fbb4d3648c944db02428
   languageName: node
   linkType: hard
 
@@ -7382,7 +7389,7 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "vite-plugin-compression2@workspace:."
   dependencies:
-    "@nolyfill/es-aggregate-error": "npm:^1.0.21"
+    "@nolyfill/es-aggregate-error": "npm:^1.0.28"
     "@rollup/pluginutils": "npm:^5.0.2"
     "@types/gunzip-maybe": "npm:^1.4.2"
     "@types/node": "npm:^17.0.14"

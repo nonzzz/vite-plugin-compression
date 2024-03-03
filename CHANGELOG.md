@@ -1,3 +1,17 @@
+## 1.0.0
+
+# Background
+
+This is a stable version.
+
+### Major
+
+- Rename plugin `cp` as `tarball` and remove unnecessary options.
+
+### Improves
+
+- Optimize compression task.
+
 ## 0.12.0
 
 # Background

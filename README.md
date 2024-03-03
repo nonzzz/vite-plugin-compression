@@ -78,7 +78,7 @@ export default defineComponent({
   the original assets you also follow the way.
 
 > Can i create a tarball for all of assets after compressed?
-- Yes, you can import `tarball` plugin from this package(>=12.0.0)
+- Yes, you can import `tarball` plugin from this package(>=1.0.0)
 ```js
 import { defineComponent } from 'vite'
 import { compression, tarball } from 'vite-plugin-compression2'
