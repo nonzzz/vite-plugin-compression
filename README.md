@@ -95,7 +95,7 @@ export default defineComponent({
 
 ### Others
 
-If you want to further optimize the bundle size. You can take a look [vite-plugin-cdn2](https://github.com/nonzzz/vite-plugin-cdn)
+If you want to analysis your bundle assets. Maybe you can try [vite-bundle-analyzer](https://github.com/nonzzz/vite-bundle-analyzer)
 
 ### LICENSE
 
