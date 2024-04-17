@@ -142,7 +142,7 @@ function compression<T extends UserCompressionOptions = NonNullable<unknown>>(op
 function compression(opts: ViteWithoutCompressionPluginConfigFunction): Plugin
 function compression<T extends UserCompressionOptions, A extends Algorithm>(opts: ViteCompressionPluginConfig<T, A> = {}): Plugin {
   const {
-    include = /\.(html|xml|css|json|js|mjs)$/,
+    include = /\.(html|xml|css|json|js|mjs|svg)$/,
     exclude,
     threshold = 0,
     algorithm: userAlgorithm = 'gzip',
