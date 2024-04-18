@@ -35,7 +35,7 @@ export default defineConfig({
 
 | params                 | type                                          | default           | description                                                    |
 | ---------------------- | --------------------------------------------- | ----------------- | -------------------------------------------------------------- |
-| `include`              | `string \| RegExp \| Array<string \| RegExp>` | `/\.(html|xml|css|json|js|mjs|svg)$/`               | Include all assets matching any of these conditions.           |
+| `include`              | `string \| RegExp \| Array<string \| RegExp>` | `/\.(html\|xml\|css\|json\|js\|mjs\|svg)$/`             | Include all assets matching any of these conditions.           |
 | `exclude`              | `string \| RegExp \| Array<string \| RegExp>` | `-`               | Exclude all assets matching any of these conditions.           |
 | `threshold`            | `number`                                      | `0`               | Only assets bigger than this size are processed (in bytes)     |
 | `algorithm`            | `string\| function`                           | `gzip`            | The compression algorithm                                      |
@@ -68,14 +68,10 @@ export default defineComponent({
   plugins: [
     // ...your plugin
     compression(),
-    compression({ algorithm: 'brotliCompress', exclude: [/\.(br)$/, /\.(gz)$/], deleteOriginalAssets: true })
+    compression({ algorithm: 'brotliCompress' })
   ]
 })
 ```
-
-- You should set `exclude` for the latest compression plugin. ( Because in the full bundle process. Bundle chunk is shared. And
-  there are write (delete) operations on the bundle inside the plugin. So you should ignore the compressed chunk :) If you want delete
-  the original assets you also follow the way.
 
 > Can i create a tarball for all of assets after compressed?
 - Yes, you can import `tarball` plugin from this package(>=1.0.0)
