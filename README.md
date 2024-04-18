@@ -35,7 +35,7 @@ export default defineConfig({
 
 | params                 | type                                          | default           | description                                                    |
 | ---------------------- | --------------------------------------------- | ----------------- | -------------------------------------------------------------- |
-| `include`              | `string \| RegExp \| Array<string \| RegExp>` | `-`               | Include all assets matching any of these conditions.           |
+| `include`              | `string \| RegExp \| Array<string \| RegExp>` | `/\.(html|xml|css|json|js|mjs|svg)$/`               | Include all assets matching any of these conditions.           |
 | `exclude`              | `string \| RegExp \| Array<string \| RegExp>` | `-`               | Exclude all assets matching any of these conditions.           |
 | `threshold`            | `number`                                      | `0`               | Only assets bigger than this size are processed (in bytes)     |
 | `algorithm`            | `string\| function`                           | `gzip`            | The compression algorithm                                      |
