@@ -17,7 +17,3 @@ $ yarn preview // start a local server to preivew the result.
 > How to use with others web server?
 
 - This example is very simple usage. If you're using [NGINX](https://nginx.org/en/) you can refer [document](https://nginx.org/en/docs/http/ngx_http_gzip_module.html)
-
-> Why i can't compress my public directory?
-
-- Yes, This is intentional. We think compress chunk is enough.
