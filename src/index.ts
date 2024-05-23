@@ -80,7 +80,7 @@ async function handleStaticFiles(config: ResolvedConfig, callback: (file: string
   if (config.publicDir && baseCondit && fs.existsSync(config.publicDir)) {
     const staticAssets = await readAll(config.publicDir)
     const publicPath = path.join(config.root, path.relative(config.root, config.publicDir))
-    Promise.all(staticAssets.map(async (assets) => {
+    await Promise.all(staticAssets.map(async (assets) => {
       const file = slash(path.relative(publicPath, assets))
       await callback(file, assets)
     }))
@@ -95,6 +95,7 @@ function tarball(opts: ViteTarballPluginOptions = {}): Plugin {
   let root = process.cwd()
   const tarball = createTarBall()
   const queue = createConcurrentQueue(MAX_CONCURRENT)
+  let ctx: ReturnType<typeof compression.getPluginAPI>
   return {
     name: 'vite-plugin-tarball',
     enforce: 'post',
@@ -105,11 +106,9 @@ function tarball(opts: ViteTarballPluginOptions = {}): Plugin {
       tarball.setOptions({ dests, root })
       // No need to add source to pack in configResolved stage 
       // If we do at the start stage. The build task will be slow.
-      const ctx = compression.getPluginAPI(config.plugins)
-      if (ctx && ctx.staticOutputs) {
-        statics.push(...ctx.staticOutputs)
-      } else {
-        handleStaticFiles(config, async (file) => { statics.push(file) })
+      ctx = compression.getPluginAPI(config.plugins)
+      if (!ctx) {
+        await handleStaticFiles(config, async (file) => { statics.push(file) })
       }
       const plugin = config.plugins.find(p => p.name === VITE_INTERNAL_ANALYSIS_PLUGIN)
       if (!plugin) throw new Error('vite-plugin-cp can\'t be work in versions lower than vite2.0.0')
@@ -121,6 +120,9 @@ function tarball(opts: ViteTarballPluginOptions = {}): Plugin {
       }
     },
     async closeBundle() {
+      if (!statics.length && ctx && ctx.staticOutputs) {
+        statics.push(...ctx.staticOutputs)
+      }
       for (const dest of outputs) {
         for (const file of statics) {
           queue.enqueue(async () => {
@@ -210,11 +212,8 @@ function compression<T extends UserCompressionOptions, A extends Algorithm>(opts
       outputs.push(...handleOutputOption(config))
       // Vite's pubic build: https://github.com/vitejs/vite/blob/HEAD/packages/vite/src/node/build.ts#L704-L709
       // copyPublicDir minimum version 3.2+
-      await handleStaticFiles(config, async (file, assets) => {
-        if (!filter(assets)) return
-        const { size } = await fsp.stat(assets)
-        if (size > threshold) statics.push(file)
-      })
+      // No need check size here. 
+      await handleStaticFiles(config, async (file) => { statics.push(file) })
       const plugin = config.plugins.find(p => p.name === VITE_INTERNAL_ANALYSIS_PLUGIN)
       if (!plugin) throw new Error('vite-plugin-compression can\'t be work in versions lower than vite2.0.0')
       hijackGenerateBundle(plugin, generateBundle)
@@ -225,15 +224,24 @@ function compression<T extends UserCompressionOptions, A extends Algorithm>(opts
         for (const file of statics) {
           queue.enqueue(async () => {
             const p = path.join(dest, file)
-            const buf = await fsp.readFile(p)
-            const compressed = await compress(buf, zlib.algorithm, zlib.options)
-            if (skipIfLargerOrEqual && len(compressed) >= len(buf)) return
-            const fileName = replaceFileName(file, zlib.filename)
-            if (!pluginContext.staticOutputs.has(fileName)) pluginContext.staticOutputs.add(fileName)
-            // issue #30
-            const outputPath = path.join(dest, fileName)
-            if (deleteOriginalAssets && outputPath !== p) await fsp.rm(p, { recursive: true, force: true })
-            await fsp.writeFile(outputPath, compressed)
+            if (!filter(p) && !pluginContext.staticOutputs.has(file)) {
+              pluginContext.staticOutputs.add(file)
+            } else {
+              const { size } = await fsp.stat(p)
+              if (size < threshold) {
+                if (!pluginContext.staticOutputs.has(file)) pluginContext.staticOutputs.add(file)
+              } else {
+                const buf = await fsp.readFile(p)
+                const compressed = await compress(buf, zlib.algorithm, zlib.options)
+                if (skipIfLargerOrEqual && len(compressed) >= len(buf)) return
+                const fileName = replaceFileName(file, zlib.filename)
+                if (!pluginContext.staticOutputs.has(fileName)) pluginContext.staticOutputs.add(fileName)
+                // issue #30
+                const outputPath = path.join(dest, fileName)
+                if (deleteOriginalAssets && outputPath !== p) await fsp.rm(p, { recursive: true, force: true })
+                await fsp.writeFile(outputPath, compressed)
+              }
+            }
           })
         }
       }

@@ -91,7 +91,10 @@ export default defineComponent({
 
 ### Others
 
-If you want to analysis your bundle assets. Maybe you can try [vite-bundle-analyzer](https://github.com/nonzzz/vite-bundle-analyzer)
+- If you want to analysis your bundle assets. Maybe you can try [vite-bundle-analyzer](https://github.com/nonzzz/vite-bundle-analyzer)
+
+- `tarball` option `dest` means to generate a tarball somewhere 
+
 
 ### LICENSE
 

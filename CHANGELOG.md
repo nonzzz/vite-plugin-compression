@@ -1,3 +1,9 @@
+## 1.1.1
+
+# Patches
+
+- Tarball should handle right static sources.
+
 ## 1.1.0
 
 # Improve
