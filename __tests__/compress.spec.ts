@@ -15,10 +15,9 @@ test('transer', async (t) => {
 })
 
 test('compress with error', async (t) => {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const msg = await t.throwsAsync(mockCompress('gzip', 123 as any))
   t.is(
     msg.message,
-    'The "chunk" argument must be of type string or an instance of Buffer or Uint8Array. Received type number (123)'
+    'The "chunk" argument must be of type string or an instance of Buffer, TypedArray, or DataView. Received type number (123)'
   )
 })

@@ -1,4 +1,3 @@
-import AggregateError from '@nolyfill/es-aggregate-error'
 import { len } from './utils'
 
 class Queue {
