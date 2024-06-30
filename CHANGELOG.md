@@ -1,3 +1,9 @@
+## 1.1.2
+
+# Improve
+
+- Remove `tar-stream`.
+
 ## 1.1.1
 
 # Patches
