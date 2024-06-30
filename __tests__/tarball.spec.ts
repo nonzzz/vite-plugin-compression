@@ -78,7 +78,7 @@ test('tarball', async (t) => {
   const diff1Js = diff1.filter((v) => v.endsWith('.js.gz')).map((v) => zlib.unzipSync(fs.readFileSync(v)))
   const diff2Js = diff2.filter((v) => v.endsWith('.js')).map((v) => fs.readFileSync(v))
   t.deepEqual(diff1Js, diff2Js)
-  const [dest1, dest2] = await Promise.all(ids.map((id) => extract(path.join(dest, id + '.tar.gz'))))
+  const [dest1, dest2] = await Promise.all(ids.map((id) => extract(path.join(dest, id + '.tar'))))
   for (const file in dest1) {
     if (file in dest2) {
       t.deepEqual(dest1[file], dest2[file])
@@ -88,7 +88,7 @@ test('tarball', async (t) => {
 
 test('tarball without compression', async (t) => {
   const { id, bundle } = await mockBuildwithoutCompression('normal', getId())
-  const outputs = await extract(path.join(dist, id + '.tar.gz'))
+  const outputs = await extract(path.join(dist, id + '.tar'))
   if (typeof bundle === 'object' && 'output' in bundle) {
     for (const chunk of bundle.output) {
       if (chunk.fileName in outputs) {
@@ -106,6 +106,6 @@ test('tarball without compression', async (t) => {
 test('tarball specify output', async (t) => {
   const id = getId()
   await mockBuildwithoutCompression('public-assets-nest', id, { dest: path.join(dest, id) })
-  const outputs = await extract(path.join(dest, id + '.tar.gz'))
+  const outputs = await extract(path.join(dest, id + '.tar'))
   t.truthy(Object.keys(outputs).length > 0)
 })

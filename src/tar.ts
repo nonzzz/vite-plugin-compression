@@ -42,14 +42,6 @@ export const TypeFlag = {
 
 export type TypeFlag = typeof TypeFlag[keyof typeof TypeFlag]
 
-// export interface Options {
-//   name: string
-//   // The typeflag field specifies the type of file archived
-//   typeflag: TypeFlag
-//   linkname: string
-//   mode: number
-// }
-
 export type Options = Partial<
   Overwrite<Header, {
     name: string
@@ -71,7 +63,7 @@ export const HEAD_TABLE_SIZE = 512
 
 export const MAX_FILE_NAME_SIZE = 255
 
-export const ZERO_OFFSET = 48 // '0'.charCodeAt(0)
+export const ZERO_OFFSET = 0
 
 export const T_MAGIC = 'ustar'
 
@@ -96,7 +88,6 @@ export const Mode = {
   TO_EXEC: 0o0001
 } as const
 
-// Is not a octal number
 export const F_MODE = Mode.TU_READ | Mode.TU_WRITE | Mode.TG_READ | Mode.TO_READ
 
 export const D_MODE = Mode.TU_READ | Mode.TU_WRITE | Mode.TU_EXEC | Mode.TG_READ | Mode.TG_EXEC | Mode.TO_READ |
@@ -132,7 +123,7 @@ export const octal = {
     const o = u.toString(8)
     if (fixed) {
       if (len(o) <= fixed) {
-        const fill = '0'.repeat(fixed)
+        const fill = '0'.repeat(fixed - len(o))
         return fill + o + ' '
       }
       return '7'.repeat(fixed) + ' '
@@ -209,7 +200,7 @@ export class Head {
       t.unshift(0x80)
       this.block.set(new Uint8Array(t), 124)
     } else {
-      this.block.set(u8.encode(sizeWithOctal), 124)
+      this.block.set(u8.encode(octal.encode(size, 11)), 124)
     }
     // mtime
     this.block.set(u8.encode(octal.encode(mtime, 11)), 136)
@@ -253,20 +244,44 @@ export class Head {
 // This is an internal imlementation of tarball
 // So we will avoid too much data conversion
 export interface FileMeta {
-  filenmae: string
+  filename: string
   content: Uint8Array
 }
 
 export class Pack {
+  private files: FileMeta[]
+  constructor() {
+    this.files = []
+  }
+
   add(opt: FileMeta) {
-    //
-    // const head = new Head({ name: opt.filenmae, typeflag: TypeFlag.CONT_TYPE })
-    // const head = {
-    //   size: 0,
-    //   type: 'file',
-    //   uid: 0,
-    //   gid: 0,
-    //   mtime: new Date()
-    // }
+    this.files.push(opt)
+  }
+
+  write() {
+    const archive: Uint8Array[] = []
+    for (const meta of this.files) {
+      const header = <Options> {
+        name: meta.filename,
+        typeflag: TypeFlag.AREG_TYPE,
+        mode: F_MODE,
+        uid: U_ID,
+        gid: G_ID,
+        devmajor: 0,
+        devminor: 0,
+        size: meta.content.length,
+        mtime: Math.floor(Date.now() / 1000)
+      }
+      const head = new Head(header)
+      head.encode()
+      archive.push(head.data)
+      archive.push(meta.content)
+      // Padding to 512-byte boundary
+      const padding = new Uint8Array((512 - (meta.content.length % 512)) % 512)
+      archive.push(padding)
+    }
+    archive.push(new Uint8Array(512))
+    archive.push(new Uint8Array(512))
+    return new Uint8Array(archive.reduce((acc, curr) => acc.concat(Array.from(curr)), []))
   }
 }

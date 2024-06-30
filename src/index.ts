@@ -62,13 +62,13 @@ async function hijackGenerateBundle(plugin: Plugin, afterHook: GenerateBundle) {
   const hook = plugin.generateBundle
   if (typeof hook === 'object' && hook.handler) {
     const fn = hook.handler
-    hook.handler = async function(this, ...args: any) {
+    hook.handler = async function handler(this, ...args: any) {
       await fn.apply(this, args)
       await afterHook.apply(this, args)
     }
   }
   if (typeof hook === 'function') {
-    plugin.generateBundle = async function(this, ...args: any) {
+    plugin.generateBundle = async function handler(this, ...args: any) {
       await hook.apply(this, args)
       await afterHook.apply(this, args)
     }
@@ -118,7 +118,7 @@ function tarball(opts: ViteTarballPluginOptions = {}): Plugin {
     async writeBundle(_, bundles) {
       for (const fileName in bundles) {
         const bundle = bundles[fileName]
-        tarball.add(fileName, bundle.type === 'asset' ? bundle.source : bundle.code)
+        tarball.add({ filename: fileName, content: bundle.type === 'asset' ? bundle.source : bundle.code })
       }
     },
     async closeBundle() {
@@ -130,7 +130,7 @@ function tarball(opts: ViteTarballPluginOptions = {}): Plugin {
           queue.enqueue(async () => {
             const p = path.join(dest, file)
             const buf = await fsp.readFile(p)
-            tarball.add(file, buf)
+            tarball.add({ filename: file, content: buf })
           })
         }
       }
@@ -179,7 +179,7 @@ function compression<T extends UserCompressionOptions, A extends Algorithm>(
   zlib.filename = filename ?? (userAlgorithm === 'brotliCompress' ? '[path][base].br' : '[path][base].gz')
   const queue = createConcurrentQueue(MAX_CONCURRENT)
 
-  const generateBundle: GenerateBundle = async function(_, bundles) {
+  const generateBundle: GenerateBundle = async function handler(_, bundles) {
     for (const fileName in bundles) {
       if (!filter(fileName)) continue
       const bundle = bundles[fileName]

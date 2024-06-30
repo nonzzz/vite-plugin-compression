@@ -1,11 +1,9 @@
 import zlib from 'zlib'
 import util from 'util'
-import fs from 'fs'
 import fsp from 'fs/promises'
 import path from 'path'
 import type { BrotliOptions, InputType, ZlibOptions } from 'zlib'
-import tar from 'tar-stream'
-import gunzip from 'gunzip-maybe'
+import { Pack } from './tar'
 import type { Algorithm, AlgorithmFunction, UserCompressionOptions } from './interface'
 import { slash, stringToBytes } from './utils'
 
@@ -53,8 +51,13 @@ interface TarballOptions {
   root: string
 }
 
+interface TarballFileMeta {
+  filename: string
+  content: string | Uint8Array
+}
+
 export function createTarBall() {
-  const pack = tar.pack()
+  const pack = new Pack()
 
   const options: TarballOptions = {
     dests: [],
@@ -63,21 +66,19 @@ export function createTarBall() {
 
   const setOptions = (tarballOPtions: TarballOptions) => Object.assign(options, tarballOPtions)
 
-  const add = (fileName: string, content: string | Uint8Array) => {
-    pack.entry({ name: fileName }, Buffer.from(stringToBytes(content)))
+  const add = (meta: TarballFileMeta) => {
+    pack.add({ filename: meta.filename, content: stringToBytes(meta.content) })
   }
 
   const write = async () => {
-    // no more entries
-    pack.finalize()
+    const archive = pack.write()
     await Promise.all(options.dests.map(async (dest) => {
-      const expected = slash(path.resolve(options.root, dest + '.tar.gz'))
+      const expected = slash(path.resolve(options.root, dest + '.tar'))
       const parent = slash(path.dirname(expected))
       if (options.root !== parent) {
         await fsp.mkdir(parent, { recursive: true })
       }
-      const output = fs.createWriteStream(expected)
-      pack.pipe(gunzip()).pipe(output)
+      await fsp.writeFile(expected, archive)
     }))
   }
 
