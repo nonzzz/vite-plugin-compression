@@ -62,13 +62,13 @@ async function hijackGenerateBundle(plugin: Plugin, afterHook: GenerateBundle) {
   const hook = plugin.generateBundle
   if (typeof hook === 'object' && hook.handler) {
     const fn = hook.handler
-    hook.handler = async function (this, ...args: any) {
+    hook.handler = async function(this, ...args: any) {
       await fn.apply(this, args)
       await afterHook.apply(this, args)
     }
   }
   if (typeof hook === 'function') {
-    plugin.generateBundle = async function (this, ...args: any) {
+    plugin.generateBundle = async function(this, ...args: any) {
       await hook.apply(this, args)
       await afterHook.apply(this, args)
     }
@@ -104,14 +104,16 @@ function tarball(opts: ViteTarballPluginOptions = {}): Plugin {
       root = config.root
       dests = userDest ? [userDest] : outputs
       tarball.setOptions({ dests, root })
-      // No need to add source to pack in configResolved stage 
+      // No need to add source to pack in configResolved stage
       // If we do at the start stage. The build task will be slow.
       ctx = compression.getPluginAPI(config.plugins)
       if (!ctx) {
-        await handleStaticFiles(config, async (file) => { statics.push(file) })
+        await handleStaticFiles(config, async (file) => {
+          statics.push(file)
+        })
       }
       const plugin = config.plugins.find(p => p.name === VITE_INTERNAL_ANALYSIS_PLUGIN)
-      if (!plugin) throw new Error('vite-plugin-cp can\'t be work in versions lower than vite2.0.0')
+      if (!plugin) throw new Error("vite-plugin-cp can't be work in versions lower than vite2.0.0")
     },
     async writeBundle(_, bundles) {
       for (const fileName in bundles) {
@@ -140,9 +142,13 @@ function tarball(opts: ViteTarballPluginOptions = {}): Plugin {
 
 function compression(): Plugin
 function compression<A extends Algorithm>(opts: Pretty<ViteCompressionPluginConfigAlgorithm<A>>): Plugin
-function compression<T extends UserCompressionOptions = NonNullable<unknown>>(opts: Pretty<ViteCompressionPluginConfigFunction<T>>): Plugin
+function compression<T extends UserCompressionOptions = NonNullable<unknown>>(
+  opts: Pretty<ViteCompressionPluginConfigFunction<T>>
+): Plugin
 function compression(opts: ViteWithoutCompressionPluginConfigFunction): Plugin
-function compression<T extends UserCompressionOptions, A extends Algorithm>(opts: ViteCompressionPluginConfig<T, A> = {}): Plugin {
+function compression<T extends UserCompressionOptions, A extends Algorithm>(
+  opts: ViteCompressionPluginConfig<T, A> = {}
+): Plugin {
   const {
     include = /\.(html|xml|css|json|js|mjs|svg)$/,
     exclude,
@@ -167,14 +173,13 @@ function compression<T extends UserCompressionOptions, A extends Algorithm>(opts
 
   zlib.algorithm = typeof userAlgorithm === 'string' ? ensureAlgorithm(userAlgorithm).algorithm : userAlgorithm
 
-  zlib.options =
-    typeof userAlgorithm === 'function'
-      ? compressionOptions
-      : Object.assign(defaultCompressionOptions[userAlgorithm], compressionOptions)
+  zlib.options = typeof userAlgorithm === 'function'
+    ? compressionOptions
+    : Object.assign(defaultCompressionOptions[userAlgorithm], compressionOptions)
   zlib.filename = filename ?? (userAlgorithm === 'brotliCompress' ? '[path][base].br' : '[path][base].gz')
   const queue = createConcurrentQueue(MAX_CONCURRENT)
 
-  const generateBundle: GenerateBundle = async function (_, bundles) {
+  const generateBundle: GenerateBundle = async function(_, bundles) {
     for (const fileName in bundles) {
       if (!filter(fileName)) continue
       const bundle = bundles[fileName]
@@ -212,10 +217,12 @@ function compression<T extends UserCompressionOptions, A extends Algorithm>(opts
       outputs.push(...handleOutputOption(config))
       // Vite's pubic build: https://github.com/vitejs/vite/blob/HEAD/packages/vite/src/node/build.ts#L704-L709
       // copyPublicDir minimum version 3.2+
-      // No need check size here. 
-      await handleStaticFiles(config, async (file) => { statics.push(file) })
+      // No need check size here.
+      await handleStaticFiles(config, async (file) => {
+        statics.push(file)
+      })
       const plugin = config.plugins.find(p => p.name === VITE_INTERNAL_ANALYSIS_PLUGIN)
-      if (!plugin) throw new Error('vite-plugin-compression can\'t be work in versions lower than vite2.0.0')
+      if (!plugin) throw new Error("vite-plugin-compression can't be work in versions lower than vite2.0.0")
       hijackGenerateBundle(plugin, generateBundle)
     },
     async closeBundle() {
@@ -253,11 +260,11 @@ function compression<T extends UserCompressionOptions, A extends Algorithm>(opts
   }
 }
 
-compression.getPluginAPI = (plugins: readonly Plugin[]): CompressionPluginAPI | undefined => 
+compression.getPluginAPI = (plugins: readonly Plugin[]): CompressionPluginAPI | undefined =>
   plugins.find(p => p.name === VITE_COMPRESSION_PLUGIN)?.api
 
 export { compression, tarball }
 
 export default compression
 
-export type { CompressionOptions, Algorithm, ViteCompressionPluginConfig, ViteTarballPluginOptions } from './interface'
+export type { Algorithm, CompressionOptions, ViteCompressionPluginConfig, ViteTarballPluginOptions } from './interface'

@@ -49,7 +49,7 @@ export const defaultCompressionOptions: {
 }
 
 interface TarballOptions {
-  dests: string[],
+  dests: string[]
   root: string
 }
 
@@ -70,7 +70,7 @@ export function createTarBall() {
   const write = async () => {
     // no more entries
     pack.finalize()
-    await Promise.all((options.dests).map(async (dest) => {
+    await Promise.all(options.dests.map(async (dest) => {
       const expected = slash(path.resolve(options.root, dest + '.tar.gz'))
       const parent = slash(path.dirname(expected))
       if (options.root !== parent) {

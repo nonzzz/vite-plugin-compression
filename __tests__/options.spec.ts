@@ -22,16 +22,16 @@ async function mockBuild<T extends Algorithm = never>(
       rollupOptions: {
         output: !single
           ? [
-              {
-                dir: path.join(__dirname, 'temp', id)
-              },
-              {
-                dir: path.join(__dirname, '.tmpl', id)
-              }
-            ]
-          : {
+            {
+              dir: path.join(__dirname, 'temp', id)
+            },
+            {
               dir: path.join(__dirname, '.tmpl', id)
             }
+          ]
+          : {
+            dir: path.join(__dirname, '.tmpl', id)
+          }
       }
     },
     root: path.join(__dirname, 'fixtures', dir),
@@ -78,7 +78,10 @@ test('rollupOptions with multiple outputs', async (t) => {
 })
 
 test('skipIfLargerOrEqual', async (t) => {
-  const id = await mockBuild({ deleteOriginalAssets: true, exclude: /\.(html)$/, skipIfLargerOrEqual: true }, 'optimization')
+  const id = await mockBuild(
+    { deleteOriginalAssets: true, exclude: /\.(html)$/, skipIfLargerOrEqual: true },
+    'optimization'
+  )
   await sleep(3000)
   const r = await readAll(path.join(tmplPath, id))
   const gz = r.filter((v) => v.endsWith('.gz'))
