@@ -94,6 +94,16 @@ export default defineComponent({
 
 - `tarball` option `dest` means to generate a tarball somewhere
 
+- `tarball` is based on the `ustart`. It should be compatible with all popular tar distributions out there (gnutar, bsdtar etc)
+
+### Sponsors
+
+<p align="center">
+  <a href="https://cdn.jsdelivr.net/gh/nonzzz/sponsors/sponsorkit/sponsors.svg">
+    <img src="https://cdn.jsdelivr.net/gh/nonzzz/sponsors/sponsorkit/sponsors.svg"/>
+  </a>
+</p>
+
 ### LICENSE
 
 [MIT](./LICENSE)
