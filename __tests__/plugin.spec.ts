@@ -5,7 +5,6 @@ import fsp from 'fs/promises'
 import util from 'util'
 import type { ZlibOptions } from 'zlib'
 import test from 'ava'
-import { build } from 'vite'
 import { len, readAll } from '../src/utils'
 import { type Algorithm, type ViteCompressionPluginConfig, compression } from '../src'
 
@@ -14,6 +13,8 @@ const getId = () => Math.random().toString(32).slice(2, 10)
 const sleep = (delay: number) => new Promise((resolve) => setTimeout(resolve, delay))
 
 const dist = path.join(__dirname, 'dist')
+
+let vite: typeof import('vite')
 
 async function mockBuild<T = never, A extends Algorithm = never>(
   config?: ViteCompressionPluginConfig<T, A>,
@@ -24,13 +25,15 @@ async function mockBuild<T = never, A extends Algorithm = never, K = never, B ex
   path?: string
 ): Promise<string>
 async function mockBuild(config: any = {}, dir = 'normal') {
+  vite = await import('vite')
   const id = getId()
   const configs = Array.isArray(config) ? config : [config]
   const plugins = configs.map(conf => {
     conf.skipIfLargerOrEqual = conf.skipIfLargerOrEqual ?? false
     return compression(conf)
   })
-  await build({
+
+  await vite.build({
     root: path.join(__dirname, 'fixtures', dir),
     plugins,
     configFile: false,
@@ -198,7 +201,10 @@ test('public assets nest', async (t) => {
 })
 
 test('public assets threshold', async (t) => {
-  const id = await mockBuild({ deleteOriginalAssets: true, exclude: /\.(html)$/, threshold: 1024 * 2 }, 'public-assets-nest')
+  const id = await mockBuild(
+    { deleteOriginalAssets: true, exclude: /\.(html)$/, threshold: 1024 * 2 },
+    'public-assets-nest'
+  )
   await sleep(3000)
   const r = await readAll(path.join(dist, id))
   const compressed = len(r.filter((s) => s.endsWith('.gz')))
@@ -219,7 +225,7 @@ test('aws s3', async (t) => {
   const r = await readAll(path.join(dist, id))
   const compressed = len(r.filter((s) => s.endsWith('.gz')))
   t.is(compressed, 0)
-   
+
   const css = r.filter(v => v.endsWith('.css'))[0]
   const bf = zlib.unzipSync(fs.readFileSync(css))
   t.is(bf.toString(), '.pr{padding-right:30px}.pl{padding-left:30px}.mt{margin-top:30px}\n')

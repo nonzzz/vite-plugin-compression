@@ -26,7 +26,7 @@ function createServer() {
 }
 
 function main() {
-  if (!fs.existsSync(publicPath)) throw new Error('Please check your\'re already run \'npm run build\'')
+  if (!fs.existsSync(publicPath)) throw new Error("Please check your're already run 'npm run build'")
   createServer()
 }
 

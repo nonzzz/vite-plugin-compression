@@ -3,13 +3,11 @@
 ## Step
 
 ```bash
-
 $ yarn // install dependices
 
 $ yarn build // packing static resources
 
 $ yarn preview // start a local server to preivew the result.
-
 ```
 
 ## F & Q

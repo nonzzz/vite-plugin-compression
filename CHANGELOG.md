@@ -14,7 +14,6 @@
 
 @Ibadichan
 
-
 ## 1.0.0
 
 # Background
@@ -52,19 +51,17 @@ This is a stable version.
 - Perf types.
 - Reduce unnecessary installation packages.
 
-
 ## 0.10.5
 
 # Background
 
-
 ### Improves
 
 - Reduce bundle size.
+
 ### Patches
 
 - Fix can't work at monorepo.
-
 
 ## 0.10.4
 
@@ -91,6 +88,7 @@ This is a stable version.
 ## 0.10.1
 
 # Background
+
 ### Patches
 
 - Fix chunk with side effect can't work with `threshold` #33
@@ -106,7 +104,6 @@ This is a stable version.
 ### Credits
 
 @vHeemstra @nonzzz
-
 
 ## 0.9.3
 

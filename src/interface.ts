@@ -12,12 +12,12 @@ export type InferDefault<T> = T extends infer K ? K : UserCompressionOptions
 
 export type CompressionOptions<T> = InferDefault<T>
 
-export type Pretty<T> = {
-  [key in keyof T]:
-  T[key] extends (...args: any[]) => any
-    ? (...args: Parameters<T[key]>) => ReturnType<T[key]>
-    : T[key] & NonNullable<unknown>
-} & NonNullable<unknown>
+export type Pretty<T> =
+  & {
+    [key in keyof T]: T[key] extends (...args: any[]) => any ? (...args: Parameters<T[key]>) => ReturnType<T[key]>
+      : T[key] & NonNullable<unknown>
+  }
+  & NonNullable<unknown>
 
 interface BaseCompressionPluginOptions {
   include?: FilterPattern
@@ -34,8 +34,7 @@ interface AlgorithmToZlib {
   deflateRaw: ZlibOptions
 }
 
-export type AlgorithmFunction<T extends UserCompressionOptions> =
-  (buf: InputType, options: T) => Promise<Buffer>
+export type AlgorithmFunction<T extends UserCompressionOptions> = (buf: InputType, options: T) => Promise<Buffer>
 
 type InternalCompressionPluginOptionsFunction<T> = {
   algorithm?: AlgorithmFunction<T>
@@ -49,12 +48,16 @@ type InternalCompressionPluginOptionsAlgorithm<A extends Algorithm> = {
   compressionOptions?: Pretty<AlgorithmToZlib[A]>
 }
 
-export type ViteCompressionPluginConfigFunction<T extends UserCompressionOptions> = BaseCompressionPluginOptions &
-InternalCompressionPluginOptionsFunction<T>
-export type ViteWithoutCompressionPluginConfigFunction = Pretty<BaseCompressionPluginOptions &
-InternalWithoutCompressionPluginOptionsFunction>
-export type ViteCompressionPluginConfigAlgorithm<A extends Algorithm> = BaseCompressionPluginOptions &
-InternalCompressionPluginOptionsAlgorithm<A>
+export type ViteCompressionPluginConfigFunction<T extends UserCompressionOptions> =
+  & BaseCompressionPluginOptions
+  & InternalCompressionPluginOptionsFunction<T>
+export type ViteWithoutCompressionPluginConfigFunction = Pretty<
+  & BaseCompressionPluginOptions
+  & InternalWithoutCompressionPluginOptionsFunction
+>
+export type ViteCompressionPluginConfigAlgorithm<A extends Algorithm> =
+  & BaseCompressionPluginOptions
+  & InternalCompressionPluginOptionsAlgorithm<A>
 export type ViteCompressionPluginConfig<T, A extends Algorithm> =
   | ViteCompressionPluginConfigFunction<T>
   | ViteCompressionPluginConfigAlgorithm<A>
@@ -62,5 +65,5 @@ export type ViteCompressionPluginConfig<T, A extends Algorithm> =
 export type GenerateBundle = HookHandler<Plugin['generateBundle']>
 
 export interface ViteTarballPluginOptions {
-  dest?: string,
+  dest?: string
 }
