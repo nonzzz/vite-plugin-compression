@@ -31,16 +31,16 @@ export default defineConfig({
 
 ## Options
 
-| params                 | type                                          | default                                     | description                                                                                |
-| ---------------------- | --------------------------------------------- | ------------------------------------------- | ------------------------------------------------------------------------------------------ |
-| `include`              | `string \| RegExp \| Array<string \| RegExp>` | `/\.(html\|xml\|css\|json\|js\|mjs\|svg)$/` | Include all assets matching any of these conditions.                                       |
-| `exclude`              | `string \| RegExp \| Array<string \| RegExp>` | `-`                                         | Exclude all assets matching any of these conditions.                                       |
-| `threshold`            | `number`                                      | `0`                                         | Only assets bigger than this size are processed (in bytes)                                 |
-| `algorithm`            | `string\| function`                           | `gzip`                                      | The compression algorithm                                                                  |
-| `compressionOptions`   | `Record<string,any>`                          | `{}`                                        | Compression options for `algorithm`(details see `zlib module`)                             |
-| `deleteOriginalAssets` | `boolean`                                     | `false`                                     | Whether to delete the original assets or not                                               |
-| `skipIfLargerOrEqual`  | `boolean`                                     | `true`                                      | Whether to skip the compression if the result is larger than or equal to the original file |
-| `filename`             | `string`                                      | `[path][base].gz`                           | The target asset filename                                                                  |
+| params                 | type                                          | default                                                   | description                                                                                |
+| ---------------------- | --------------------------------------------- | --------------------------------------------------------- | ------------------------------------------------------------------------------------------ |
+| `include`              | `string \| RegExp \| Array<string \| RegExp>` | `/\.(html\|xml\|css\|json\|js\|mjs\|svg|yaml|yml|toml)$/` | Include all assets matching any of these conditions.                                       |
+| `exclude`              | `string \| RegExp \| Array<string \| RegExp>` | `-`                                                       | Exclude all assets matching any of these conditions.                                       |
+| `threshold`            | `number`                                      | `0`                                                       | Only assets bigger than this size are processed (in bytes)                                 |
+| `algorithm`            | `string\| function`                           | `gzip`                                                    | The compression algorithm                                                                  |
+| `compressionOptions`   | `Record<string,any>`                          | `{}`                                                      | Compression options for `algorithm`(details see `zlib module`)                             |
+| `deleteOriginalAssets` | `boolean`                                     | `false`                                                   | Whether to delete the original assets or not                                               |
+| `skipIfLargerOrEqual`  | `boolean`                                     | `true`                                                    | Whether to skip the compression if the result is larger than or equal to the original file |
+| `filename`             | `string`                                      | `[path][base].gz`                                         | The target asset filename                                                                  |
 
 ## Q & A
 

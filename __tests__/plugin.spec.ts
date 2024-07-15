@@ -182,7 +182,7 @@ test('public assets', async (t) => {
   await sleep(3000)
   const r = await readAll(path.join(dist, id))
   const compressed = len(r.filter((s) => s.endsWith('.gz')))
-  t.is(compressed, 2)
+  t.is(compressed, 3)
 })
 
 test('public assets nest', async (t) => {
