@@ -150,7 +150,7 @@ function compression<T extends UserCompressionOptions, A extends Algorithm>(
   opts: ViteCompressionPluginConfig<T, A> = {}
 ): Plugin {
   const {
-    include = /\.(html|xml|css|json|js|mjs|svg)$/,
+    include = /\.(html|xml|css|json|js|mjs|svg|yaml|yml|toml)$/,
     exclude,
     threshold = 0,
     algorithm: userAlgorithm = 'gzip',
