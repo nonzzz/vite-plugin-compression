@@ -68,6 +68,7 @@
   },
   "resolutions": {
     "is-core-module": "npm:@nolyfill/is-core-module@^1",
-    "vite@npm:2.9.15": "patch:vite@npm%3A2.9.15#~/.yarn/patches/vite-npm-2.9.15-da673a6d8d.patch"
+    "vite@npm:2.9.15": "patch:vite@npm%3A2.9.15#~/.yarn/patches/vite-npm-2.9.15-da673a6d8d.patch",
+    "sirv": "2.0.3"
   }
 }
