@@ -16,7 +16,7 @@ jobs:
       - name: Install berry
         run: yarn
       - name: test 2.x to 4.x
-        run: yarn exec vitest e2e/vite[2-4]/**/*.spec.ts --coverage.enabled=false
+        run: yarn exec vitest e2e/vite[2-4]/*.spec.ts --coverage.enabled=false
   run-stable-e2e-test:
     strategy:
       matrix:
@@ -34,7 +34,7 @@ jobs:
         run: yarn
       
       - name: test 5.x
-        run: yarn exec vitest e2e/vite5/**/*.spec.ts --coverage.enabled=false
+        run: yarn exec vitest e2e/vite5/*.spec.ts --coverage.enabled=false
 
 
       
