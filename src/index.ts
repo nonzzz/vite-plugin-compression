@@ -122,7 +122,7 @@ function tarball(opts: ViteTarballPluginOptions = {}): Plugin {
       }
     },
     async closeBundle() {
-      if (!statics.length && ctx && ctx.staticOutputs) {
+      if (!statics.length && ctx && ctx.staticOutputs.size) {
         statics.push(...ctx.staticOutputs)
       }
       for (const dest of outputs) {

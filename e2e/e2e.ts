@@ -1,6 +1,6 @@
 import path from 'path'
 import http from 'http'
-import test from 'ava'
+import { expect, test } from 'vitest'
 import sirv from 'sirv'
 import { chromium } from 'playwright'
 import type { Page } from 'playwright'
@@ -33,13 +33,13 @@ const defaultWd = __dirname
 // generator assets
 function prepareAssets(taskName: string, options: TestOptions) {
   const { vite, compressOption = {} } = options
-  vite.build({
+  return vite.build({
     root: defaultWd,
     build: {
       outDir: path.join(defaultWd, 'dist', taskName)
     },
     logLevel: 'silent',
-    plugins: [compression(compressOption) as any]
+    plugins: [compression({ ...compressOption, include: [/\.(js)$/, /\.(css)$/] }) as any]
   })
 }
 
@@ -84,14 +84,16 @@ async function expectTestCase(taskName: string, page: Awaited<Page>) {
         resolve(message.text())
       }
     })
-    ;(async () => {
-      await page.click('.button--insert')
-      await page.waitForSelector('text=Insert', { timeout: 5000 })
-    })()
   })
 
-  test(`${taskName} page first load`, async (t) => t.is(await expect1, 'load main process'))
-  test(`${taskName} insert line`, async (t) => t.is(await expect2, 'append child'))
+  test(`${taskName} page first load`, async () => {
+    expect(expect1).resolves.toBe('load main process')
+  })
+  test(`${taskName} insert line`, async () => {
+    await page.click('.button--insert')
+    await page.waitForSelector('text=p-1', { timeout: 5000 })
+    expect(expect2).resolves.toBe('append child')
+  })
 }
 
 export async function runTest(taskName: string, options: TestOptions) {

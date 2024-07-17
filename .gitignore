@@ -3,6 +3,8 @@ dist
 temp
 types
 .tmpl
+.tmp
+tmp
 .dist
 coverage
 
