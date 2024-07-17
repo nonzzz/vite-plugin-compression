@@ -13,7 +13,7 @@ dev:
 
 test:
 	@echo "Running tests..."
-	@yarn exec vitest --dir __tests__
+	@yarn exec vitest --dir __tests__ --typecheck.enabled
 
 end-to-end-test:
 	@echo "Running end-to-end tests..."

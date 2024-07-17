@@ -10,9 +10,6 @@ export default defineConfig({
       include: ['src/**'],
       exclude: ['**/node_modules/**', '**/dist/**', 'src/**/interface.ts']
     },
-    testTimeout: 8000,
-    typecheck: {
-      enabled: true
-    }
+    testTimeout: 8000
   }
 })

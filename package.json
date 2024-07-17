@@ -13,7 +13,7 @@
   "scripts": {
     "build": "rollup --config rollup.config.ts --configPlugin swc3",
     "dev": "rollup --config rollup.config.ts --configPlugin swc3 --watch",
-    "test": "vitest --dir __tests__",
+    "test": "vitest --dir __tests__ --typecheck.enabled",
     "lint": "eslint . --fix",
     "e2e": "vitest e2e/**/*.spec.ts --coverage.enabled=false",
     "format": "dprint fmt"
@@ -67,6 +67,7 @@
     "@rollup/pluginutils": "^5.1.0"
   },
   "resolutions": {
-    "is-core-module": "npm:@nolyfill/is-core-module@^1"
+    "is-core-module": "npm:@nolyfill/is-core-module@^1",
+    "vite@npm:2.9.15": "patch:vite@npm%3A2.9.15#~/.yarn/patches/vite-npm-2.9.15-da673a6d8d.patch"
   }
 }
