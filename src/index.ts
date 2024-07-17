@@ -113,7 +113,7 @@ function tarball(opts: ViteTarballPluginOptions = {}): Plugin {
         })
       }
       const plugin = config.plugins.find(p => p.name === VITE_INTERNAL_ANALYSIS_PLUGIN)
-      if (!plugin) throw new Error("vite-plugin-cp can't be work in versions lower than vite2.0.0")
+      if (!plugin) throw new Error("[vite-plugin-tarball] can't be work in versions lower than vite at 2.0.0")
     },
     async writeBundle(_, bundles) {
       for (const fileName in bundles) {
@@ -222,7 +222,7 @@ function compression<T extends UserCompressionOptions, A extends Algorithm>(
         statics.push(file)
       })
       const plugin = config.plugins.find(p => p.name === VITE_INTERNAL_ANALYSIS_PLUGIN)
-      if (!plugin) throw new Error("vite-plugin-compression can't be work in versions lower than vite2.0.0")
+      if (!plugin) throw new Error("[vite-plugin-compression] Can't be work in versions lower than vite at 2.0.0")
       hijackGenerateBundle(plugin, generateBundle)
     },
     async closeBundle() {
@@ -263,7 +263,11 @@ function compression<T extends UserCompressionOptions, A extends Algorithm>(
 compression.getPluginAPI = (plugins: readonly Plugin[]): CompressionPluginAPI | undefined =>
   plugins.find(p => p.name === VITE_COMPRESSION_PLUGIN)?.api
 
-export { compression, tarball }
+function defineCompressionOption<T = never, A extends Algorithm = never>(option: ViteCompressionPluginConfig<T, A>) {
+  return option
+}
+
+export { compression, defineCompressionOption, tarball }
 
 export default compression
 
