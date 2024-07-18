@@ -4,7 +4,7 @@ import { afterAll, expect, test } from 'vitest'
 
 import type { Pretty, ViteCompressionPluginConfigAlgorithm } from '../src/interface'
 import { compression } from '../src'
-import { readAll } from '../src/utils'
+import { readAll } from '../src/shared'
 import type { Algorithm } from '../src'
 
 const getId = () => Math.random().toString(32).slice(2, 10)

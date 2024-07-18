@@ -5,7 +5,7 @@ import fsp from 'fs/promises'
 import { build } from 'vite'
 import { afterAll, expect, test } from 'vitest'
 import tar from 'tar-stream'
-import { readAll } from '../src/utils'
+import { readAll } from '../src/shared'
 import type { ViteCompressionPluginConfig, ViteTarballPluginOptions } from '../src'
 import { compression, tarball } from '../src'
 

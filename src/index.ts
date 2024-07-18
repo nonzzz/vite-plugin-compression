@@ -4,7 +4,7 @@ import os from 'os'
 import path from 'path'
 import { createFilter } from '@rollup/pluginutils'
 import type { Plugin, ResolvedConfig } from 'vite'
-import { len, readAll, replaceFileName, slash, stringToBytes } from './utils'
+import { len, readAll, replaceFileName, slash, stringToBytes } from './shared'
 import { compress, createTarBall, defaultCompressionOptions, ensureAlgorithm } from './compress'
 import { createConcurrentQueue } from './task'
 import type {

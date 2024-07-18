@@ -5,7 +5,7 @@ import fsp from 'fs/promises'
 import util from 'util'
 import type { ZlibOptions } from 'zlib'
 import { afterAll, expect, test } from 'vitest'
-import { len, readAll } from '../src/utils'
+import { len, readAll } from '../src/shared'
 import { type Algorithm, type ViteCompressionPluginConfig, compression } from '../src'
 
 const getId = () => Math.random().toString(32).slice(2, 10)
