@@ -141,10 +141,12 @@ function tarball(opts: ViteTarballPluginOptions = {}): Plugin {
 }
 
 function compression(): Plugin
-function compression<A extends Algorithm>(opts: Pretty<ViteCompressionPluginConfigAlgorithm<A>>): Plugin
-function compression<T extends UserCompressionOptions = NonNullable<unknown>>(
-  opts: Pretty<ViteCompressionPluginConfigFunction<T>>
+function compression<T extends UserCompressionOptions | undefined, A extends Algorithm | AlgorithmFunction<T> | AlgorithmFunction<undefined>>(
+  opts: A extends Algorithm
+    ? Pretty<ViteCompressionPluginConfigAlgorithm<A>>
+    : ViteCompressionPluginConfigFunction<T, AlgorithmFunction<T>>
 ): Plugin
+function compression<T extends UserCompressionOptions>(opts: ViteCompressionPluginConfigFunction<T, AlgorithmFunction<T>>): Plugin
 function compression(opts: ViteWithoutCompressionPluginConfigFunction): Plugin
 function compression<T extends UserCompressionOptions, A extends Algorithm>(
   opts: ViteCompressionPluginConfig<T, A> = {}

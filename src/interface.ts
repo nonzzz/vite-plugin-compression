@@ -14,8 +14,7 @@ export type CompressionOptions<T> = InferDefault<T>
 
 export type Pretty<T> =
   & {
-    [key in keyof T]: T[key] extends (...args: any[]) => any ? (...args: Parameters<T[key]>) => ReturnType<T[key]>
-      : T[key] & NonNullable<unknown>
+    [key in keyof T]: T[key]
   }
   & NonNullable<unknown>
 
@@ -36,8 +35,8 @@ interface AlgorithmToZlib {
 
 export type AlgorithmFunction<T extends UserCompressionOptions> = (buf: InputType, options: T) => Promise<Buffer>
 
-type InternalCompressionPluginOptionsFunction<T> = {
-  algorithm?: AlgorithmFunction<T>
+type InternalCompressionPluginOptionsFunction<T, A extends AlgorithmFunction<T>> = {
+  algorithm?: A
   compressionOptions: T
 }
 type InternalWithoutCompressionPluginOptionsFunction = {
@@ -48,9 +47,9 @@ type InternalCompressionPluginOptionsAlgorithm<A extends Algorithm> = {
   compressionOptions?: Pretty<AlgorithmToZlib[A]>
 }
 
-export type ViteCompressionPluginConfigFunction<T extends UserCompressionOptions> =
+export type ViteCompressionPluginConfigFunction<T extends UserCompressionOptions, A extends AlgorithmFunction<T>> =
   & BaseCompressionPluginOptions
-  & InternalCompressionPluginOptionsFunction<T>
+  & InternalCompressionPluginOptionsFunction<T, A>
 export type ViteWithoutCompressionPluginConfigFunction = Pretty<
   & BaseCompressionPluginOptions
   & InternalWithoutCompressionPluginOptionsFunction
@@ -59,8 +58,14 @@ export type ViteCompressionPluginConfigAlgorithm<A extends Algorithm> =
   & BaseCompressionPluginOptions
   & InternalCompressionPluginOptionsAlgorithm<A>
 export type ViteCompressionPluginConfig<T, A extends Algorithm> =
-  | ViteCompressionPluginConfigFunction<T>
+  | ViteCompressionPluginConfigFunction<T, AlgorithmFunction<T>>
   | ViteCompressionPluginConfigAlgorithm<A>
+
+export type ViteCompressionPluginOption<A extends Algorithm | UserCompressionOptions | undefined = undefined> = A extends undefined
+  ? Pretty<ViteWithoutCompressionPluginConfigFunction>
+  : A extends Algorithm ? Pretty<ViteCompressionPluginConfigAlgorithm<A>>
+    : A extends UserCompressionOptions ? Pretty<ViteCompressionPluginConfigFunction<A, AlgorithmFunction<A>>>
+      : never
 
 export type GenerateBundle = HookHandler<Plugin['generateBundle']>
 
