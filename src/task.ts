@@ -1,4 +1,4 @@
-import { len } from './utils'
+import { len } from './shared'
 
 class Queue {
   maxConcurrent: number

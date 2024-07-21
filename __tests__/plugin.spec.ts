@@ -4,8 +4,8 @@ import fs from 'fs'
 import fsp from 'fs/promises'
 import util from 'util'
 import type { ZlibOptions } from 'zlib'
-import test from 'ava'
-import { len, readAll } from '../src/utils'
+import { afterAll, expect, test } from 'vitest'
+import { len, readAll } from '../src/shared'
 import { type Algorithm, type ViteCompressionPluginConfig, compression } from '../src'
 
 const getId = () => Math.random().toString(32).slice(2, 10)
@@ -45,63 +45,63 @@ async function mockBuild(config: any = {}, dir = 'normal') {
   return id
 }
 
-test.after(async () => {
+afterAll(async () => {
   await fsp.rm(dist, { recursive: true })
 })
 
-test('vite-plugin-compression2', async (t) => {
+test('vite-plugin-compression2', async () => {
   const id = await mockBuild()
   const r = await readAll(path.join(dist, id))
   const compressed = len(r.filter((s) => s.endsWith('.gz')))
-  t.is(compressed, 3)
+  expect(compressed).toBe(3)
 })
 
-test('include js only', async (t) => {
+test('include js only', async () => {
   const id = await mockBuild({
     include: /\.(js)$/
   })
   const r = await readAll(path.join(dist, id))
   const compressed = len(r.filter((s) => s.endsWith('.gz')))
-  t.is(compressed, 1)
+  expect(compressed).toBe(1)
 })
 
-test('include css and js', async (t) => {
+test('include css and js', async () => {
   const id = await mockBuild({
     include: [/\.(js)$/, /\.(css)$/]
   })
   const r = await readAll(path.join(dist, id))
   const compressed = len(r.filter((s) => s.endsWith('.gz')))
-  t.is(compressed, 2)
+  expect(compressed).toBe(2)
 })
 
-test('exlucde html', async (t) => {
+test('exlucde html', async () => {
   const id = await mockBuild({
     exclude: /\.(html)$/
   })
   const r = await readAll(path.join(dist, id))
   const compressed = len(r.filter((s) => s.endsWith('.gz')))
-  t.is(compressed, 2)
+  expect(compressed).toBe(2)
 })
 
-test('threshold', async (t) => {
+test('threshold', async () => {
   const id = await mockBuild({
     threshold: 100
   })
   const r = await readAll(path.join(dist, id))
   const compressed = len(r.filter((s) => s.endsWith('.gz')))
-  t.is(compressed, 2)
+  expect(compressed).toBe(2)
 })
 
-test('algorithm', async (t) => {
+test('algorithm', async () => {
   const id = await mockBuild({
     algorithm: 'gzip'
   })
   const r = await readAll(path.join(dist, id))
   const compressed = len(r.filter((s) => s.endsWith('.gz')))
-  t.is(compressed, 3)
+  expect(compressed).toBe(3)
 })
 
-test('custom alorithm', async (t) => {
+test('custom alorithm', async () => {
   const id = await mockBuild<ZlibOptions>({
     algorithm(buf, opt) {
       return util.promisify(zlib.gzip)(buf, opt)
@@ -112,36 +112,36 @@ test('custom alorithm', async (t) => {
   })
   const r = await readAll(path.join(dist, id))
   const compressed = len(r.filter((s) => s.endsWith('.gz')))
-  t.is(compressed, 3)
+  expect(compressed).toBe(3)
 })
 
-test('deleteOriginalAssets', async (t) => {
+test('deleteOriginalAssets', async () => {
   const id = await mockBuild({
     deleteOriginalAssets: true
   })
   const r = await readAll(path.join(dist, id))
-  t.is(len(r), 3)
+  expect(len(r)).toBe(3)
 })
 
-test('brotliCompress', async (t) => {
+test('brotliCompress', async () => {
   const id = await mockBuild({
     algorithm: 'brotliCompress'
   })
   const r = await readAll(path.join(dist, id))
   const compressed = len(r.filter((s) => s.endsWith('.br')))
-  t.is(compressed, 3)
+  expect(compressed).toBe(3)
 })
 
-test('filename', async (t) => {
+test('filename', async () => {
   const id = await mockBuild({
     filename: 'fake/[base].gz'
   })
   const r = await readAll(path.join(dist, id, 'fake'))
   const compressed = len(r.filter((s) => s.endsWith('.gz')))
-  t.is(compressed, 3)
+  expect(compressed).toBe(3)
 })
 
-test('multiple', async (t) => {
+test('multiple', async () => {
   const id = await mockBuild<ZlibOptions, 'gzip', BrotliOptions, Exclude<Algorithm, 'gzip'>>([
     {
       algorithm: 'gzip',
@@ -156,51 +156,51 @@ test('multiple', async (t) => {
   const r = await readAll(path.join(dist, id))
   const gz = len(r.filter((s) => s.endsWith('.gz')))
   const br = len(r.filter((s) => s.endsWith('.br')))
-  t.is(gz, 1)
-  t.is(br, 1)
+  expect(gz).toBe(1)
+  expect(br).toBe(1)
 })
 
-test('dynamic', async (t) => {
+test('dynamic', async () => {
   const id = await mockBuild({ deleteOriginalAssets: true }, 'dynamic')
   await sleep(3000)
   const r = await readAll(path.join(dist, id))
   const compressed = len(r.filter((s) => s.endsWith('.gz')))
-  t.is(compressed, 4)
+  expect(compressed).toBe(4)
 })
 
-test('dynamic diff', async (t) => {
+test('dynamic diff', async () => {
   const ids = await Promise.all([mockBuild({ deleteOriginalAssets: true }, 'dynamic'), mockBuild({}, 'dynamic')])
   await sleep(3000)
   const [diff1, diff2] = await Promise.all(ids.map((id) => readAll(path.join(dist, id))))
   const diff1Js = diff1.filter((v) => v.endsWith('.js.gz')).map((v) => zlib.unzipSync(fs.readFileSync(v)))
   const diff2Js = diff2.filter((v) => v.endsWith('.js')).map((v) => fs.readFileSync(v))
-  t.deepEqual(diff1Js, diff2Js)
+  expect(diff1Js).toStrictEqual(diff2Js)
 })
 
-test('public assets', async (t) => {
+test('public assets', async () => {
   const id = await mockBuild({ deleteOriginalAssets: true, exclude: /\.(html)$/ }, 'public-assets')
   await sleep(3000)
   const r = await readAll(path.join(dist, id))
   const compressed = len(r.filter((s) => s.endsWith('.gz')))
-  t.is(compressed, 3)
+  expect(compressed).toBe(3)
 })
 
-test('public assets nest', async (t) => {
+test('public assets nest', async () => {
   const id = await mockBuild({ deleteOriginalAssets: true, exclude: /\.(html)$/ }, 'public-assets-nest')
   await sleep(3000)
   const r = await readAll(path.join(dist, id))
   const compressed = len(r.filter((s) => s.endsWith('.gz')))
-  t.is(compressed, 6)
+  expect(compressed).toBe(6)
   const nestJs1 = path.join(dist, id, 'js/nest1', 'index.js.gz')
   const nestJs2 = path.join(dist, id, 'js/nest2', 'index.js.gz')
   const nestCss1 = path.join(dist, id, 'theme/dark', 'dark.css.gz')
   const nestCss2 = path.join(dist, id, 'theme/light', 'light.css.gz')
   const Js = path.join(dist, id, 'normal.js.gz')
   const fianl = [nestCss1, nestCss2, nestJs1, nestJs2, Js]
-  fianl.forEach((p) => t.is(fs.existsSync(p), true))
+  fianl.forEach((p) => expect(fs.existsSync(p)).toBeTruthy())
 })
 
-test('public assets threshold', async (t) => {
+test('public assets threshold', async () => {
   const id = await mockBuild(
     { deleteOriginalAssets: true, exclude: /\.(html)$/, threshold: 1024 * 2 },
     'public-assets-nest'
@@ -208,25 +208,25 @@ test('public assets threshold', async (t) => {
   await sleep(3000)
   const r = await readAll(path.join(dist, id))
   const compressed = len(r.filter((s) => s.endsWith('.gz')))
-  t.is(compressed, 0)
+  expect(compressed).toBe(0)
 })
 
-test('exclude-assets', async (t) => {
+test('exclude-assets', async () => {
   const id = await mockBuild({ exclude: [/\.(gif)$/] }, 'exclude-assets')
   await sleep(3000)
   const r = await readAll(path.join(dist, id))
   const compressed = len(r.filter((s) => s.endsWith('.gz')))
-  t.is(compressed, 2)
+  expect(compressed).toBe(2)
 })
 
-test('aws s3', async (t) => {
+test('aws s3', async () => {
   const id = await mockBuild({ filename: '[path][base]', deleteOriginalAssets: true }, 'dynamic')
   await sleep(3000)
   const r = await readAll(path.join(dist, id))
   const compressed = len(r.filter((s) => s.endsWith('.gz')))
-  t.is(compressed, 0)
+  expect(compressed).toBe(0)
 
   const css = r.filter(v => v.endsWith('.css'))[0]
   const bf = zlib.unzipSync(fs.readFileSync(css))
-  t.is(bf.toString(), '.pr{padding-right:30px}.pl{padding-left:30px}.mt{margin-top:30px}\n')
+  expect(bf.toString(), '.pr{padding-right:30px}.pl{padding-left:30px}.mt{margin-top:30px}\n')
 })

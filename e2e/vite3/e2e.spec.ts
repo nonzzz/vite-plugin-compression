@@ -1,12 +1,14 @@
+import { describe } from 'vitest'
 import { runTest } from '../e2e'
 import { name } from './package.json'
 
-export default (async function() {
+describe('vite3', async () => {
   const vite = await import('vite')
-  runTest(name, {
+
+  await runTest(name, {
     vite,
     compressOption: {
       deleteOriginalAssets: true
     }
   })
-})()
+})

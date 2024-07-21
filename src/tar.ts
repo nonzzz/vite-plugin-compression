@@ -3,7 +3,7 @@
 // No gnu or old gnu or v7 and oters etc.
 // POSIX.1-1988
 // https://www.gnu.org/software/tar/manual/tar.html#Blocking-Factor
-import { len } from './utils'
+import { len } from './shared'
 
 export interface Header {
   name: Uint8Array[100]

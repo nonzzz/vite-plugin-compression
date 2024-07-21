@@ -5,7 +5,7 @@ import path from 'path'
 import type { BrotliOptions, InputType, ZlibOptions } from 'zlib'
 import { Pack } from './tar'
 import type { Algorithm, AlgorithmFunction, UserCompressionOptions } from './interface'
-import { slash, stringToBytes } from './utils'
+import { slash, stringToBytes } from './shared'
 
 export function ensureAlgorithm(userAlgorithm: Algorithm) {
   const algorithm = userAlgorithm in zlib ? userAlgorithm : 'gzip'

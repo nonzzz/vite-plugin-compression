@@ -1,12 +1,19 @@
-import { createApp } from 'vue'
-import App from './app.vue'
-import '@fect-ui/themes'
-import '@fect-ui/vue/dist/cjs/main.css'
-
 import { seq } from './seq'
 
-import('./dynamic').then((re) => console.log(re.d))
+const app = document.querySelector('#app')
 
-createApp(App).mount('#app')
+const button = document.createElement('button')
+
+button.textContent = 'Click Me'
+
+button.addEventListener('click', () => {
+  console.log('Button Clicked')
+  import('./dynamic').then((re) => {
+    console.log(re.d)
+    re.injectElement()
+  })
+})
+
+app.appendChild(button)
 
 console.log(seq)

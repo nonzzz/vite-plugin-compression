@@ -6,15 +6,8 @@
     "preview": "node ./server/app.js"
   },
   "devDependencies": {
-    "@vitejs/plugin-vue": "^4.3.4",
     "sirv": "^2.0.3",
     "vite": "^4.4.9",
-    "vite-plugin-cdn2": "^0.13.0",
     "vite-plugin-compression2": "workspace:*"
-  },
-  "dependencies": {
-    "@fect-ui/themes": "2.2.0",
-    "@fect-ui/vue": "^1.6.1",
-    "vue": "^3.3.4"
   }
 }

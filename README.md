@@ -44,49 +44,7 @@ export default defineConfig({
 
 ## Q & A
 
-> Why not vite-plugin-compression
-
-- `vite-plugin-compression` no longer maintenance.
-
-> Why vite-plugin-compression2
-
-- `vite-plugin-compression2` has minimal dependencies and better performance.
-
-> Can i custom the compression algorithm?
-
-- Yes, you can see the unit test case.
-
-> Can i generate multiple compressed assets with difference compression algorithm?
-
-```js
-import { defineComponent } from 'vite'
-import { compression } from 'vite-plugin-compression2'
-
-export default defineComponent({
-  plugins: [
-    // ...your plugin
-    compression(),
-    compression({ algorithm: 'brotliCompress' })
-  ]
-})
-```
-
-> Can i create a tarball for all of assets after compressed?
-
-- Yes, you can import `tarball` plugin from this package(>=1.0.0)
-
-```js
-import { defineComponent } from 'vite'
-import { compression, tarball } from 'vite-plugin-compression2'
-
-export default defineComponent({
-  plugins: [
-    // ...your plugin
-    compression(),
-    tarball()
-  ]
-})
-```
+[FAQ](./Q&A.md)
 
 ### Others
 
