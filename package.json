@@ -13,7 +13,7 @@
   "scripts": {
     "build": "rollup --config rollup.config.ts --configPlugin swc3",
     "dev": "rollup --config rollup.config.ts --configPlugin swc3 --watch",
-    "test": "vitest --dir __tests__ --typecheck.enabled",
+    "test": "vitest __tests__",
     "lint": "eslint . --fix",
     "e2e": "vitest e2e/**/*.spec.ts --coverage.enabled=false",
     "format": "dprint fmt"

@@ -15,11 +15,13 @@ jobs:
         with:
           node-version: '22.x'
           registry-url: 'https://registry.npmjs.org'
+      - name: Install Berry
+        run: corepack enable
       - name: Install Dependices
-        run: make
+        run: yarn
       - name: Pack and Publish
         run: |
-          make build
+          yarn build
           npm publish --provenance --access public
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
