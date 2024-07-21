@@ -273,4 +273,4 @@ export { compression, defineCompressionOption, tarball }
 
 export default compression
 
-export type { Algorithm, CompressionOptions, ViteCompressionPluginConfig, ViteTarballPluginOptions } from './interface'
+export type { Algorithm, CompressionOptions, ViteCompressionPluginConfig, ViteTarballPluginOptions, ViteCompressionPluginOption } from './interface'

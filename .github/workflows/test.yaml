@@ -13,10 +13,10 @@ jobs:
         with:
           node-version: 22
       - name: Install Dependices
-        run: make
+        run: yarn install
 
       - name: Run Test
-        run: make test
+        run: yarn test
 
       - name: Report Coverage
         uses: codecov/codecov-action@v2
