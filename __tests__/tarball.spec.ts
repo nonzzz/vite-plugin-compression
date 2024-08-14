@@ -4,7 +4,7 @@ import fs from 'fs'
 import fsp from 'fs/promises'
 import { build } from 'vite'
 import { afterAll, expect, test } from 'vitest'
-import tar from 'tar-stream'
+import { createExtract } from 'tar-mini'
 import { readAll } from '../src/shared'
 import type { ViteCompressionPluginConfig, ViteTarballPluginOptions } from '../src'
 import { compression, tarball } from '../src'
@@ -16,21 +16,15 @@ const dist = path.join(__dirname, 'dist')
 const dest = path.join(__dirname, '.dist')
 
 function extract(p: string): Promise<Record<string, Buffer>> {
+  const extract = createExtract()
+  fs.createReadStream(p).pipe(extract.receiver)
   return new Promise((resolve, reject) => {
-    const extract = tar.extract()
     const files: Record<string, Buffer> = {}
-    extract.on('entry', (header, stream, next) => {
-      let file = Buffer.alloc(0)
-      stream.on('data', c => file = Buffer.concat([file, c]))
-      stream.on('end', () => {
-        files[header.name] = file
-        next()
-      })
-      stream.resume()
+    extract.on('entry', (head, file) => {
+      files[head.name] = Buffer.from(file)
     })
     extract.on('finish', () => resolve(files))
     extract.on('error', reject)
-    fs.createReadStream(p).pipe(extract)
   })
 }
 

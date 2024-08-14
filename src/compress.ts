@@ -1,9 +1,10 @@
 import zlib from 'zlib'
 import util from 'util'
-import fsp from 'fs/promises'
 import path from 'path'
+import fs from 'fs'
 import type { BrotliOptions, InputType, ZlibOptions } from 'zlib'
-import { Pack } from './tar'
+import { createPack } from 'tar-mini'
+
 import type { Algorithm, AlgorithmFunction, UserCompressionOptions } from './interface'
 import { slash, stringToBytes } from './shared'
 
@@ -57,7 +58,7 @@ interface TarballFileMeta {
 }
 
 export function createTarBall() {
-  const pack = new Pack()
+  const pack = createPack()
 
   const options: TarballOptions = {
     dests: [],
@@ -67,19 +68,25 @@ export function createTarBall() {
   const setOptions = (tarballOPtions: TarballOptions) => Object.assign(options, tarballOPtions)
 
   const add = (meta: TarballFileMeta) => {
-    pack.add({ filename: meta.filename, content: stringToBytes(meta.content) })
+    pack.add(stringToBytes(meta.content), { filename: meta.filename })
   }
 
-  const write = async () => {
-    const archive = pack.write()
-    await Promise.all(options.dests.map(async (dest) => {
+  const write = () => {
+    const promises = options.dests.map(dest => {
       const expected = slash(path.resolve(options.root, dest + '.tar'))
       const parent = slash(path.dirname(expected))
       if (options.root !== parent) {
-        await fsp.mkdir(parent, { recursive: true })
+        fs.mkdirSync(parent, { recursive: true })
       }
-      await fsp.writeFile(expected, archive)
-    }))
+      return new Promise<void>((resolve, reject) => {
+        const w = fs.createWriteStream(expected)
+        w.on('error', reject)
+        w.on('finish', resolve)
+        pack.receiver.pipe(w)
+      })
+    })
+
+    return Promise.all(promises)
   }
 
   const context = {

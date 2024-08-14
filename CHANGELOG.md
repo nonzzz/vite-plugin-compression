@@ -1,3 +1,7 @@
+## 1.1.4
+
+- Migrate to `tar-mini`
+
 ## 1.1.3
 
 # Improves

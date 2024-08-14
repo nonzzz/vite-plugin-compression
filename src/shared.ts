@@ -1,6 +1,5 @@
 import fsp from 'fs/promises'
 import path from 'path'
-import { u8 } from './tar'
 
 export function len<T extends ArrayLike<unknown>>(source: T) {
   return source.length
@@ -41,6 +40,8 @@ export async function readAll(entry: string) {
   return result
 }
 
+const encoder = new TextEncoder()
+
 export function stringToBytes(b: string | Uint8Array) {
-  return typeof b === 'string' ? u8.encode(b) : b
+  return typeof b === 'string' ? encoder.encode(b) : b
 }
