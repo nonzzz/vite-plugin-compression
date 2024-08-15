@@ -218,7 +218,7 @@ function compression<T extends UserCompressionOptions, A extends Algorithm>(
       // more and more plugin use are starting specify plugin order. So we should do a check for vite's version.
       const [major, minor] = rollupVersion.split('.')
       // rollup support object hook at 2.78.0
-      if (+major < 2 && +minor < 78) {
+      if (+major <= 2 && +minor < 78) {
         hijackGenerateBundle(viteAnalyzerPlugin, generateBundle)
         return
       }
