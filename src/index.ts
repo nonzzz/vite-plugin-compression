@@ -205,11 +205,29 @@ function compression<T extends UserCompressionOptions, A extends Algorithm>(
     staticOutputs: new Set()
   }
 
-  return {
+  let viteAnalyzerPlugin = null
+
+  const plugin = <Plugin>{
     name: VITE_COMPRESSION_PLUGIN,
     apply: 'build',
     enforce: 'post',
     api: pluginContext,
+    options() {
+      const { rollupVersion } = this.meta
+      // issue #63
+      // more and more plugin use are starting specify plugin order. So we should do a check for vite's version.
+      const [major, minor] = rollupVersion.split('.')
+      // rollup support object hook at 2.78.0
+      if (+major < 2 && +minor < 78) {
+        hijackGenerateBundle(viteAnalyzerPlugin, generateBundle)
+        return
+      }
+
+      plugin.generateBundle = {
+        order: 'post',
+        handler: generateBundle
+      }
+    },
     async configResolved(config) {
       // hijack vite's internal `vite:build-import-analysis` plugin.So we won't need process us chunks at closeBundle anymore.
       // issue #26
@@ -223,9 +241,8 @@ function compression<T extends UserCompressionOptions, A extends Algorithm>(
       await handleStaticFiles(config, async (file) => {
         statics.push(file)
       })
-      const plugin = config.plugins.find(p => p.name === VITE_INTERNAL_ANALYSIS_PLUGIN)
-      if (!plugin) throw new Error("[vite-plugin-compression] Can't be work in versions lower than vite at 2.0.0")
-      hijackGenerateBundle(plugin, generateBundle)
+      viteAnalyzerPlugin = config.plugins.find(p => p.name === VITE_INTERNAL_ANALYSIS_PLUGIN)
+      if (!viteAnalyzerPlugin) throw new Error("[vite-plugin-compression] Can't be work in versions lower than vite at 2.0.0")
     },
     async closeBundle() {
       // parallel run
@@ -260,6 +277,8 @@ function compression<T extends UserCompressionOptions, A extends Algorithm>(
       await queue.wait().catch(e => e)
     }
   }
+
+  return plugin
 }
 
 compression.getPluginAPI = (plugins: readonly Plugin[]): CompressionPluginAPI | undefined =>

@@ -1,3 +1,7 @@
+## 1.2.0
+
+- Support work with plugins that specify hook order.
+
 ## 1.1.4
 
 - Migrate to `tar-mini`
