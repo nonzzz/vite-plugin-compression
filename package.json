@@ -63,7 +63,7 @@
   },
   "dependencies": {
     "@rollup/pluginutils": "^5.1.0",
-    "tar-mini": "^0.1.0"
+    "tar-mini": "^0.1.1"
   },
   "resolutions": {
     "is-core-module": "npm:@nolyfill/is-core-module@^1",

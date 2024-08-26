@@ -65,13 +65,13 @@ export function createTarBall() {
     root: ''
   }
 
-  const setOptions = (tarballOPtions: TarballOptions) => Object.assign(options, tarballOPtions)
-
   const add = (meta: TarballFileMeta) => {
     pack.add(stringToBytes(meta.content), { filename: meta.filename })
   }
 
-  const write = () => {
+  const setup = async (tarballOPtions: TarballOptions) => {
+    Object.assign(options, tarballOPtions)
+
     const promises = options.dests.map(dest => {
       const expected = slash(path.resolve(options.root, dest + '.tar'))
       const parent = slash(path.dirname(expected))
@@ -80,19 +80,19 @@ export function createTarBall() {
       }
       return new Promise<void>((resolve, reject) => {
         const w = fs.createWriteStream(expected)
+
         w.on('error', reject)
         w.on('finish', resolve)
         pack.receiver.pipe(w)
       })
     })
-
     return Promise.all(promises)
   }
 
   const context = {
     add,
-    write,
-    setOptions
+    setup,
+    done: () => pack.done()
   }
 
   return context
