@@ -88,7 +88,7 @@ async function handleStaticFiles(config: ResolvedConfig, callback: (file: string
 }
 
 function tarball(opts: ViteTarballPluginOptions = {}): Plugin {
-  const { dest: userDest } = opts
+  const { dest: userDest, gz = false } = opts
   const statics: string[] = []
   const outputs: string[] = []
   let dests: string[] = []
@@ -115,7 +115,7 @@ function tarball(opts: ViteTarballPluginOptions = {}): Plugin {
       if (!plugin) throw new Error("[vite-plugin-tarball] can't be work in versions lower than vite at 2.0.0")
 
       // create dest dir
-      tarball.setup({ dests, root })
+      tarball.setup({ dests, root, gz })
     },
     async writeBundle(_, bundles) {
       for (const fileName in bundles) {

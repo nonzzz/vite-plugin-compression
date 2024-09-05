@@ -15,9 +15,13 @@ const sleep = (delay: number) => new Promise((resolve) => setTimeout(resolve, de
 const dist = path.join(__dirname, 'dist')
 const dest = path.join(__dirname, '.dist')
 
-function extract(p: string): Promise<Record<string, Buffer>> {
+function extract(p: string, gz = false): Promise<Record<string, Buffer>> {
   const extract = createExtract()
-  fs.createReadStream(p).pipe(extract.receiver)
+  if (gz) {
+    fs.createReadStream(p).pipe(zlib.createUnzip()).pipe(extract.receiver)
+  } else {
+    fs.createReadStream(p).pipe(extract.receiver)
+  }
   return new Promise((resolve, reject) => {
     const files: Record<string, Buffer> = {}
     extract.on('entry', (head, file) => {
@@ -30,12 +34,13 @@ function extract(p: string): Promise<Record<string, Buffer>> {
 
 async function mockBuild<T extends Algorithm = never>(
   dir = 'public-assets-nest',
-  options?: ViteCompressionPluginConfig<T, any>
+  options?: ViteCompressionPluginConfig<T, any>,
+  gz = false
 ) {
   const id = getId()
   await build({
     root: path.join(__dirname, 'fixtures', dir),
-    plugins: [compression(options), tarball({ dest: path.join(dest, id) })],
+    plugins: [compression(options), tarball({ dest: path.join(dest, id), gz })],
     configFile: false,
     logLevel: 'silent',
     build: {
@@ -103,4 +108,33 @@ test('tarball specify output', async () => {
   await mockBuildwithoutCompression('public-assets-nest', id, { dest: path.join(dest, id) })
   const outputs = await extract(path.join(dest, id + '.tar'))
   expect(Object.keys(outputs).length > 0).toBeTruthy()
+})
+
+test('tarball specify output with gz', async () => {
+  const id = getId()
+  await mockBuildwithoutCompression('public-assets-nest', id, { dest: path.join(dest, id), gz: true })
+  await sleep(3000)
+  const outputs = await extract(path.join(dest, id + '.tar.gz'), true)
+  expect(Object.keys(outputs).length > 0).toBeTruthy()
+})
+
+test('tarball gz with compression', async () => {
+  const id = await mockBuild('public-assets-nest', { deleteOriginalAssets: true, skipIfLargerOrEqual: false }, true)
+  await sleep(3000)
+  const { bundle } = await mockBuildwithoutCompression('public-assets-nest', getId())
+  await sleep(3000)
+  const outputs = extract(path.join(dest, id + '.tar.gz'), true)
+
+  if (typeof bundle === 'object' && 'output' in bundle) {
+    for (const chunk of bundle.output) {
+      if (chunk.fileName in outputs) {
+        const act = Buffer.from(outputs[chunk.fileName])
+        if (chunk.type === 'asset') {
+          expect(act).toStrictEqual(Buffer.from(chunk.source))
+        } else {
+          expect(act).toStrictEqual(Buffer.from(chunk.code))
+        }
+      }
+    }
+  }
 })

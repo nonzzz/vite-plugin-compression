@@ -1,3 +1,4 @@
+/* eslint-disable stylistic/indent */
 import type { BrotliOptions, InputType, ZlibOptions } from 'zlib'
 import type { HookHandler, Plugin } from 'vite'
 import type { FilterPattern } from '@rollup/pluginutils'
@@ -61,14 +62,15 @@ export type ViteCompressionPluginConfig<T, A extends Algorithm> =
   | ViteCompressionPluginConfigFunction<T, AlgorithmFunction<T>>
   | ViteCompressionPluginConfigAlgorithm<A>
 
-export type ViteCompressionPluginOption<A extends Algorithm | UserCompressionOptions | undefined = undefined> = A extends undefined
-  ? Pretty<ViteWithoutCompressionPluginConfigFunction>
-  : A extends Algorithm ? Pretty<ViteCompressionPluginConfigAlgorithm<A>>
+export type ViteCompressionPluginOption<A extends Algorithm | UserCompressionOptions | undefined = undefined> =
+  A extends undefined ? Pretty<ViteWithoutCompressionPluginConfigFunction>
+    : A extends Algorithm ? Pretty<ViteCompressionPluginConfigAlgorithm<A>>
     : A extends UserCompressionOptions ? Pretty<ViteCompressionPluginConfigFunction<A, AlgorithmFunction<A>>>
-      : never
+    : never
 
 export type GenerateBundle = HookHandler<Plugin['generateBundle']>
 
 export interface ViteTarballPluginOptions {
   dest?: string
+  gz?: boolean
 }

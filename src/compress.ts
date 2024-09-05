@@ -50,6 +50,7 @@ export const defaultCompressionOptions: {
 interface TarballOptions {
   dests: string[]
   root: string
+  gz: boolean
 }
 
 interface TarballFileMeta {
@@ -62,7 +63,8 @@ export function createTarBall() {
 
   const options: TarballOptions = {
     dests: [],
-    root: ''
+    root: '',
+    gz: false
   }
 
   const add = (meta: TarballFileMeta) => {
@@ -73,7 +75,7 @@ export function createTarBall() {
     Object.assign(options, tarballOPtions)
 
     const promises = options.dests.map(dest => {
-      const expected = slash(path.resolve(options.root, dest + '.tar'))
+      const expected = slash(path.resolve(options.root, dest + '.tar' + (options.gz ? '.gz' : '')))
       const parent = slash(path.dirname(expected))
       if (options.root !== parent) {
         fs.mkdirSync(parent, { recursive: true })
@@ -83,6 +85,11 @@ export function createTarBall() {
 
         w.on('error', reject)
         w.on('finish', resolve)
+
+        if (options.gz) {
+          pack.receiver.pipe(zlib.createGzip()).pipe(w)
+          return
+        }
         pack.receiver.pipe(w)
       })
     })

@@ -5397,10 +5397,10 @@ __metadata:
   languageName: node
   linkType: hard
 
-"tar-mini@npm:^0.1.1":
-  version: 0.1.1
-  resolution: "tar-mini@npm:0.1.1"
-  checksum: 10/62f69990e6f6c0015653ec62ea271f5ed64e6ae6183ad17d5cfefc53ec5372a492c2c2096a9eac7af14c327ebe74cefd20e6a8a1bcdbbd30dd612273e33239d4
+"tar-mini@npm:^0.2.0":
+  version: 0.2.0
+  resolution: "tar-mini@npm:0.2.0"
+  checksum: 10/56f1ff01196244c82bbc4a93a5cbb47a075efcbc6f2fdd11d64988fe3405f2660f5fd9bf08e06677e8c64648b7b253e2e38d7288957a199a97a33cee64f53606
   languageName: node
   linkType: hard
 
@@ -5721,7 +5721,7 @@ __metadata:
     rollup-plugin-dts: "npm:^6.1.1"
     rollup-plugin-swc3: "npm:^0.11.2"
     sirv: "npm:^2.0.3"
-    tar-mini: "npm:^0.1.1"
+    tar-mini: "npm:^0.2.0"
     typescript: "npm:^5.3.3"
     vite: "npm:^5.3.4"
     vitest: "npm:^2.0.3"

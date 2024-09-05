@@ -32,7 +32,7 @@ async function mockBuild<T extends Algorithm = never>(
       }
     },
     root: path.join(__dirname, 'fixtures', dir),
-    plugins: [compression(conf)],
+    plugins: [compression(conf as any)],
     logLevel: 'silent'
   })
   return id
