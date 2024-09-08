@@ -25,6 +25,8 @@ export default defineConfig({
   plugins: [
     // ...your plugin
     compression()
+    // If you want to create a tarball archive you can import tarball plugin from this package and use
+    // after compression.
   ]
 })
 ```
@@ -52,7 +54,7 @@ export default defineConfig({
 
 - `tarball` option `dest` means to generate a tarball somewhere
 
-- `tarball` is based on the `ustart`. It should be compatible with all popular tar distributions out there (gnutar, bsdtar etc)
+- `tarball` is based on the `ustar`. It should be compatible with all popular tar distributions out there (gnutar, bsdtar etc)
 
 ### Sponsors
 

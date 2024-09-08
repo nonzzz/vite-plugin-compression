@@ -1,3 +1,13 @@
+## 1.3.0
+
+# Improves
+
+- `tarball` support generate gz archive.
+
+# Patches
+
+- Fix vite@2 can't work.
+
 ## 1.2.0
 
 - Support work with plugins that specify hook order.
@@ -19,7 +29,6 @@
 ### Credits
 
 @mengdaoshizhongxinyang @silverwind
-
 
 ## 1.1.2
 
