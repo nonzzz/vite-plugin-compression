@@ -5,11 +5,5 @@
   "editor.codeActionsOnSave": {
     "source.fixAll": "explicit"
   },
-  "editor.formatOnSave": true,
-  "[json]": {
-    "editor.defaultFormatter": "dprint.dprint"
-  },
-  "[markdown]": {
-    "editor.defaultFormatter": "dprint.dprint"
-  }
+  "editor.formatOnSave": true
 }

@@ -138,3 +138,24 @@ test('tarball gz with compression', async () => {
     }
   }
 })
+
+test('tarball gz with compression and skipIfLargerOrEqual', async () => {
+  const id = await mockBuild('public-assets-nest', { deleteOriginalAssets: true, skipIfLargerOrEqual: true }, true)
+  await sleep(3000)
+  const { bundle } = await mockBuildwithoutCompression('public-assets-nest', getId())
+  await sleep(3000)
+  const outputs = extract(path.join(dest, id + '.tar.gz'), true)
+
+  if (typeof bundle === 'object' && 'output' in bundle) {
+    for (const chunk of bundle.output) {
+      if (chunk.fileName in outputs) {
+        const act = Buffer.from(outputs[chunk.fileName])
+        if (chunk.type === 'asset') {
+          expect(act).toStrictEqual(Buffer.from(chunk.source))
+        } else {
+          expect(act).toStrictEqual(Buffer.from(chunk.code))
+        }
+      }
+    }
+  }
+})

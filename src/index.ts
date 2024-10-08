@@ -253,30 +253,44 @@ function compression<T extends UserCompressionOptions, A extends Algorithm>(
       }
     },
     async closeBundle() {
+      const compressAndHandleFile = async (filePath: string, file: string, dest: string) => {
+        const buf = await fsp.readFile(filePath)
+        const compressed = await compress(buf, zlib.algorithm, zlib.options)
+        if (skipIfLargerOrEqual && len(compressed) >= len(buf)) {
+          if (!pluginContext.staticOutputs.has(filePath)) pluginContext.staticOutputs.add(filePath)
+          return
+        }
+
+        const fileName = replaceFileName(file, zlib.filename)
+        if (!pluginContext.staticOutputs.has(fileName)) pluginContext.staticOutputs.add(fileName)
+
+        const outputPath = path.join(dest, fileName)
+        if (deleteOriginalAssets && outputPath !== filePath) {
+          await fsp.rm(filePath, { recursive: true, force: true })
+        }
+        await fsp.writeFile(outputPath, compressed)
+      }
+
+      const processFile = async (dest: string, file: string) => {
+        const filePath = path.join(dest, file)
+        if (!filter(filePath) && !pluginContext.staticOutputs.has(file)) {
+          pluginContext.staticOutputs.add(file)
+          return
+        }
+        const { size } = await fsp.stat(filePath)
+        if (size < threshold) {
+          if (!pluginContext.staticOutputs.has(file)) {
+            pluginContext.staticOutputs.add(file)
+          }
+          return
+        }
+        await compressAndHandleFile(filePath, file, dest)
+      }
+
       // parallel run
       for (const dest of outputs) {
         for (const file of statics) {
-          queue.enqueue(async () => {
-            const p = path.join(dest, file)
-            if (!filter(p) && !pluginContext.staticOutputs.has(file)) {
-              pluginContext.staticOutputs.add(file)
-            } else {
-              const { size } = await fsp.stat(p)
-              if (size < threshold) {
-                if (!pluginContext.staticOutputs.has(file)) pluginContext.staticOutputs.add(file)
-              } else {
-                const buf = await fsp.readFile(p)
-                const compressed = await compress(buf, zlib.algorithm, zlib.options)
-                if (skipIfLargerOrEqual && len(compressed) >= len(buf)) return
-                const fileName = replaceFileName(file, zlib.filename)
-                if (!pluginContext.staticOutputs.has(fileName)) pluginContext.staticOutputs.add(fileName)
-                // issue #30
-                const outputPath = path.join(dest, fileName)
-                if (deleteOriginalAssets && outputPath !== p) await fsp.rm(p, { recursive: true, force: true })
-                await fsp.writeFile(outputPath, compressed)
-              }
-            }
-          })
+          queue.enqueue(() => processFile(dest, file))
         }
       }
       // issue #18
