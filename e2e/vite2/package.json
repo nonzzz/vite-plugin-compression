@@ -1,6 +1,6 @@
 {
   "name": "vite-plugin-compression2-e2e-vite2",
   "dependencies": {
-    "vite": "patch:vite@npm%3A2.9.15#~/.yarn/patches/vite-npm-2.9.15-da673a6d8d.patch"
+    "vite": "^2"
   }
 }

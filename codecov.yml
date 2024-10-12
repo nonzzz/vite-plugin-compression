@@ -10,11 +10,11 @@ coverage:
         base: auto
         if_ci_failed: error
         branches:
-          - 'master'
+          - "master"
 
 comment:
-  layout: 'reach, diff, flags, files'
+  layout: "reach, diff, flags, files"
   behavior: default
   require_changes: false
   branches:
-    - 'master'
+    - "master"

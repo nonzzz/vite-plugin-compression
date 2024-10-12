@@ -1,19 +1,9 @@
-import path from 'path'
-import zlib from 'zlib'
 import fs from 'fs'
-import fsp from 'fs/promises'
-import { build } from 'vite'
-import { afterAll, expect, test } from 'vitest'
+import zlib from 'zlib'
+import { afterAll, assert, describe, expect, it } from 'vitest'
 import { createExtract } from 'tar-mini'
-import { readAll } from '../src/shared'
-import type { ViteCompressionPluginConfig, ViteTarballPluginOptions } from '../src'
 import { compression, tarball } from '../src'
-
-const getId = () => Math.random().toString(32).slice(2, 10)
-const sleep = (delay: number) => new Promise((resolve) => setTimeout(resolve, delay))
-
-const dist = path.join(__dirname, 'dist')
-const dest = path.join(__dirname, '.dist')
+import { createDisk, mockBuild } from './shared/kit.mjs'
 
 function extract(p: string, gz = false): Promise<Record<string, Buffer>> {
   const extract = createExtract()
@@ -32,130 +22,38 @@ function extract(p: string, gz = false): Promise<Record<string, Buffer>> {
   })
 }
 
-async function mockBuild<T extends Algorithm = never>(
-  dir = 'public-assets-nest',
-  options?: ViteCompressionPluginConfig<T, any>,
-  gz = false
-) {
-  const id = getId()
-  await build({
-    root: path.join(__dirname, 'fixtures', dir),
-    plugins: [compression(options), tarball({ dest: path.join(dest, id), gz })],
-    configFile: false,
-    logLevel: 'silent',
-    build: {
-      outDir: path.join(dist, id)
+describe('tarball', () => {
+  const { root, destroy } = createDisk('tarball')
+
+  afterAll(destroy)
+  it('only use tarball plugin', async () => {
+    const { output, bundle } = await mockBuild('normal', root, { plugins: [tarball()] })
+    const extracted = await extract(output + '.tar')
+    assert(typeof bundle === 'object' && 'output' in bundle)
+    for (const chunk of bundle.output) {
+      expect(extracted[chunk.fileName]).toStrictEqual(Buffer.from(chunk.type === 'asset' ? chunk.source : chunk.code))
     }
   })
-  return id
-}
 
-async function mockBuildwithoutCompression(dir: string, id: string, options: ViteTarballPluginOptions = {}) {
-  const bundle = await build({
-    root: path.join(__dirname, 'fixtures', dir),
-    plugins: [tarball(options)],
-    configFile: false,
-    logLevel: 'silent',
-    build: {
-      outDir: path.join(dist, id)
+  it('tar archive after compress', async () => {
+    const { output, bundle } = await mockBuild('public-assets-nest', root, { plugins: [compression(), tarball()] })
+    const { output: ouput2 } = await mockBuild('public-assets-nest', root, {
+      plugins: [compression(), tarball({ gz: true })]
+    })
+    const extracted1 = await extract(output + '.tar')
+    const extracted2 = await extract(ouput2 + '.tar.gz', true)
+    assert(Object.keys(extracted1).length === Object.keys(extracted2).length)
+    for (const filename in extracted1) {
+      assert(Reflect.has(extracted2, filename))
+      expect(extracted1[filename]).toStrictEqual(extracted2[filename])
+    }
+    assert(typeof bundle === 'object' && 'output' in bundle)
+    for (const chunk of bundle.output) {
+      if (chunk.fileName in extracted2) {
+        expect(extracted2[chunk.fileName]).toStrictEqual(
+          Buffer.from(chunk.type === 'asset' ? chunk.source : chunk.code)
+        )
+      }
     }
   })
-  return { id, bundle }
-}
-
-afterAll(async () => {
-  await fsp.rm(dest, { recursive: true })
-})
-
-test('tarball', async () => {
-  const ids = await Promise.all([
-    mockBuild('public-assets-nest', { deleteOriginalAssets: true, skipIfLargerOrEqual: false }),
-    mockBuild('public-assets-nest', { skipIfLargerOrEqual: false })
-  ])
-  await sleep(3000)
-  const [diff1, diff2] = await Promise.all(ids.map((id) => readAll(path.join(dist, id))))
-  const diff1Js = diff1.filter((v) => v.endsWith('.js.gz')).map((v) => zlib.unzipSync(fs.readFileSync(v)))
-  const diff2Js = diff2.filter((v) => v.endsWith('.js')).map((v) => fs.readFileSync(v))
-  // .deepEqual(diff1Js, diff2Js)
-  expect(diff1Js).toStrictEqual(diff2Js)
-  const [dest1, dest2] = await Promise.all(ids.map((id) => extract(path.join(dest, id + '.tar'))))
-  for (const file in dest1) {
-    if (file in dest2) {
-      expect(dest1[file]).toStrictEqual(dest2[file])
-    }
-  }
-})
-
-test('tarball without compression', async () => {
-  const { id, bundle } = await mockBuildwithoutCompression('normal', getId())
-  const outputs = await extract(path.join(dist, id + '.tar'))
-  if (typeof bundle === 'object' && 'output' in bundle) {
-    for (const chunk of bundle.output) {
-      if (chunk.fileName in outputs) {
-        const act = Buffer.from(outputs[chunk.fileName])
-        if (chunk.type === 'asset') {
-          expect(act).toStrictEqual(Buffer.from(chunk.source))
-        } else {
-          expect(act).toStrictEqual(Buffer.from(chunk.code))
-        }
-      }
-    }
-  }
-})
-
-test('tarball specify output', async () => {
-  const id = getId()
-  await mockBuildwithoutCompression('public-assets-nest', id, { dest: path.join(dest, id) })
-  const outputs = await extract(path.join(dest, id + '.tar'))
-  expect(Object.keys(outputs).length > 0).toBeTruthy()
-})
-
-test('tarball specify output with gz', async () => {
-  const id = getId()
-  await mockBuildwithoutCompression('public-assets-nest', id, { dest: path.join(dest, id), gz: true })
-  await sleep(3000)
-  const outputs = await extract(path.join(dest, id + '.tar.gz'), true)
-  expect(Object.keys(outputs).length > 0).toBeTruthy()
-})
-
-test('tarball gz with compression', async () => {
-  const id = await mockBuild('public-assets-nest', { deleteOriginalAssets: true, skipIfLargerOrEqual: false }, true)
-  await sleep(3000)
-  const { bundle } = await mockBuildwithoutCompression('public-assets-nest', getId())
-  await sleep(3000)
-  const outputs = extract(path.join(dest, id + '.tar.gz'), true)
-
-  if (typeof bundle === 'object' && 'output' in bundle) {
-    for (const chunk of bundle.output) {
-      if (chunk.fileName in outputs) {
-        const act = Buffer.from(outputs[chunk.fileName])
-        if (chunk.type === 'asset') {
-          expect(act).toStrictEqual(Buffer.from(chunk.source))
-        } else {
-          expect(act).toStrictEqual(Buffer.from(chunk.code))
-        }
-      }
-    }
-  }
-})
-
-test('tarball gz with compression and skipIfLargerOrEqual', async () => {
-  const id = await mockBuild('public-assets-nest', { deleteOriginalAssets: true, skipIfLargerOrEqual: true }, true)
-  await sleep(3000)
-  const { bundle } = await mockBuildwithoutCompression('public-assets-nest', getId())
-  await sleep(3000)
-  const outputs = extract(path.join(dest, id + '.tar.gz'), true)
-
-  if (typeof bundle === 'object' && 'output' in bundle) {
-    for (const chunk of bundle.output) {
-      if (chunk.fileName in outputs) {
-        const act = Buffer.from(outputs[chunk.fileName])
-        if (chunk.type === 'asset') {
-          expect(act).toStrictEqual(Buffer.from(chunk.source))
-        } else {
-          expect(act).toStrictEqual(Buffer.from(chunk.code))
-        }
-      }
-    }
-  }
 })

@@ -1,8 +1,8 @@
 name: publish
 on:
   push:
-    tags: ['v*']
-   
+    tags: ["v*"]
+
 jobs:
   publish:
     runs-on: ubuntu-latest
@@ -13,15 +13,13 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: '20.x'
-          registry-url: 'https://registry.npmjs.org'
-      - name: Install Berry
-        run: corepack enable
+          node-version: 21
+          registry-url: "https://registry.npmjs.org"
       - name: Install Dependices
-        run: yarn
+        run: make
       - name: Pack and Publish
         run: |
-          yarn build
+          make build-pub
           npm publish --provenance --access public
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

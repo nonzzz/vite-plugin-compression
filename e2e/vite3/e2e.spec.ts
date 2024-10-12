@@ -4,7 +4,6 @@ import { name } from './package.json'
 
 describe('vite3', async () => {
   const vite = await import('vite')
-
   await runTest(name, {
     vite,
     compressOption: {

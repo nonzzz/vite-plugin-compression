@@ -13,35 +13,29 @@ jobs:
       - uses: actions/checkout@v4
         with:
           node-version: ${{ matrix.version  }}
-      - name: Install berry
-        run: yarn
-      
+      - name: Instanll pnpm
+        run: make install
+
       - name: install playwright
-        run:  yarn playwright install
-        
+        run: pnpm playwright install
+
       - name: test 2.x to 4.x
-        run: yarn exec vitest e2e/vite[2-4]/*.spec.ts --coverage.enabled=false
+        run: pnpm exec vitest e2e/vite[2-4]/*.spec.ts --coverage.enabled=false
   run-stable-e2e-test:
     strategy:
       matrix:
-        version: [18,20]
+        version: [18, 20]
         os: [ubuntu-latest]
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
         with:
           node-version: ${{ matrix.version  }}
-      - name: Install berry
-        run: corepack enable
+      - name: Instanll pnpm
+        run: make install
 
-      - name: install dependices
-        run: yarn
-      
       - name: install playwright
-        run:  yarn playwright install
-      
+        run: pnpm playwright install
+
       - name: test 5.x
-        run: yarn exec vitest e2e/vite5/*.spec.ts --coverage.enabled=false
-
-
-      
+        run: pnpm exec vitest e2e/vite5/*.spec.ts --coverage.enabled=false

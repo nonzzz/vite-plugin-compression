@@ -1,20 +1,27 @@
 install:
-	@echo "Setup yarn package manager..."
+	@echo "Setup pnpm package manager..."
 	@corepack enable
-	yarn install
+	pnpm install
 
 build:
 	@echo "Building..."
-	@yarn exec rollup --config rollup.config.ts --configPlugin swc3
+	@pnpm exec rollup --config rollup.config.ts --configPlugin swc3
+
+
+build-pub: install build
 
 dev:
 	@echo "Starting development server..."
-	@yarn exec rollup --config rollup.config.ts --configPlugin swc3 --watch
+	@pnpm exec rollup --config rollup.config.ts --configPlugin swc3 --watch
 
 test:
 	@echo "Running tests..."
-	@yarn exec vitest --dir __tests__ --typecheck.enabled
+	@pnpm exec vitest --dir __tests__ --typecheck.enabled
 
 end-to-end-test:
 	@echo "Running end-to-end tests..."
-	@yarn exec vitest --dir e2e
+	@pnpm exec vitest e2e/**/*.spec.ts --coverage.enabled=false
+
+format:
+	@echo "Format code"
+	@pnpm exec dprint fmt
