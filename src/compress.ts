@@ -77,7 +77,7 @@ export function createTarBall() {
     const promises = options.dests.map(dest => {
       const expected = slash(path.resolve(options.root, dest + '.tar' + (options.gz ? '.gz' : '')))
       const parent = slash(path.dirname(expected))
-      if (options.root !== parent) {
+      if (slash(options.root) !== parent) {
         fs.mkdirSync(parent, { recursive: true })
       }
       return new Promise<void>((resolve, reject) => {
