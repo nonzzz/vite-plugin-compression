@@ -1,10 +1,10 @@
-import { builtinModules, createRequire } from 'module'
+import { builtinModules } from 'module'
 import { defineConfig } from 'rollup'
 import dts from 'rollup-plugin-dts'
 import { minify, swc } from 'rollup-plugin-swc3'
+import packageJson from './package.json' with { type: 'json' }
 
-const _require = createRequire(import.meta.url)
-const { dependencies } = _require('./package.json')
+const { dependencies } = packageJson
 
 const external = [...Object.keys(dependencies), ...builtinModules]
 

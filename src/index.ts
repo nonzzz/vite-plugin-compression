@@ -58,23 +58,6 @@ function handleOutputOption(conf: ResolvedConfig) {
   return outputs
 }
 
-async function hijackGenerateBundle(plugin: Plugin, afterHook: GenerateBundle) {
-  const hook = plugin.generateBundle
-  if (typeof hook === 'object' && hook.handler) {
-    const fn = hook.handler
-    hook.handler = async function handler(this, ...args: any) {
-      await fn.apply(this, args)
-      await afterHook.apply(this, args)
-    }
-  }
-  if (typeof hook === 'function') {
-    plugin.generateBundle = async function handler(this, ...args: any) {
-      await hook.apply(this, args)
-      await afterHook.apply(this, args)
-    }
-  }
-}
-
 async function handleStaticFiles(config: ResolvedConfig, callback: (file: string, assets: string) => Promise<void>) {
   const baseCondit = VITE_COPY_PUBLIC_DIR in config.build ? config.build.copyPublicDir : true
   if (config.publicDir && baseCondit && fs.existsSync(config.publicDir)) {
@@ -111,9 +94,6 @@ function tarball(opts: ViteTarballPluginOptions = {}): Plugin {
           statics.push(file)
         })
       }
-      const plugin = config.plugins.find(p => p.name === VITE_INTERNAL_ANALYSIS_PLUGIN)
-      if (!plugin) throw new Error("[vite-plugin-tarball] can't be work in versions lower than vite at 2.0.0")
-
       // create dest dir
       tarball.setup({ dests, root, gz })
     },
@@ -223,9 +203,16 @@ function compression<T extends UserCompressionOptions, A extends Algorithm>(
       // issue #63
       // more and more plugin use are starting specify plugin order. So we should do a check for vite's version.
       const [major, minor] = rollupVersion.split('.')
-      // rollup support object hook at 2.78.0
+      // rollup support object hook at 2.78.0 (vite 3.1.0)
+      // https://github.com/rollup/rollup/pull/4600
       if (+major <= 2 && +minor < 78) {
-        hijackGenerateBundle(viteAnalyzerPlugin, generateBundle)
+        const hook = viteAnalyzerPlugin.generateBundle
+        if (typeof hook === 'function') {
+          plugin.generateBundle = async function handler(this, ...args: any) {
+            await hook.apply(this, args)
+            await generateBundle.apply(this, args)
+          }
+        }
         return
       }
 

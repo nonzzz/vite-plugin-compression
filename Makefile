@@ -1,3 +1,6 @@
+NODE_OPTIONS= export NODE_OPTIONS=--no-warnings
+ROLLUP_CMD = ${NODE_OPTIONS} && pnpm exec rollup --config rollup.config.mjs
+
 install:
 	@echo "Setup pnpm package manager..."
 	@corepack enable
@@ -5,14 +8,14 @@ install:
 
 build:
 	@echo "Building..."
-	@pnpm exec rollup --config rollup.config.ts --configPlugin swc3
+	$(ROLLUP_CMD)
 
 
 build-pub: install build
 
 dev:
 	@echo "Starting development server..."
-	@pnpm exec rollup --config rollup.config.ts --configPlugin swc3 --watch
+	$(ROLLUP_CMD) --watch
 
 test:
 	@echo "Running tests..."
