@@ -3,6 +3,7 @@ import path from 'path'
 import url from 'url'
 import { build } from 'vite'
 import type { InlineConfig } from 'vite'
+import { destroy as _destory, create } from 'memdisk'
 
 export const __filename = url.fileURLToPath(import.meta.url)
 
@@ -16,16 +17,16 @@ export function sleep(delay: number) {
   return new Promise((resolve) => setTimeout(resolve, delay))
 }
 
-const namespace = '.tmpl_suite'
+const namespace = 'compression-suite-'
 
 export function createDisk(p: string) {
-  const dir = path.join(path.dirname(__dirname), namespace)
-  const root = path.join(dir, p)
+  const dir = create.sync(namespace + p, 64 * 1024 * 1024, { quiet: false })
+  const root = dir
 
   fs.mkdirSync(root, { recursive: true })
 
   const destroy = () => {
-    fs.rmSync(root, { recursive: true, force: true })
+    _destory.sync(dir, { quiet: false })
   }
 
   return { destroy, root, dir }
