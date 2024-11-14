@@ -28,7 +28,6 @@
   "homepage": "https://github.com/nonzzz/vite-plugin-compression#readme",
   "exports": "./src/index.ts",
   "devDependencies": {
-    "@swc/core": "^1.7.26",
     "@types/node": "^20.14.9",
     "@vitest/coverage-v8": "^2.0.3",
     "dprint": "^0.46.3",
@@ -37,10 +36,10 @@
     "jiek": "^1.0.14",
     "memdisk": "^1.2.1",
     "playwright": "^1.32.3",
-    "rollup": "^4.18.0",
     "sirv": "^2.0.3",
     "typescript": "^5.3.3",
-    "vitest": "^2.1.2"
+    "vitest": "^2.1.2",
+    "rollup": "^4.18.0"
   },
   "dependencies": {
     "@rollup/pluginutils": "^5.1.0",

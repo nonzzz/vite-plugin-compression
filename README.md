@@ -68,6 +68,10 @@ export default defineConfig({
 
 [MIT](./LICENSE)
 
+## Acknowledgements
+
+[NWYLZW](https://github.com/NWYLZW)
+
 ### Author
 
-Kanno
+[Kanno](https://github.com/nonzzz)
