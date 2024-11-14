@@ -1,6 +1,6 @@
 {
   "name": "vite-plugin-compression2",
-  "version": "1.3.0",
+  "version": "1.3.1",
   "packageManager": "pnpm@9.4.0",
   "description": "a fast vite compression plugin",
   "main": "dist/index.js",
@@ -34,14 +34,12 @@
     "dprint": "^0.46.3",
     "eslint": "^8.57.0",
     "eslint-config-kagura": "^2.1.1",
+    "jiek": "^1.0.14",
     "memdisk": "^1.2.1",
     "playwright": "^1.32.3",
     "rollup": "^4.18.0",
-    "rollup-plugin-dts": "^6.1.1",
-    "rollup-plugin-swc3": "^0.12.1",
     "sirv": "^2.0.3",
     "typescript": "^5.3.3",
-    "vite": "^5.3.4",
     "vitest": "^2.1.2"
   },
   "dependencies": {

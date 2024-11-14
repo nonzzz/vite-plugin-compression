@@ -1,5 +1,4 @@
-NODE_OPTIONS= export NODE_OPTIONS=--no-warnings
-ROLLUP_CMD = ${NODE_OPTIONS} && pnpm exec rollup --config rollup.config.mjs
+JK = pnpm exec jiek -f vite-plugin-compression2
 
 install:
 	@echo "Setup pnpm package manager..."
@@ -8,14 +7,15 @@ install:
 
 build:
 	@echo "Building..."
-	$(ROLLUP_CMD)
+	-rm -rf dist
+	$(JK) build
 
 
 build-pub: install build
-
-dev:
-	@echo "Starting development server..."
-	$(ROLLUP_CMD) --watch
+	@echo "Building for publish..."
+	mv 'dist/index.min.js' 'dist/index.js'
+	mv 'dist/index.min.mjs' 'dist/index.mjs'
+	$(JK) pub -no-b
 
 test:
 	@echo "Running tests..."
