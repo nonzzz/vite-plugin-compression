@@ -10,11 +10,8 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22.3
-      - name: Install Dependices
-        run: make
-
       - name: Build Library
-        run: make build-pub
+        run: make bootstrap
       - name: Run Test
         run: make test
 

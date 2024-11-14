@@ -9,12 +9,13 @@ build:
 	@echo "Building..."
 	-rm -rf dist
 	$(JK) build
+	mv 'dist/index.min.js' 'dist/index.js'
+	mv 'dist/index.min.mjs' 'dist/index.mjs'
 
+bootstrap: install build
 
 build-pub: install build
 	@echo "Building for publish..."
-	mv 'dist/index.min.js' 'dist/index.js'
-	mv 'dist/index.min.mjs' 'dist/index.mjs'
 	$(JK) pub -no-b
 
 test:

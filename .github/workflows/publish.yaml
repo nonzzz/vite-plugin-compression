@@ -15,8 +15,6 @@ jobs:
         with:
           node-version: 21
           registry-url: "https://registry.npmjs.org"
-      - name: Install Dependices
-        run: make
       - name: Pack and Publish
         run: |
           make build-pub
