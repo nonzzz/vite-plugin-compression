@@ -1,3 +1,7 @@
+## 1.3.2
+
+Support Vite6
+
 ## 1.3.1
 
 Using `jiek`
