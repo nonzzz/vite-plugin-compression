@@ -38,4 +38,4 @@ jobs:
         run: pnpm playwright install
 
       - name: test 5.x
-        run: pnpm exec vitest e2e/vite5/*.spec.ts --coverage.enabled=false
+        run: pnpm exec vitest e2e/vite[5-6]/*.spec.ts --coverage.enabled=false

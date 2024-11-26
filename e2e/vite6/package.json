@@ -1,0 +1,6 @@
+{
+  "name": "vite-plugin-compression2-e2e-vite6",
+  "dependencies": {
+    "vite": "^6"
+  }
+}

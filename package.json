@@ -45,7 +45,7 @@
     "tar-mini": "^0.2.0"
   },
   "optionalDependencies": {
-    "vite": "^5.3.4"
+    "vite": "^6"
   },
   "resolutions": {
     "is-core-module": "npm:@nolyfill/is-core-module@^1",
