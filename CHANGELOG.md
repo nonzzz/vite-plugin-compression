@@ -1,3 +1,9 @@
+## 1.3.3
+
+# Patches
+
+- Fix error deps
+
 ## 1.3.2
 
 Support Vite6
