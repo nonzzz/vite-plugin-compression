@@ -10,8 +10,9 @@ import type { Vite2Instance } from './vite2/interface'
 import type { Vite3Instance } from './vite3/interface'
 import type { Vite4Instance } from './vite4/interface'
 import type { Vite5Instance } from './vite5/interface'
+import type { Vite6Instance } from './vite6/interface'
 
-type ViteInstance = Vite2Instance | Vite3Instance | Vite4Instance | Vite5Instance  
+type ViteInstance = Vite2Instance | Vite3Instance | Vite4Instance | Vite5Instance | Vite6Instance
 
 type Server = http.Server & {
   ip: string
@@ -39,6 +40,7 @@ function prepareAssets(taskName: string, options: TestOptions) {
       outDir: path.join(defaultWd, 'dist', taskName)
     },
     logLevel: 'silent',
+    // @ts-expect-error vite type error
     plugins: [compression({ ...compressOption, include: [/\.(js)$/, /\.(css)$/] })]
   })
 }
@@ -68,12 +70,11 @@ async function createChromeBrowser(server: Server) {
   const browser = await chromium.launch()
   const page = await browser.newPage()
   const localUrl = server.ip
-  await page.goto(localUrl)
 
-  return { page }
+  return { page, localUrl }
 }
 
-function expectTestCase(taskName: string, page: Awaited<Page>) {
+async function expectTestCase(taskName: string, page: Awaited<Page>, localUrl: Awaited<string>) {
   const expect1 = new Promise((resolve) => {
     page.on('console', (message) => resolve(message.text()))
   })
@@ -87,19 +88,20 @@ function expectTestCase(taskName: string, page: Awaited<Page>) {
   })
 
   test(`${taskName} page first load`, async () => {
-    await expect(expect1).resolves.toBe('load main process')
+    expect(await expect1).toBe('load main process')
   })
   test(`${taskName} insert line`, async () => {
     await page.click('.button--insert')
     await page.waitForSelector('text=p-1', { timeout: 5000 })
-    await expect(expect2).resolves.toBe('append child')
+    expect(await expect2).toBe('append child')
   })
+  await page.goto(localUrl)
 }
 
 export async function runTest(taskName: string, options: TestOptions) {
   await prepareAssets(taskName, options)
   await new Promise((resolve) => setTimeout(resolve, 5000))
   const { server } = createServer(taskName)
-  const { page } = await createChromeBrowser(server)
-  expectTestCase(taskName, page)
+  const { page, localUrl } = await createChromeBrowser(server)
+  await expectTestCase(taskName, page, localUrl)
 }
