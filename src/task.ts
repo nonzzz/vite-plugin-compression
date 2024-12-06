@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-floating-promises */
 import { len } from './shared'
 
 class Queue {
@@ -12,7 +13,7 @@ class Queue {
     this.running = 0
   }
 
-  enqueue(task) {
+  enqueue(task: () => Promise<void>) {
     this.queue.push(task)
     this.run()
   }
@@ -24,7 +25,7 @@ class Queue {
       try {
         await task()
       } catch (error) {
-        this.errors.push(error)
+        this.errors.push(error as Error)
       } finally {
         this.running--
         this.run()
@@ -36,7 +37,7 @@ class Queue {
     while (this.running) {
       await new Promise((resolve) => setTimeout(resolve, 0))
     }
-    if (len(this.errors)) throw new AggregateError(this.errors, 'task failed')
+    if (len(this.errors)) { throw new AggregateError(this.errors, 'task failed') }
   }
 }
 
