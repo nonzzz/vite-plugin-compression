@@ -2,6 +2,7 @@ JK = pnpm exec jiek -f vite-plugin-compression2
 
 install:
 	@echo "Setup pnpm package manager..."
+	npm install -g corepack@latest --force
 	@corepack enable
 	pnpm install
 
