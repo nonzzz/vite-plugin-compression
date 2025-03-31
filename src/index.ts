@@ -180,7 +180,7 @@ function compression<T extends UserCompressionOptions, A extends Algorithm>(
     algorithm: typeof userAlgorithm === 'string' ? ensureAlgorithm(userAlgorithm).algorithm : userAlgorithm,
     options: typeof userAlgorithm === 'function'
       ? compressionOptions
-      : Object.assign(defaultCompressionOptions[userAlgorithm], compressionOptions),
+      : Object.assign({}, defaultCompressionOptions[userAlgorithm], compressionOptions),
     filename: filename ?? (userAlgorithm === 'brotliCompress' ? '[path][base].br' : '[path][base].gz')
   }
 
