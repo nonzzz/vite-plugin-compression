@@ -4,8 +4,6 @@
 
 [![codecov](https://codecov.io/gh/nonzzz/vite-plugin-compression/branch/master/graph/badge.svg?token=NG4475OP6B)](https://codecov.io/gh/nonzzz/vite-compression-plugin)
 
-[<img src="https://api.gitsponsors.com/api/badge/img?id=454016981" height="20">](https://api.gitsponsors.com/api/badge/link?p=GxxV3KoD1WezHkLd1R9UKKQG4PfFX88G+AeLkIFBJeFJtHd8bPrjEMGTcdoD6DDqdWTlJfiUBnhUHSiT9WHjPuSe+oa/rQ+2aeJ87Fq1sN4bd/X8QXUngMfWmV5cXhTHfnqzXv3bamu3MKWFm6T5PA==)
-
 ## Install
 
 ```bash
