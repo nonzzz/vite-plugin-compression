@@ -164,7 +164,7 @@ function compression<T extends UserCompressionOptions, A extends Algorithm>(
     include = /\.(html|xml|css|json|js|mjs|svg|yaml|yml|toml)$/,
     exclude,
     threshold = 0,
-    algorithm: userAlgorithm = 'gzip',
+    algorithm: userAlgorithm = 'brotliCompress',
     filename,
     compressionOptions,
     deleteOriginalAssets = false,
