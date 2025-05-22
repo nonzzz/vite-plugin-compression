@@ -1,7 +1,7 @@
 import fs from 'fs'
-import zlib from 'zlib'
-import { afterAll, assert, describe, expect, it } from 'vitest'
 import { createExtract } from 'tar-mini'
+import { afterAll, assert, describe, expect, it } from 'vitest'
+import zlib from 'zlib'
 import { compression, tarball } from '../src'
 import { createDisk, mockBuild } from './shared/kit.mjs'
 

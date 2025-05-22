@@ -41,7 +41,7 @@ function prepareAssets(taskName: string, options: TestOptions) {
     },
     logLevel: 'silent',
     // @ts-expect-error vite type error
-    plugins: [compression({ ...compressOption, include: [/\.(js)$/, /\.(css)$/] })]
+    plugins: [compression({ ...compressOption, include: [/\.(js)$/, /\.(css)$/], algorithm: 'gzip' })]
   })
 }
 

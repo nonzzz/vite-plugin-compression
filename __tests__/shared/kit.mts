@@ -1,9 +1,9 @@
 import fs from 'fs'
+import { create, destroy as _destory } from 'memdisk'
 import path from 'path'
 import url from 'url'
 import { build } from 'vite'
 import type { InlineConfig } from 'vite'
-import { destroy as _destory, create } from 'memdisk'
 
 export const __filename = url.fileURLToPath(import.meta.url)
 
