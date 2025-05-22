@@ -17,7 +17,7 @@ export function replaceFileName(staticPath: string, rule: string | ((id: string)
 
 export function slash(path: string) {
   const isExtendedLengthPath = /^\\\\\?\\/.test(path)
-  if (isExtendedLengthPath) return path
+  if (isExtendedLengthPath) { return path }
   return path.replace(/\\/g, '/')
 }
 
@@ -45,3 +45,5 @@ const encoder = new TextEncoder()
 export function stringToBytes(b: string | Uint8Array) {
   return typeof b === 'string' ? encoder.encode(b) : b
 }
+
+export function noop() {}

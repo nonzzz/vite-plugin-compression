@@ -17,7 +17,7 @@ import type {
   ViteTarballPluginOptions,
   ViteWithoutCompressionPluginConfigFunction
 } from './interface'
-import { len, readAll, replaceFileName, slash, stringToBytes } from './shared'
+import { len, noop, readAll, replaceFileName, slash, stringToBytes } from './shared'
 import { createConcurrentQueue } from './task'
 
 const VITE_INTERNAL_ANALYSIS_PLUGIN = 'vite:build-import-analysis'
@@ -31,6 +31,7 @@ const MAX_CONCURRENT = (() => {
 
 interface CompressionPluginAPI {
   staticOutputs: Set<string>
+  done: Promise<void>
 }
 
 interface InternalZlibOptions<T> {
@@ -110,9 +111,13 @@ function tarball(opts: ViteTarballPluginOptions = {}): Plugin {
       }
     },
     async closeBundle() {
+      if (ctx) {
+        await ctx.done
+      }
       if (!statics.length && ctx && ctx.staticOutputs.size) {
         statics.push(...ctx.staticOutputs)
       }
+
       for (const dest of outputs) {
         for (const file of statics) {
           queue.enqueue(async () => {
@@ -206,8 +211,13 @@ function compression<T extends UserCompressionOptions, A extends Algorithm>(
     await queue.wait().catch(this.error)
   }
 
+  const doneResolver: { resolve: () => void } = { resolve: noop }
+
   const pluginContext: CompressionPluginAPI = {
-    staticOutputs: new Set()
+    staticOutputs: new Set(),
+    done: new Promise((resolve) => {
+      doneResolver.resolve = resolve
+    })
   }
 
   const plugin = <Plugin> {
@@ -239,7 +249,7 @@ function compression<T extends UserCompressionOptions, A extends Algorithm>(
         const buf = await fsp.readFile(filePath)
         const compressed = await compress(buf, zlib.algorithm, zlib.options)
         if (skipIfLargerOrEqual && len(compressed) >= len(buf)) {
-          if (!pluginContext.staticOutputs.has(filePath)) { pluginContext.staticOutputs.add(filePath) }
+          if (!pluginContext.staticOutputs.has(file)) { pluginContext.staticOutputs.add(file) }
           return
         }
 
@@ -279,6 +289,7 @@ function compression<T extends UserCompressionOptions, A extends Algorithm>(
       // In somecase. Like vuepress it will called vite build with `Promise.all`. But it's concurrency. when we record the
       // file fd. It had been changed. So that we should catch the error
       await queue.wait().catch((e: unknown) => e)
+      doneResolver.resolve()
     }
   }
 
