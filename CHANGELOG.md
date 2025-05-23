@@ -1,3 +1,9 @@
+## 1.4.0
+
+Added build log output for compression result.
+
+This enhancement provides visibility into compression results during the build process, complementing Vite's default reporter by including assets from the public directory in the output statistics.
+
 ## 1.3.3
 
 # Patches
