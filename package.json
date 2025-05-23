@@ -39,7 +39,8 @@
     "sirv": "^2.0.3",
     "typescript": "^5.3.3",
     "vitest": "^2.1.2",
-    "vite": "^6.3.5"
+    "vite": "^6.3.5",
+    "ansis": "^4.0.0"
   },
   "dependencies": {
     "@rollup/pluginutils": "^5.1.0",

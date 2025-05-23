@@ -30,6 +30,9 @@ importers:
       '@vitest/coverage-v8':
         specifier: ^2.0.3
         version: 2.1.2(vitest@2.1.2(@types/node@20.16.11)(terser@5.36.0))
+      ansis:
+        specifier: ^4.0.0
+        version: 4.0.0
       dprint:
         specifier: ^0.46.3
         version: 0.46.3
@@ -1476,6 +1479,10 @@ packages:
   ansi-styles@6.2.1:
     resolution: {integrity: sha512-bN798gFfQX+viw3R7yrGWRqnrN2oRkEkUjjl4JNn4E8GxxbjtG3FbrEIIY3l8/hrwUwIeCZvi4QuOTP4MErVug==}
     engines: {node: '>=12'}
+
+  ansis@4.0.0:
+    resolution: {integrity: sha512-P8nrHI1EyW9OfBt1X7hMSwGN2vwRuqHSKJAT1gbLWZRzDa24oHjYwGHvEgHeBepupzk878yS/HBZ0NMPYtbolw==}
+    engines: {node: '>=14'}
 
   archy@1.0.0:
     resolution: {integrity: sha512-Xg+9RwCg/0p32teKdGMPTPnVXKD0w3DfHnFTficozsAgsvq2XenPJq/MYpzzQ/v8zrOyJn6Ds39VA4JIDwFfqw==}
@@ -5027,6 +5034,8 @@ snapshots:
       color-convert: 2.0.1
 
   ansi-styles@6.2.1: {}
+
+  ansis@4.0.0: {}
 
   archy@1.0.0:
     optional: true

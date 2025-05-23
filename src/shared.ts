@@ -47,3 +47,25 @@ export function stringToBytes(b: string | Uint8Array) {
 }
 
 export function noop() {}
+
+export function captureViteLogger() {
+  const msgs: string[] = []
+
+  const originalStdWrite = process.stdout.write.bind(process.stdout) as typeof process.stdout.write
+
+  const cleanup = () => process.stdout.write = originalStdWrite
+
+  // @ts-expect-error overloaded methods
+  process.stdout.write = function(...args: Parameters<typeof process.stdout.write>) {
+    const [output] = args
+    const str = typeof output === 'string' ? output : output.toString()
+    if (str.includes('built in')) {
+      msgs.push(str)
+      return false
+    }
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-return
+    return originalStdWrite.apply(this, args)
+  }
+
+  return { cleanup, msgs }
+}

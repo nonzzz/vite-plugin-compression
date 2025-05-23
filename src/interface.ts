@@ -70,6 +70,8 @@ export type ViteCompressionPluginOption<A extends Algorithm | UserCompressionOpt
 
 export type GenerateBundle = HookHandler<Plugin['generateBundle']>
 
+export type WriteBundle = HookHandler<Plugin['writeBundle']>
+
 export interface ViteTarballPluginOptions {
   dest?: string
   gz?: boolean

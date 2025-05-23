@@ -1,9 +1,10 @@
 import { createFilter } from '@rollup/pluginutils'
+import ansis from 'ansis'
 import fs from 'fs'
 import fsp from 'fs/promises'
 import os from 'os'
 import path from 'path'
-import type { Plugin, ResolvedConfig } from 'vite'
+import type { Logger, Plugin, ResolvedConfig } from 'vite'
 import { compress, createTarBall, defaultCompressionOptions, ensureAlgorithm } from './compress'
 import type {
   Algorithm,
@@ -17,7 +18,7 @@ import type {
   ViteTarballPluginOptions,
   ViteWithoutCompressionPluginConfigFunction
 } from './interface'
-import { len, noop, readAll, replaceFileName, slash, stringToBytes } from './shared'
+import { captureViteLogger, len, noop, readAll, replaceFileName, slash, stringToBytes } from './shared'
 import { createConcurrentQueue } from './task'
 
 const VITE_INTERNAL_ANALYSIS_PLUGIN = 'vite:build-import-analysis'
@@ -181,6 +182,15 @@ function compression<T extends UserCompressionOptions, A extends Algorithm>(
   const statics: string[] = []
   const outputs: string[] = []
 
+  // vite internal vite:reporter don't write any log info to stdout. So we only capture the built in message
+  // and print static process to stdout. I don't want to complicate things. So about message aligned with internal
+  // result. I never deal with it.
+  const { msgs, cleanup } = captureViteLogger()
+
+  let logger: Logger
+
+  let root: string = process.cwd()
+
   const zlib: InternalZlibOptions<T> = {
     algorithm: typeof userAlgorithm === 'string' ? ensureAlgorithm(userAlgorithm).algorithm : userAlgorithm,
     options: typeof userAlgorithm === 'function'
@@ -220,6 +230,15 @@ function compression<T extends UserCompressionOptions, A extends Algorithm>(
     })
   }
 
+  const numberFormatter = new Intl.NumberFormat('en', {
+    maximumFractionDigits: 2,
+    minimumFractionDigits: 2
+  })
+
+  const displaySize = (bytes: number) => {
+    return `${numberFormatter.format(bytes / 1000)} kB`
+  }
+
   const plugin = <Plugin> {
     name: VITE_COMPRESSION_PLUGIN,
     apply: 'build',
@@ -243,8 +262,14 @@ function compression<T extends UserCompressionOptions, A extends Algorithm>(
         throw new Error("[vite-plugin-compression] Can't be work in versions lower than vite at 2.0.0")
       }
       hijackGenerateBundle(viteAnalyzerPlugin, generateBundle)
+
+      logger = config.logger
+
+      root = config.root
     },
     async closeBundle() {
+      const compressedMessages: Array<{ dest: string, file: string, size: number }> = []
+
       const compressAndHandleFile = async (filePath: string, file: string, dest: string) => {
         const buf = await fsp.readFile(filePath)
         const compressed = await compress(buf, zlib.algorithm, zlib.options)
@@ -261,6 +286,7 @@ function compression<T extends UserCompressionOptions, A extends Algorithm>(
           await fsp.rm(filePath, { recursive: true, force: true })
         }
         await fsp.writeFile(outputPath, compressed)
+        compressedMessages.push({ dest: path.relative(root, dest) + '/', file: fileName, size: len(compressed) })
       }
 
       const processFile = async (dest: string, file: string) => {
@@ -285,11 +311,29 @@ function compression<T extends UserCompressionOptions, A extends Algorithm>(
           queue.enqueue(() => processFile(dest, file))
         }
       }
+
       // issue #18
       // In somecase. Like vuepress it will called vite build with `Promise.all`. But it's concurrency. when we record the
       // file fd. It had been changed. So that we should catch the error
       await queue.wait().catch((e: unknown) => e)
       doneResolver.resolve()
+      cleanup()
+
+      if (logger) {
+        const paddingSize = compressedMessages.reduce((acc, cur) => {
+          const full = cur.dest + cur.file
+          return Math.max(acc, full.length)
+        }, 0)
+
+        for (const { dest, file, size } of compressedMessages) {
+          const paddedFile = file.padEnd(paddingSize)
+          logger.info(ansis.dim(dest) + ansis.green(paddedFile) + ansis.bold(ansis.dim(displaySize(size))))
+        }
+      }
+
+      for (const msg of msgs) {
+        console.info(msg)
+      }
     }
   }
 

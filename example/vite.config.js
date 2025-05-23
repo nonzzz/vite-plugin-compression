@@ -5,7 +5,8 @@ export default defineConfig({
   plugins: [
     compression({
       include: [/\.(js)$/, /\.(css)$/],
-      deleteOriginalAssets: true
+      deleteOriginalAssets: true,
+      skipIfLargerOrEqual: false
     }),
     tarball()
   ]
