@@ -6,7 +6,7 @@ jobs:
   run-e2e-test:
     strategy:
       matrix:
-        version: [16, 18]
+        version: [22, 23, 24]
         os: [ubuntu-latest]
     runs-on: ${{ matrix.os }}
     steps:
@@ -19,23 +19,5 @@ jobs:
       - name: install playwright
         run: pnpm playwright install
 
-      - name: test 2.x to 4.x
-        run: pnpm exec vitest e2e/vite[2-4]/*.spec.ts --coverage.enabled=false
-  run-stable-e2e-test:
-    strategy:
-      matrix:
-        version: [18, 20]
-        os: [ubuntu-latest]
-    runs-on: ${{ matrix.os }}
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          node-version: ${{ matrix.version  }}
-      - name: Instanll pnpm
-        run: make install
-
-      - name: install playwright
-        run: pnpm playwright install
-
-      - name: test 5.x
-        run: pnpm exec vitest e2e/vite[5-6]/*.spec.ts --coverage.enabled=false
+      - name: e2e test
+        run: make end-to-end-test

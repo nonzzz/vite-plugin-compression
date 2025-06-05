@@ -1,91 +1,96 @@
-import util from 'util'
-import zlib from 'zlib'
-import type { ZlibOptions } from 'zlib'
-import path from 'path'
 import fs from 'fs'
+import path from 'path'
+import util from 'util'
 import { afterAll, assert, describe, expect, it } from 'vitest'
+import zlib from 'zlib'
+import { compression, defineAlgorithm } from '../src'
 import { readAll } from '../src/shared'
-import { compression } from '../src'
 import { createDisk, getId, mockBuild } from './shared/kit.mjs'
 
-describe('plugin', () => {
-  const { root, destroy, dir } = createDisk('plugin')
+describe('compression plugin', () => {
+  const { root, destroy, dir } = createDisk('compression-plugin')
   afterAll(destroy)
+
   it('include only', async () => {
     const { output } = await mockBuild('normal', root, { plugins: [compression({ include: /\.(js)$/ })] })
-    expect((await readAll(output)).filter(s => s.endsWith('.gz')).length).toBe(1)
+    expect((await readAll(output)).filter((s) => s.endsWith('.gz')).length).toBe(1)
   })
+
   it('exclude only', async () => {
     const { output } = await mockBuild('normal', root, {
       plugins: [compression({ exclude: /\.(html)$/, skipIfLargerOrEqual: false })]
     })
-    expect((await readAll(output)).filter(s => s.endsWith('.gz')).length).toBe(2)
+    expect((await readAll(output)).filter((s) => s.endsWith('.gz')).length).toBe(2)
   })
 
   it('threshold', async () => {
     const { output } = await mockBuild('normal', root, { plugins: [compression({ threshold: 100 })] })
-    expect((await readAll(output)).filter(s => s.endsWith('.gz')).length).toBe(2)
+    expect((await readAll(output)).filter((s) => s.endsWith('.gz')).length).toBe(2)
   })
 
   it('algorithm', async () => {
     const { output } = await mockBuild('normal', root, {
-      plugins: [compression({ algorithm: 'gzip', skipIfLargerOrEqual: false })]
+      plugins: [compression({ algorithms: ['gzip'], skipIfLargerOrEqual: false })]
     })
-    expect((await readAll(output)).filter(s => s.endsWith('.gz')).length).toBe(3)
+    expect((await readAll(output)).filter((s) => s.endsWith('.gz')).length).toBe(3)
   })
+
   it('custom alorithm', async () => {
     const { output } = await mockBuild('normal', root, {
-      plugins: [compression<ZlibOptions>({
-        algorithm(buf, opt) {
-          return util.promisify(zlib.gzip)(buf, opt)
-        },
-        skipIfLargerOrEqual: false,
-        compressionOptions: { level: 9 }
-      })]
-    })
-    expect((await readAll(output)).filter(s => s.endsWith('.gz')).length).toBe(3)
-  })
-  it('brotliCompress', async () => {
-    const { output } = await mockBuild('normal', root, {
       plugins: [compression({
-        algorithm: 'brotliCompress',
+        algorithms: [defineAlgorithm((buf, opt) => {
+          return util.promisify(zlib.gzip)(buf, opt)
+        }, { level: 9 })],
         skipIfLargerOrEqual: false
       })]
     })
-    expect((await readAll(output)).filter(s => s.endsWith('.br')).length).toBe(3)
+    expect((await readAll(output)).filter((s) => s.endsWith('.gz')).length).toBe(3)
+  })
+
+  it('brotliCompress', async () => {
+    const { output } = await mockBuild('normal', root, {
+      plugins: [compression({
+        algorithms: ['brotliCompress'],
+        skipIfLargerOrEqual: false
+      })]
+    })
+    expect((await readAll(output)).filter((s) => s.endsWith('.br')).length).toBe(3)
   })
   it('delete original assets', async () => {
     const { output } = await mockBuild('normal', root, {
       plugins: [compression({
+        algorithms: ['gzip', 'brotliCompress'],
         deleteOriginalAssets: true,
         skipIfLargerOrEqual: false
       })]
     })
-    expect((await readAll(output)).length).toBe(3)
+    expect((await readAll(output)).length).toBe(6)
   })
+
   it('filename', async () => {
     const { output } = await mockBuild('normal', root, {
       plugins: [compression({
         skipIfLargerOrEqual: false,
+        algorithms: ['gzip'],
         filename: 'fake/[base].gz'
       })]
     })
     const result = await readAll(path.join(output, 'fake'))
-    expect(result.filter(s => s.endsWith('.gz')).length).toBe(3)
+    expect(result.filter((s) => s.endsWith('.gz')).length).toBe(3)
   })
 
   it('multiple', async () => {
     const { output } = await mockBuild('normal', root, {
       plugins: [
-        compression({ skipIfLargerOrEqual: false, algorithm: 'gzip', include: /\.(css)$/ }),
-        compression({ skipIfLargerOrEqual: false, include: /\.(css)$/, algorithm: 'brotliCompress' })
+        compression({ skipIfLargerOrEqual: false, include: /\.(css)$/ })
       ]
     })
     const result = await readAll(output)
-    const gzip = result.filter(s => s.endsWith('.gz'))
-    const br = result.filter(s => s.endsWith('.br'))
+    const gzip = result.filter((s) => s.endsWith('.gz'))
+    const br = result.filter((s) => s.endsWith('.br'))
     expect(gzip.length).toBe(br.length)
   })
+
   it('dynamic import source', async () => {
     const { output } = await mockBuild('dynamic', root, {
       plugins: [compression({
@@ -93,7 +98,7 @@ describe('plugin', () => {
         deleteOriginalAssets: true
       })]
     })
-    expect((await readAll(output)).filter(s => s.endsWith('.gz')).length).toBe(4)
+    expect((await readAll(output)).filter((s) => s.endsWith('.gz')).length).toBe(4)
   })
 
   describe('Public assets', () => {
@@ -105,7 +110,7 @@ describe('plugin', () => {
           exclude: /\.(html)$/
         })]
       })
-      expect((await readAll(output)).filter(s => s.endsWith('.gz')).length).toBe(3)
+      expect((await readAll(output)).filter((s) => s.endsWith('.gz')).length).toBe(3)
     })
     it('nesting', async () => {
       const { output } = await mockBuild('public-assets-nest', root, {
@@ -116,7 +121,7 @@ describe('plugin', () => {
         })]
       })
       const result = await readAll(output)
-      expect(result.filter(s => s.endsWith('.gz')).length).toBe(6)
+      expect(result.filter((s) => s.endsWith('.gz')).length).toBe(6)
     })
 
     it('threshold', async () => {
@@ -129,7 +134,7 @@ describe('plugin', () => {
         })]
       })
       const result = await readAll(output)
-      expect(result.filter(s => s.endsWith('.gz')).length).toBe(0)
+      expect(result.filter((s) => s.endsWith('.gz')).length).toBe(0)
     })
   })
 
@@ -137,12 +142,13 @@ describe('plugin', () => {
     const { output } = await mockBuild('dynamic', root, {
       plugins: [compression({
         skipIfLargerOrEqual: false,
+        algorithms: ['gzip'],
         filename: '[path][base]',
         deleteOriginalAssets: true
       })]
     })
     const result = await readAll(output)
-    const cssFiles = result.filter(v => v.endsWith('.css'))
+    const cssFiles = result.filter((v) => v.endsWith('.css'))
     assert(cssFiles.length === 1)
     expect(zlib.unzipSync(fs.readFileSync(cssFiles[0])).toString()).toBe(
       '.pr{padding-right:30px}.pl{padding-left:30px}.mt{margin-top:30px}\n'

@@ -9,14 +9,12 @@ import { compress, createTarBall, defaultCompressionOptions, ensureAlgorithm } f
 import type {
   Algorithm,
   AlgorithmFunction,
+  AlgorithmToZlib,
+  DefineAlgorithmResult,
   GenerateBundle,
-  Pretty,
   UserCompressionOptions,
-  ViteCompressionPluginConfig,
-  ViteCompressionPluginConfigAlgorithm,
-  ViteCompressionPluginConfigFunction,
-  ViteTarballPluginOptions,
-  ViteWithoutCompressionPluginConfigFunction
+  ViteCompressionPluginOption,
+  ViteTarballPluginOptions
 } from './interface'
 import { captureViteLogger, len, noop, readAll, replaceFileName, slash, stringToBytes } from './shared'
 import { createConcurrentQueue } from './task'
@@ -33,12 +31,6 @@ const MAX_CONCURRENT = (() => {
 interface CompressionPluginAPI {
   staticOutputs: Set<string>
   done: Promise<void>
-}
-
-interface InternalZlibOptions<T> {
-  algorithm: AlgorithmFunction<T>
-  filename: string | ((id: string) => string)
-  options: UserCompressionOptions
 }
 
 function handleOutputOption(conf: ResolvedConfig) {
@@ -79,7 +71,7 @@ async function handleStaticFiles(config: ResolvedConfig, callback: (file: string
 }
 
 function tarball(opts: ViteTarballPluginOptions = {}): Plugin {
-  const { dest: userDest, gz = false } = opts
+  const { dest: userDest } = opts
   const statics: string[] = []
   const outputs: string[] = []
   let dests: string[] = []
@@ -103,7 +95,7 @@ function tarball(opts: ViteTarballPluginOptions = {}): Plugin {
         })
       }
       // create dest dir
-      tarball.setup({ dests, root, gz })
+      tarball.setup({ dests, root })
     },
     writeBundle(_, bundles) {
       for (const fileName in bundles) {
@@ -151,31 +143,28 @@ function hijackGenerateBundle(plugin: Plugin, afterHook: GenerateBundle) {
   }
 }
 
-function compression(): Plugin
-function compression<
-  T extends UserCompressionOptions | undefined,
-  A extends Algorithm | AlgorithmFunction<T> | AlgorithmFunction<undefined>
->(
-  opts: A extends Algorithm ? Pretty<ViteCompressionPluginConfigAlgorithm<A>>
-    : ViteCompressionPluginConfigFunction<T, AlgorithmFunction<T>>
-): Plugin
-function compression<T extends UserCompressionOptions>(
-  opts: ViteCompressionPluginConfigFunction<T, AlgorithmFunction<T>>
-): Plugin
-function compression(opts: ViteWithoutCompressionPluginConfigFunction): Plugin
-function compression<T extends UserCompressionOptions, A extends Algorithm>(
-  opts: ViteCompressionPluginConfig<T, A> = {}
+function compression(
+  opts: ViteCompressionPluginOption = {}
 ): Plugin {
   const {
     include = /\.(html|xml|css|json|js|mjs|svg|yaml|yml|toml)$/,
     exclude,
     threshold = 0,
-    algorithm: userAlgorithm = 'gzip',
+    algorithms: userAlgorithms = ['gzip', 'brotliCompress'],
     filename,
-    compressionOptions,
     deleteOriginalAssets = false,
     skipIfLargerOrEqual = true
   } = opts
+
+  const algorithms: DefineAlgorithmResult[] = []
+
+  userAlgorithms.forEach((algorithm) => {
+    if (typeof algorithm === 'string') {
+      algorithms.push(defineAlgorithm(algorithm))
+    } else if (typeof algorithm === 'object' && Array.isArray(algorithm)) {
+      algorithms.push(algorithm)
+    }
+  })
 
   const filter = createFilter(include, exclude)
 
@@ -191,13 +180,11 @@ function compression<T extends UserCompressionOptions, A extends Algorithm>(
 
   let root: string = process.cwd()
 
-  const zlib: InternalZlibOptions<T> = {
-    algorithm: typeof userAlgorithm === 'string' ? ensureAlgorithm(userAlgorithm).algorithm : userAlgorithm,
-    options: typeof userAlgorithm === 'function'
-      ? compressionOptions
-      : Object.assign({}, defaultCompressionOptions[userAlgorithm], compressionOptions),
-    filename: filename ?? (userAlgorithm === 'brotliCompress' ? '[path][base].br' : '[path][base].gz')
-  }
+  const zlibs = algorithms.map(([algorithm, options]) => ({
+    algorithm: typeof algorithm === 'string' ? ensureAlgorithm(algorithm).algorithm : algorithm,
+    options,
+    filename: filename ?? (algorithm === 'brotliCompress' ? '[path][base].br' : '[path][base].gz')
+  }))
 
   const queue = createConcurrentQueue(MAX_CONCURRENT)
 
@@ -209,13 +196,19 @@ function compression<T extends UserCompressionOptions, A extends Algorithm>(
       const size = len(source)
       if (size < threshold) { continue }
       queue.enqueue(async () => {
-        const name = replaceFileName(fileName, zlib.filename)
-        const compressed = await compress(source, zlib.algorithm, zlib.options)
-        if (skipIfLargerOrEqual && len(compressed) >= size) { return }
-        // #issue 30 31
-        // https://rollupjs.org/plugin-development/#this-emitfile
-        if (deleteOriginalAssets || fileName === name) { Reflect.deleteProperty(bundles, fileName) }
-        this.emitFile({ type: 'asset', fileName: name, source: compressed })
+        for (let i = 0; i < zlibs.length; i++) {
+          const z = zlibs[i]
+          const flag = i === zlibs.length - 1
+          const name = replaceFileName(fileName, z.filename, { options: z.options, algorithm: z.algorithm })
+          const compressed = await compress(source, z.algorithm, z.options)
+          if (skipIfLargerOrEqual && len(compressed) >= size) { return }
+          // #issue 30 31
+          // https://rollupjs.org/plugin-development/#this-emitfile
+          if (flag) {
+            if (deleteOriginalAssets || fileName === name) { Reflect.deleteProperty(bundles, fileName) }
+          }
+          this.emitFile({ type: 'asset', fileName: name, source: compressed })
+        }
       })
     }
     await queue.wait().catch(this.error)
@@ -272,21 +265,28 @@ function compression<T extends UserCompressionOptions, A extends Algorithm>(
 
       const compressAndHandleFile = async (filePath: string, file: string, dest: string) => {
         const buf = await fsp.readFile(filePath)
-        const compressed = await compress(buf, zlib.algorithm, zlib.options)
-        if (skipIfLargerOrEqual && len(compressed) >= len(buf)) {
-          if (!pluginContext.staticOutputs.has(file)) { pluginContext.staticOutputs.add(file) }
-          return
-        }
 
-        const fileName = replaceFileName(file, zlib.filename)
-        if (!pluginContext.staticOutputs.has(fileName)) { pluginContext.staticOutputs.add(fileName) }
+        for (let i = 0; i < zlibs.length; i++) {
+          const z = zlibs[i]
+          const flag = i === zlibs.length - 1
+          const compressed = await compress(buf, z.algorithm, z.options)
+          if (skipIfLargerOrEqual && len(compressed) >= len(buf)) {
+            if (!pluginContext.staticOutputs.has(file)) { pluginContext.staticOutputs.add(file) }
+            return
+          }
 
-        const outputPath = path.join(dest, fileName)
-        if (deleteOriginalAssets && outputPath !== filePath) {
-          await fsp.rm(filePath, { recursive: true, force: true })
+          const fileName = replaceFileName(file, z.filename, { options: z.options, algorithm: z.algorithm })
+          if (!pluginContext.staticOutputs.has(fileName)) { pluginContext.staticOutputs.add(fileName) }
+
+          const outputPath = path.join(dest, fileName)
+          if (flag) {
+            if (deleteOriginalAssets && outputPath !== filePath) {
+              await fsp.rm(filePath, { recursive: true, force: true })
+            }
+          }
+          await fsp.writeFile(outputPath, compressed)
+          compressedMessages.push({ dest: path.relative(root, dest) + '/', file: fileName, size: len(compressed) })
         }
-        await fsp.writeFile(outputPath, compressed)
-        compressedMessages.push({ dest: path.relative(root, dest) + '/', file: fileName, size: len(compressed) })
       }
 
       const processFile = async (dest: string, file: string) => {
@@ -343,18 +343,28 @@ function compression<T extends UserCompressionOptions, A extends Algorithm>(
 compression.getPluginAPI = (plugins: readonly Plugin[]): CompressionPluginAPI | undefined =>
   (plugins.find((p) => p.name === VITE_COMPRESSION_PLUGIN) as Plugin<CompressionPluginAPI>)?.api
 
-function defineCompressionOption<T = never, A extends Algorithm = never>(option: ViteCompressionPluginConfig<T, A>) {
-  return option
+export function defineAlgorithm<T extends Algorithm | UserCompressionOptions | AlgorithmFunction<UserCompressionOptions>>(
+  algorithm: T extends Algorithm | AlgorithmFunction<UserCompressionOptions> ? T : AlgorithmFunction<Exclude<T, string>>,
+  options?: T extends Algorithm ? AlgorithmToZlib[T] : T extends AlgorithmFunction<UserCompressionOptions> ? UserCompressionOptions : T
+): DefineAlgorithmResult<T extends Algorithm | AlgorithmFunction<UserCompressionOptions> ? UserCompressionOptions : T> {
+  if (typeof algorithm === 'string') {
+    if (algorithm in defaultCompressionOptions) {
+      // @ts-expect-error no need to check
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+      const opts = { ...defaultCompressionOptions[algorithm] }
+      if (options) {
+        Object.assign(opts, options)
+      }
+      return [algorithm, opts]
+    }
+    throw new Error(`[vite-plugin-compression] Unsupported algorithm: ${algorithm}`)
+  }
+  // @ts-expect-error no need to check
+  return [algorithm, options || {}]
 }
 
-export { compression, defineCompressionOption, tarball }
+export { compression, tarball }
 
 export default compression
 
-export type {
-  Algorithm,
-  CompressionOptions,
-  ViteCompressionPluginConfig,
-  ViteCompressionPluginOption,
-  ViteTarballPluginOptions
-} from './interface'
+export type { Algorithm, CompressionOptions, ViteCompressionPluginOption, ViteTarballPluginOptions } from './interface'

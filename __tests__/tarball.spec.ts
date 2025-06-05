@@ -1,8 +1,8 @@
 import fs from 'fs'
-import zlib from 'zlib'
-import { afterAll, assert, describe, expect, it } from 'vitest'
 import { createExtract } from 'tar-mini'
-import { compression, tarball } from '../src'
+import { afterAll, assert, describe, expect, it } from 'vitest'
+import zlib from 'zlib'
+import { tarball } from '../src'
 import { createDisk, mockBuild } from './shared/kit.mjs'
 
 function extract(p: string, gz = false): Promise<Record<string, Buffer>> {
@@ -32,28 +32,6 @@ describe('tarball', () => {
     assert(typeof bundle === 'object' && 'output' in bundle)
     for (const chunk of bundle.output) {
       expect(extracted[chunk.fileName]).toStrictEqual(Buffer.from(chunk.type === 'asset' ? chunk.source : chunk.code))
-    }
-  })
-
-  it('tar archive after compress', async () => {
-    const { output, bundle } = await mockBuild('public-assets-nest', root, { plugins: [compression(), tarball()] })
-    const { output: ouput2 } = await mockBuild('public-assets-nest', root, {
-      plugins: [compression(), tarball({ gz: true })]
-    })
-    const extracted1 = await extract(output + '.tar')
-    const extracted2 = await extract(ouput2 + '.tar.gz', true)
-    assert(Object.keys(extracted1).length === Object.keys(extracted2).length)
-    for (const filename in extracted1) {
-      assert(Reflect.has(extracted2, filename))
-      expect(extracted1[filename]).toStrictEqual(extracted2[filename])
-    }
-    assert(typeof bundle === 'object' && 'output' in bundle)
-    for (const chunk of bundle.output) {
-      if (chunk.fileName in extracted2) {
-        expect(extracted2[chunk.fileName]).toStrictEqual(
-          Buffer.from(chunk.type === 'asset' ? chunk.source : chunk.code)
-        )
-      }
     }
   })
 })

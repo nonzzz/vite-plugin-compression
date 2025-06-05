@@ -19,15 +19,20 @@ export type Pretty<T> =
   }
   & NonNullable<unknown>
 
+export interface FileNameFunctionMetadata {
+  // eslint-disable-next-line no-use-before-define
+  algorithm: Algorithm | AlgorithmFunction<UserCompressionOptions>
+  options: UserCompressionOptions
+}
 interface BaseCompressionPluginOptions {
   include?: FilterPattern
   exclude?: FilterPattern
   threshold?: number
-  filename?: string | ((id: string) => string)
+  filename?: string | ((id: string, metadata: FileNameFunctionMetadata) => string)
   deleteOriginalAssets?: boolean
   skipIfLargerOrEqual?: boolean
 }
-interface AlgorithmToZlib {
+export interface AlgorithmToZlib {
   gzip: ZlibOptions
   brotliCompress: BrotliOptions
   deflate: ZlibOptions
@@ -36,37 +41,25 @@ interface AlgorithmToZlib {
 
 export type AlgorithmFunction<T extends UserCompressionOptions> = (buf: InputType, options: T) => Promise<Buffer>
 
-type InternalCompressionPluginOptionsFunction<T, A extends AlgorithmFunction<T>> = {
-  algorithm?: A,
-  compressionOptions: T
-}
-type InternalWithoutCompressionPluginOptionsFunction = {
-  algorithm?: AlgorithmFunction<undefined>
-}
-type InternalCompressionPluginOptionsAlgorithm<A extends Algorithm> = {
-  algorithm?: A,
-  compressionOptions?: Pretty<AlgorithmToZlib[A]>
-}
+export type DefineAlgorithmResult<T extends UserCompressionOptions = UserCompressionOptions> =
+  | readonly [
+    'gzip' | 'deflate' | 'deflateRaw',
+    ZlibOptions
+  ]
+  | readonly [
+    'brotliCompress',
+    BrotliOptions
+  ]
+  | readonly [
+    AlgorithmFunction<T>,
+    T
+  ]
 
-export type ViteCompressionPluginConfigFunction<T extends UserCompressionOptions, A extends AlgorithmFunction<T>> =
-  & BaseCompressionPluginOptions
-  & InternalCompressionPluginOptionsFunction<T, A>
-export type ViteWithoutCompressionPluginConfigFunction = Pretty<
-  & BaseCompressionPluginOptions
-  & InternalWithoutCompressionPluginOptionsFunction
->
-export type ViteCompressionPluginConfigAlgorithm<A extends Algorithm> =
-  & BaseCompressionPluginOptions
-  & InternalCompressionPluginOptionsAlgorithm<A>
-export type ViteCompressionPluginConfig<T, A extends Algorithm> =
-  | ViteCompressionPluginConfigFunction<T, AlgorithmFunction<T>>
-  | ViteCompressionPluginConfigAlgorithm<A>
+export type Algorithms = (Algorithm | DefineAlgorithmResult)[]
 
-export type ViteCompressionPluginOption<A extends Algorithm | UserCompressionOptions | undefined = undefined> = A extends undefined
-  ? Pretty<ViteWithoutCompressionPluginConfigFunction>
-  : A extends Algorithm ? Pretty<ViteCompressionPluginConfigAlgorithm<A>>
-  : A extends UserCompressionOptions ? Pretty<ViteCompressionPluginConfigFunction<A, AlgorithmFunction<A>>>
-  : never
+export interface ViteCompressionPluginOption extends BaseCompressionPluginOptions {
+  algorithms?: Algorithms
+}
 
 export type GenerateBundle = HookHandler<Plugin['generateBundle']>
 
@@ -74,5 +67,4 @@ export type WriteBundle = HookHandler<Plugin['writeBundle']>
 
 export interface ViteTarballPluginOptions {
   dest?: string
-  gz?: boolean
 }

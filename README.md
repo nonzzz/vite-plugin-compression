@@ -16,45 +16,217 @@ $ npm install vite-plugin-compression2 -D
 
 ## Usage
 
+### Basic Usage
+
 ```js
 import { defineConfig } from 'vite'
-
 import { compression } from 'vite-plugin-compression2'
 
 export default defineConfig({
   plugins: [
-    // ...your plugin
+    // ...your plugins
     compression()
-    // If you want to create a tarball archive you can import tarball plugin from this package and use
-    // after compression.
+  ]
+})
+```
+
+### Multiple Algorithms
+
+```js
+import { compression, defineAlgorithm } from 'vite-plugin-compression2'
+
+export default defineConfig({
+  plugins: [
+    compression({
+      algorithms: [
+        'gzip',
+        'brotliCompress',
+        defineAlgorithm('deflate', { level: 9 })
+      ]
+    })
+  ]
+})
+```
+
+### Custom Algorithm Function
+
+```js
+import { compression, defineAlgorithm } from 'vite-plugin-compression2'
+
+export default defineConfig({
+  plugins: [
+    compression({
+      algorithms: [
+        defineAlgorithm(
+          async (buffer, options) => {
+            // Your custom compression logic
+            return compressedBuffer
+          },
+          { customOption: true }
+        )
+      ]
+    })
+  ]
+})
+```
+
+### With Tarball
+
+```js
+import { compression, tarball } from 'vite-plugin-compression2'
+
+export default defineConfig({
+  plugins: [
+    compression(),
+    // If you want to create a tarball archive, use tarball plugin after compression
+    tarball({ dest: './dist/archive' })
   ]
 })
 ```
 
 ## Options
 
+### Compression Plugin Options
+
 | params                 | type                                          | default                                                      | description                                                                                |
 | ---------------------- | --------------------------------------------- | ------------------------------------------------------------ | ------------------------------------------------------------------------------------------ |
 | `include`              | `string \| RegExp \| Array<string \| RegExp>` | `/\.(html\|xml\|css\|json\|js\|mjs\|svg\|yaml\|yml\|toml)$/` | Include all assets matching any of these conditions.                                       |
 | `exclude`              | `string \| RegExp \| Array<string \| RegExp>` | `-`                                                          | Exclude all assets matching any of these conditions.                                       |
 | `threshold`            | `number`                                      | `0`                                                          | Only assets bigger than this size are processed (in bytes)                                 |
-| `algorithm`            | `string\| function`                           | `gzip`                                                       | The compression algorithm                                                                  |
-| `compressionOptions`   | `Record<string,any>`                          | `{}`                                                         | Compression options for `algorithm`(details see `zlib module`)                             |
+| `algorithms`           | `Algorithms`                                  | `['gzip', 'brotliCompress']`                                 | Array of compression algorithms or defineAlgorithm results                                 |
+| `filename`             | `string \| function`                          | `[path][base].gz` or `[path][base].br`                       | The target asset filename pattern                                                          |
 | `deleteOriginalAssets` | `boolean`                                     | `false`                                                      | Whether to delete the original assets or not                                               |
 | `skipIfLargerOrEqual`  | `boolean`                                     | `true`                                                       | Whether to skip the compression if the result is larger than or equal to the original file |
-| `filename`             | `string`                                      | `[path][base].gz`                                            | The target asset filename                                                                  |
+
+### Tarball Plugin Options
+
+| params | type     | default | description                       |
+| ------ | -------- | ------- | --------------------------------- |
+| `dest` | `string` | `-`     | Destination directory for tarball |
+
+## API
+
+### `defineAlgorithm(algorithm, options?)`
+
+Define a compression algorithm with options.
+
+**Parameters:**
+
+- `algorithm`: Algorithm name (`'gzip' | 'brotliCompress' | 'deflate' | 'deflateRaw'`) or custom function
+- `options`: Compression options for the algorithm
+
+**Returns:** `[algorithm, options]` tuple
+
+**Examples:**
+
+```js
+// Built-in algorithm with default options
+defineAlgorithm('gzip')
+
+// Built-in algorithm with custom options
+defineAlgorithm('gzip', { level: 9 })
+
+// Brotli with custom quality
+defineAlgorithm('brotliCompress', {
+  params: {
+    [require('zlib').constants.BROTLI_PARAM_QUALITY]: 11
+  }
+})
+
+// Custom algorithm function
+defineAlgorithm(
+  async (buffer, options) => {
+    // Your compression implementation
+    return compressedBuffer
+  },
+  { customOption: 'value' }
+)
+```
+
+### Supported Algorithms
+
+- **gzip**: Standard gzip compression
+- **brotliCompress**: Brotli compression (better compression ratio)
+- **deflate**: Deflate compression
+- **deflateRaw**: Raw deflate compression
+- **Custom Function**: Your own compression algorithm
+
+### Algorithm Types
+
+The `algorithms` option accepts:
+
+```typescript
+type Algorithms =
+  | Algorithm[] // ['gzip', 'brotliCompress']
+  | DefineAlgorithmResult[] // [defineAlgorithm('gzip'), ...]
+  | (Algorithm | DefineAlgorithmResult)[] // Mixed array
+```
+
+## Migration
+
+If you're upgrading from v1.x, please check the [Migration Guide](./MIGRATION-GUIDE.md).
 
 ## Q & A
 
 [FAQ](./Q&A.md)
 
+### Examples
+
+#### Basic Gzip Only
+
+```js
+compression({
+  algorithms: ['gzip']
+})
+```
+
+#### Multiple Algorithms with Custom Options
+
+```js
+compression({
+  algorithms: [
+    defineAlgorithm('gzip', { level: 9 }),
+    defineAlgorithm('brotliCompress', {
+      params: {
+        [require('zlib').constants.BROTLI_PARAM_QUALITY]: 11
+      }
+    })
+  ]
+})
+```
+
+#### Custom Filename Pattern
+
+```js
+compression({
+  algorithms: ['gzip'],
+  filename: '[path][base].[hash].gz'
+})
+```
+
+#### Delete Original Files
+
+```js
+compression({
+  algorithms: ['gzip'],
+  deleteOriginalAssets: true
+})
+```
+
+#### Size Threshold
+
+```js
+compression({
+  algorithms: ['gzip'],
+  threshold: 1000 // Only compress files larger than 1KB
+})
+```
+
 ### Others
 
-- If you want to analysis your bundle assets. Maybe you can try [vite-bundle-analyzer](https://github.com/nonzzz/vite-bundle-analyzer)
-
+- If you want to analyze your bundle assets, try [vite-bundle-analyzer](https://github.com/nonzzz/vite-bundle-analyzer)
 - `tarball` option `dest` means to generate a tarball somewhere
-
-- `tarball` is based on the `ustar`. It should be compatible with all popular tar distributions out there (gnutar, bsdtar etc)
+- `tarball` is based on the `ustar` format. It should be compatible with all popular tar distributions (gnutar, bsdtar etc)
 
 ### Sponsors
 

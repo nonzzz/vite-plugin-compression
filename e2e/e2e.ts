@@ -6,13 +6,14 @@ import sirv from 'sirv'
 import { expect, test } from 'vitest'
 import { compression } from '../src'
 
+import type { RolldownViteInstance } from './rolldown-vite/interface'
 import type { Vite2Instance } from './vite2/interface'
 import type { Vite3Instance } from './vite3/interface'
 import type { Vite4Instance } from './vite4/interface'
 import type { Vite5Instance } from './vite5/interface'
 import type { Vite6Instance } from './vite6/interface'
 
-type ViteInstance = Vite2Instance | Vite3Instance | Vite4Instance | Vite5Instance | Vite6Instance
+type ViteInstance = Vite2Instance | Vite3Instance | Vite4Instance | Vite5Instance | Vite6Instance | RolldownViteInstance
 
 type Server = http.Server & {
   ip: string
