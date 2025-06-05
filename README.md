@@ -164,7 +164,7 @@ type Algorithms =
 
 ## Migration
 
-If you're upgrading from v1.x, please check the [Migration Guide](./MIGRATION_GUIDE.md).
+If you're upgrading from v1.x, please check the [Migration Guide](./MIGRATION-GUIDE.md).
 
 ## Q & A
 

@@ -76,7 +76,7 @@ export default defineConfig({
   - `defineAlgorithm()` helper for better type safety
   - Custom algorithm function support
   - Better TypeScript types
-  - See [Migration Guide](./MIGRATION_GUIDE.md) for details
+  - See [Migration Guide](./MIGRATION-GUIDE.md) for details
 
 > What algorithms are supported?
 
