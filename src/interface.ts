@@ -61,5 +61,4 @@ export type WriteBundle = HookHandler<Plugin['writeBundle']>
 
 export interface ViteTarballPluginOptions {
   dest?: string
-  gz?: boolean
 }

@@ -71,7 +71,7 @@ async function handleStaticFiles(config: ResolvedConfig, callback: (file: string
 }
 
 function tarball(opts: ViteTarballPluginOptions = {}): Plugin {
-  const { dest: userDest, gz = false } = opts
+  const { dest: userDest } = opts
   const statics: string[] = []
   const outputs: string[] = []
   let dests: string[] = []
@@ -95,7 +95,7 @@ function tarball(opts: ViteTarballPluginOptions = {}): Plugin {
         })
       }
       // create dest dir
-      tarball.setup({ dests, root, gz })
+      tarball.setup({ dests, root })
     },
     writeBundle(_, bundles) {
       for (const fileName in bundles) {
