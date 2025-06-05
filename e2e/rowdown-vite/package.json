@@ -1,0 +1,6 @@
+{
+  "name": "vite-plugin-compression2-e2e-rodown-vite",
+  "dependencies": {
+    "vite": "npm:rolldown-vite"
+  }
+}
