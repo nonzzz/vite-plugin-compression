@@ -343,10 +343,10 @@ function compression(
 compression.getPluginAPI = (plugins: readonly Plugin[]): CompressionPluginAPI | undefined =>
   (plugins.find((p) => p.name === VITE_COMPRESSION_PLUGIN) as Plugin<CompressionPluginAPI>)?.api
 
-export function defineAlgorithm<T extends Algorithm | AlgorithmFunction<UserCompressionOptions>>(
-  algorithm: T,
-  options?: T extends Algorithm ? AlgorithmToZlib[T] : T extends AlgorithmFunction<infer O> ? O : never
-): DefineAlgorithmResult<T extends Algorithm ? AlgorithmToZlib[T] : T extends AlgorithmFunction<infer O> ? O : never> {
+export function defineAlgorithm<T extends Algorithm | UserCompressionOptions | AlgorithmFunction<UserCompressionOptions>>(
+  algorithm: T extends Algorithm | AlgorithmFunction<UserCompressionOptions> ? T : AlgorithmFunction<Exclude<T, string>>,
+  options?: T extends Algorithm ? AlgorithmToZlib[T] : T extends AlgorithmFunction<UserCompressionOptions> ? UserCompressionOptions : T
+): DefineAlgorithmResult<T extends Algorithm | AlgorithmFunction<UserCompressionOptions> ? UserCompressionOptions : T> {
   if (typeof algorithm === 'string') {
     if (algorithm in defaultCompressionOptions) {
       // @ts-expect-error no need to check

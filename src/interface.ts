@@ -41,15 +41,21 @@ export interface AlgorithmToZlib {
 
 export type AlgorithmFunction<T extends UserCompressionOptions> = (buf: InputType, options: T) => Promise<Buffer>
 
-export type DefineAlgorithmResult<T = unknown> = readonly [
-  Algorithm | AlgorithmFunction<T>,
-  T extends Algorithm ? AlgorithmToZlib[T] : T
-]
+export type DefineAlgorithmResult<T extends UserCompressionOptions = UserCompressionOptions> =
+  | readonly [
+    'gzip' | 'deflate' | 'deflateRaw',
+    ZlibOptions
+  ]
+  | readonly [
+    'brotliCompress',
+    BrotliOptions
+  ]
+  | readonly [
+    AlgorithmFunction<T>,
+    T
+  ]
 
-export type Algorithms =
-  | Algorithm[]
-  | DefineAlgorithmResult[]
-  | (Algorithm | DefineAlgorithmResult)[]
+export type Algorithms = (Algorithm | DefineAlgorithmResult)[]
 
 export interface ViteCompressionPluginOption extends BaseCompressionPluginOptions {
   algorithms?: Algorithms
