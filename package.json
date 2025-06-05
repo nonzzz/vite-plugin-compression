@@ -1,6 +1,6 @@
 {
   "name": "vite-plugin-compression2",
-  "version": "2.0.0",
+  "version": "2.0.1",
   "packageManager": "pnpm@9.4.0",
   "description": "a fast vite compression plugin",
   "main": "dist/index.js",
@@ -37,6 +37,9 @@
   },
   "homepage": "https://github.com/nonzzz/vite-plugin-compression#readme",
   "devDependencies": {
+    "@rollup/plugin-commonjs": "^28.0.3",
+    "@rollup/plugin-esm-shim": "^0.1.8",
+    "@rollup/plugin-node-resolve": "^16.0.1",
     "@swc/core": "^1.11.31",
     "@types/node": "^20.14.9",
     "@vitest/coverage-v8": "^2.0.3",
@@ -58,9 +61,6 @@
   "dependencies": {
     "@rollup/pluginutils": "^5.1.0",
     "tar-mini": "^0.2.0"
-  },
-  "peerDependencies": {
-    "vite": "^2.0.0||^3.0.0||^4.0.0||^5.0.0 ||^6.0.0"
   },
   "resolutions": {
     "is-core-module": "npm:@nolyfill/is-core-module@^1",

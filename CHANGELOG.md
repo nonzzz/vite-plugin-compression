@@ -1,3 +1,7 @@
+## 2.0.1
+
+- Fix build script.
+
 ## 2.0.0
 
 ### Major Changes
@@ -11,7 +15,6 @@
 - Support for multiple compression algorithms in a single plugin instance
 - New `defineAlgorithm()` helper for better type-safety and options control
 - Custom compression algorithm support via function callbacks
-
 
 ### Improvements
 
