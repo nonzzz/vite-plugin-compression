@@ -11,6 +11,16 @@
     "README.md",
     "LICENSE"
   ],
+  "exports": {
+    ".": {
+      "types": {
+        "import": "./dist/index.d.mts",
+        "require": "./dist/index.d.ts"
+      },
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.js"
+    }
+  },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/nonzzz/vite-plugin-compression.git"
@@ -26,21 +36,24 @@
     "url": "https://github.com/nonzzz/vite-plugin-compression/issues"
   },
   "homepage": "https://github.com/nonzzz/vite-plugin-compression#readme",
-  "exports": "./src/index.ts",
   "devDependencies": {
+    "@swc/core": "^1.11.31",
     "@types/node": "^20.14.9",
     "@vitest/coverage-v8": "^2.0.3",
+    "ansis": "^4.0.0",
     "dprint": "^0.46.3",
     "eslint": "^9.16.0",
     "eslint-config-kagura": "^3.0.1",
-    "jiek": "^1.0.14",
     "memdisk": "^1.2.1",
     "playwright": "^1.32.3",
+    "rollup": "^4.41.1",
+    "rollup-plugin-dts": "^6.2.1",
+    "rollup-plugin-swc3": "^0.12.1",
     "sirv": "^2.0.3",
     "typescript": "^5.3.3",
-    "vitest": "^2.1.2",
     "vite": "^6.3.5",
-    "ansis": "^4.0.0"
+    "vite-bundle-analyzer": "^0.22.0",
+    "vitest": "^2.1.2"
   },
   "dependencies": {
     "@rollup/pluginutils": "^5.1.0",
