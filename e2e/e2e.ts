@@ -6,7 +6,7 @@ import sirv from 'sirv'
 import { expect, test } from 'vitest'
 import { compression } from '../src'
 
-import type { RolldownViteInstance } from './rowdown-vite/interface'
+import type { RolldownViteInstance } from './rolldown-vite/interface'
 import type { Vite2Instance } from './vite2/interface'
 import type { Vite3Instance } from './vite3/interface'
 import type { Vite4Instance } from './vite4/interface'
