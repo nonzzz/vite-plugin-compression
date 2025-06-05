@@ -26,7 +26,7 @@
 **Before (v1.x)**
 
 ```js
-import { compression } from 'vite-plugin-compression'
+import { compression } from 'vite-plugin-compression2'
 
 compression({
   algorithm: 'gzip',
@@ -104,15 +104,14 @@ compression({
 #### Step 1: Update Package
 
 ```bash
-npm uninstall vite-plugin-compression
-npm install vite-plugin-compression2 -D
+npm install vite-plugin-compression2@latest -D
 ```
 
 #### Step 2: Update Import
 
 ```js
 // Old
-import { compression } from 'vite-plugin-compression'
+import { compression } from 'vite-plugin-compression2'
 
 // New
 import { compression, defineAlgorithm } from 'vite-plugin-compression2'
@@ -315,5 +314,5 @@ compression({
 ### Need Help?
 
 - 📖 Check the [Q&A Guide](./Q&A.md)
-- 🐛 Report issues on [GitHub Issues](https://github.com/nonzzz/vite-plugin-compression/issues)
+- 🐛 Report issues on [GitHub Issues](https://github.com/nonzzz/vite-plugin-compression2/issues)
 - 💡 See more examples in the [README](./README.md)

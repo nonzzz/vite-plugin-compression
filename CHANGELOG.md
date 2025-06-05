@@ -1,3 +1,27 @@
+## 2.0.0
+
+### Major Changes
+
+- Changed `algorithm` option to `algorithms` (array support)
+- Removed `compressionOptions` in favor of new `defineAlgorithm()` helper
+- Enhanced API for better developer experience
+
+### New Features
+
+- Support for multiple compression algorithms in a single plugin instance
+- New `defineAlgorithm()` helper for better type-safety and options control
+- Custom compression algorithm support via function callbacks
+
+
+### Improvements
+
+- Better TypeScript type definitions
+- Simplified configuration for common use cases
+- Added comprehensive migration guide
+- Added Q&A document for common usage patterns
+
+See the [Migration Guide](./MIGRATION-GUIDE.md) for detailed upgrade instructions.
+
 ## 1.4.0
 
 Added build log output for compression result.
