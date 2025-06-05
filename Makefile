@@ -10,8 +10,6 @@ build:
 	@echo "Building..."
 	-rm -rf dist
 	$(ROLLUP)
-	mv 'dist/index.min.js' 'dist/index.js'
-	mv 'dist/index.min.mjs' 'dist/index.mjs'
 
 bootstrap: install build
 

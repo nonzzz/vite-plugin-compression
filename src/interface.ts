@@ -19,15 +19,20 @@ export type Pretty<T> =
   }
   & NonNullable<unknown>
 
+export interface FileNameFunctionMetadata {
+  // eslint-disable-next-line no-use-before-define
+  algorithm: Algorithm | AlgorithmFunction<UserCompressionOptions>
+  options: UserCompressionOptions
+}
 interface BaseCompressionPluginOptions {
   include?: FilterPattern
   exclude?: FilterPattern
   threshold?: number
-  filename?: string | ((id: string) => string)
+  filename?: string | ((id: string, metadata: FileNameFunctionMetadata) => string)
   deleteOriginalAssets?: boolean
   skipIfLargerOrEqual?: boolean
 }
-interface AlgorithmToZlib {
+export interface AlgorithmToZlib {
   gzip: ZlibOptions
   brotliCompress: BrotliOptions
   deflate: ZlibOptions
@@ -67,6 +72,20 @@ export type ViteCompressionPluginOption<A extends Algorithm | UserCompressionOpt
   : A extends Algorithm ? Pretty<ViteCompressionPluginConfigAlgorithm<A>>
   : A extends UserCompressionOptions ? Pretty<ViteCompressionPluginConfigFunction<A, AlgorithmFunction<A>>>
   : never
+
+export type DefineAlgorithmResult<T = unknown> = readonly [
+  Algorithm | AlgorithmFunction<T>,
+  T extends Algorithm ? AlgorithmToZlib[T] : T
+]
+
+export type Algorithms =
+  | Algorithm[]
+  | DefineAlgorithmResult[]
+  | (Algorithm | DefineAlgorithmResult)[]
+
+export interface MajorViteCompressionPluginOptions extends BaseCompressionPluginOptions {
+  algorithms?: Algorithms
+}
 
 export type GenerateBundle = HookHandler<Plugin['generateBundle']>
 

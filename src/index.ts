@@ -9,7 +9,11 @@ import { compress, createTarBall, defaultCompressionOptions, ensureAlgorithm } f
 import type {
   Algorithm,
   AlgorithmFunction,
+  AlgorithmToZlib,
+  DefineAlgorithmResult,
+  FileNameFunctionMetadata,
   GenerateBundle,
+  MajorViteCompressionPluginOptions,
   Pretty,
   UserCompressionOptions,
   ViteCompressionPluginConfig,
@@ -37,7 +41,7 @@ interface CompressionPluginAPI {
 
 interface InternalZlibOptions<T> {
   algorithm: AlgorithmFunction<T>
-  filename: string | ((id: string) => string)
+  filename: string | ((id: string, metadata: FileNameFunctionMetadata) => string)
   options: UserCompressionOptions
 }
 
@@ -278,7 +282,7 @@ function compression<T extends UserCompressionOptions, A extends Algorithm>(
           return
         }
 
-        const fileName = replaceFileName(file, zlib.filename)
+        const fileName = replaceFileName(file, zlib.filename, { options: zlib.options, algorithm: zlib.algorithm })
         if (!pluginContext.staticOutputs.has(fileName)) { pluginContext.staticOutputs.add(fileName) }
 
         const outputPath = path.join(dest, fileName)
@@ -345,6 +349,132 @@ compression.getPluginAPI = (plugins: readonly Plugin[]): CompressionPluginAPI | 
 
 function defineCompressionOption<T = never, A extends Algorithm = never>(option: ViteCompressionPluginConfig<T, A>) {
   return option
+}
+
+export function defineAlgorithm<T extends Algorithm | AlgorithmFunction<UserCompressionOptions>>(
+  algorithm: T,
+  options?: T extends Algorithm ? AlgorithmToZlib[T] : T extends AlgorithmFunction<infer O> ? O : never
+): DefineAlgorithmResult<T extends Algorithm ? AlgorithmToZlib[T] : T extends AlgorithmFunction<infer O> ? O : never> {
+  if (typeof algorithm === 'string') {
+    if (algorithm in defaultCompressionOptions) {
+      // @ts-expect-error no need to check
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+      const opts = { ...defaultCompressionOptions[algorithm] }
+      if (options) {
+        Object.assign(opts, options)
+      }
+      return [algorithm, opts]
+    }
+    throw new Error(`[vite-plugin-compression] Unsupported algorithm: ${algorithm}`)
+  }
+  // @ts-expect-error no need to check
+  return [algorithm, options || {}]
+}
+
+export function major(options: MajorViteCompressionPluginOptions = {}): Plugin {
+  const {
+    include = /\.(html|xml|css|json|js|mjs|svg|yaml|yml|toml)$/,
+    exclude,
+    threshold = 0,
+    filename,
+    deleteOriginalAssets = false,
+    skipIfLargerOrEqual = true,
+    algorithms: userAlgorithms = ['gzip', 'brotliCompress']
+  } = options
+
+  const algorithms: DefineAlgorithmResult[] = []
+
+  userAlgorithms.forEach((algorithm) => {
+    if (typeof algorithm === 'string') {
+      algorithms.push(defineAlgorithm(algorithm))
+    } else if (typeof algorithm === 'object' && Array.isArray(algorithm)) {
+      algorithms.push(algorithm)
+    }
+  })
+  const filter = createFilter(include, exclude)
+
+  const statics: string[] = []
+  const outputs: string[] = []
+
+  const { msgs, cleanup } = captureViteLogger()
+
+  let logger: Logger
+
+  let root: string = process.cwd()
+
+  const zlibs = algorithms.map(([algorithm, options]) => ({
+    algorithm: typeof algorithm === 'string' ? ensureAlgorithm(algorithm).algorithm : algorithm,
+    options,
+    filename: filename ?? (algorithm === 'brotliCompress' ? '[path][base].br' : '[path][base].gz')
+  }))
+
+  const queue = createConcurrentQueue(MAX_CONCURRENT)
+
+  const generateBundle: GenerateBundle = async function handler(_, bundles) {
+    for (const fileName in bundles) {
+      if (!filter(fileName)) { continue }
+      const bundle = bundles[fileName]
+      const source = stringToBytes(bundle.type === 'asset' ? bundle.source : bundle.code)
+      const size = len(source)
+      if (size < threshold) { continue }
+      // queue.enqueue(async () => {
+      //   const name = replaceFileName(fileName, zlib.filename)
+      //   const compressed = await compress(source, zlib.algorithm, zlib.options)
+      //   if (skipIfLargerOrEqual && len(compressed) >= size) { return }
+      //   // #issue 30 31
+      //   // https://rollupjs.org/plugin-development/#this-emitfile
+      //   if (deleteOriginalAssets || fileName === name) { Reflect.deleteProperty(bundles, fileName) }
+      //   this.emitFile({ type: 'asset', fileName: name, source: compressed })
+      // })
+    }
+    await queue.wait().catch(this.error)
+  }
+
+  return <Plugin> {
+    name: VITE_COMPRESSION_PLUGIN,
+    apply: 'build',
+    enforce: 'post',
+    async configResolved(config) {
+      // hijack vite's internal `vite:build-import-analysis` plugin.So we won't need process us chunks at closeBundle anymore.
+      // issue #26
+      // https://github.com/vitejs/vite/blob/716286ef21f4d59786f21341a52a81ee5db58aba/packages/vite/src/node/build.ts#L566-L611
+      // Vite follow rollup option as first and the configResolved Hook don't expose merged conf for user. :(
+      // Someone who like using rollupOption. `config.build.outDir` will not as expected.
+      outputs.push(...handleOutputOption(config))
+      // Vite's pubic build: https://github.com/vitejs/vite/blob/HEAD/packages/vite/src/node/build.ts#L704-L709
+      // copyPublicDir minimum version 3.2+
+      // No need check size here.
+      await handleStaticFiles(config, (file) => {
+        statics.push(file)
+      })
+      const viteAnalyzerPlugin = config.plugins.find((p) => p.name === VITE_INTERNAL_ANALYSIS_PLUGIN)
+      if (!viteAnalyzerPlugin) {
+        throw new Error("[vite-plugin-compression] Can't be work in versions lower than vite at 2.0.0")
+      }
+      hijackGenerateBundle(viteAnalyzerPlugin, generateBundle)
+
+      logger = config.logger
+
+      root = config.root
+    },
+    async closeBundle() {
+      if (logger) {
+        // const paddingSize = compressedMessages.reduce((acc, cur) => {
+        //   const full = cur.dest + cur.file
+        //   return Math.max(acc, full.length)
+        // }, 0)
+
+        // for (const { dest, file, size } of compressedMessages) {
+        //   const paddedFile = file.padEnd(paddingSize)
+        //   logger.info(ansis.dim(dest) + ansis.green(paddedFile) + ansis.bold(ansis.dim(displaySize(size))))
+        // }
+      }
+
+      for (const msg of msgs) {
+        console.info(msg)
+      }
+    }
+  }
 }
 
 export { compression, defineCompressionOption, tarball }
