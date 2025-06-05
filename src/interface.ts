@@ -41,38 +41,6 @@ export interface AlgorithmToZlib {
 
 export type AlgorithmFunction<T extends UserCompressionOptions> = (buf: InputType, options: T) => Promise<Buffer>
 
-type InternalCompressionPluginOptionsFunction<T, A extends AlgorithmFunction<T>> = {
-  algorithm?: A,
-  compressionOptions: T
-}
-type InternalWithoutCompressionPluginOptionsFunction = {
-  algorithm?: AlgorithmFunction<undefined>
-}
-type InternalCompressionPluginOptionsAlgorithm<A extends Algorithm> = {
-  algorithm?: A,
-  compressionOptions?: Pretty<AlgorithmToZlib[A]>
-}
-
-export type ViteCompressionPluginConfigFunction<T extends UserCompressionOptions, A extends AlgorithmFunction<T>> =
-  & BaseCompressionPluginOptions
-  & InternalCompressionPluginOptionsFunction<T, A>
-export type ViteWithoutCompressionPluginConfigFunction = Pretty<
-  & BaseCompressionPluginOptions
-  & InternalWithoutCompressionPluginOptionsFunction
->
-export type ViteCompressionPluginConfigAlgorithm<A extends Algorithm> =
-  & BaseCompressionPluginOptions
-  & InternalCompressionPluginOptionsAlgorithm<A>
-export type ViteCompressionPluginConfig<T, A extends Algorithm> =
-  | ViteCompressionPluginConfigFunction<T, AlgorithmFunction<T>>
-  | ViteCompressionPluginConfigAlgorithm<A>
-
-export type ViteCompressionPluginOption<A extends Algorithm | UserCompressionOptions | undefined = undefined> = A extends undefined
-  ? Pretty<ViteWithoutCompressionPluginConfigFunction>
-  : A extends Algorithm ? Pretty<ViteCompressionPluginConfigAlgorithm<A>>
-  : A extends UserCompressionOptions ? Pretty<ViteCompressionPluginConfigFunction<A, AlgorithmFunction<A>>>
-  : never
-
 export type DefineAlgorithmResult<T = unknown> = readonly [
   Algorithm | AlgorithmFunction<T>,
   T extends Algorithm ? AlgorithmToZlib[T] : T
@@ -83,7 +51,7 @@ export type Algorithms =
   | DefineAlgorithmResult[]
   | (Algorithm | DefineAlgorithmResult)[]
 
-export interface MajorViteCompressionPluginOptions extends BaseCompressionPluginOptions {
+export interface ViteCompressionPluginOption extends BaseCompressionPluginOptions {
   algorithms?: Algorithms
 }
 
