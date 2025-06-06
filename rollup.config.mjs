@@ -6,8 +6,9 @@ import { defineConfig } from 'rollup'
 import dts from 'rollup-plugin-dts'
 import { minify, swc } from 'rollup-plugin-swc3'
 import { adapter, analyzer } from 'vite-bundle-analyzer'
+import pkg from './package.json' with { type: 'json' }
 
-const external = [...builtinModules]
+const external = [...builtinModules, ...Object.keys(pkg.dependencies)]
 
 export default defineConfig([{
   input: 'src/index.ts',

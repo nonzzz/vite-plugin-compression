@@ -9,7 +9,7 @@ install:
 build:
 	@echo "Building..."
 	-rm -rf dist
-	$(ROLLUP)
+	NODE_NO_WARNINGS=1 $(ROLLUP)
 
 bootstrap: install build
 
