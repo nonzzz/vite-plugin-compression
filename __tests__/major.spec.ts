@@ -173,16 +173,16 @@ describe('compression plugin', () => {
     })
   })
   it('zstd version v23.8.0 and v22.15.0', async () => {
-    const p = compression({ include: /\.(js)$/, algorithms: ['zstd'] })
+    const p = () => compression({ include: /\.(js)$/, algorithms: ['zstd'] })
     const [major, minor] = process.versions.node.split('.').map((s) => +s)
     if ((+major === 23 && +minor < 8) || (+major < 22 || (+major === 22 && +minor < 15))) {
-      expect(() => p).toThrowError(
+      expect(p).toThrowError(
         `Node.js ${process.versions.node} does not support zstd compression. ` +
           `Requires Node.js >= 22.15.0 or >= 23.8.0`
       )
     } else {
       expect(defineAlgorithm('zstd')).toHaveLength(2)
-      const { output } = await mockBuild('normal', root, { plugins: [p] })
+      const { output } = await mockBuild('normal', root, { plugins: [p()] })
       expect((await readAll(output)).filter((s) => s.endsWith('.zst')).length).toBe(1)
     }
   })
