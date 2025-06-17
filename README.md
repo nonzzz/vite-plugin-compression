@@ -88,15 +88,15 @@ export default defineConfig({
 
 ### Compression Plugin Options
 
-| params                 | type                                          | default                                                      | description                                                                                |
-| ---------------------- | --------------------------------------------- | ------------------------------------------------------------ | ------------------------------------------------------------------------------------------ |
-| `include`              | `string \| RegExp \| Array<string \| RegExp>` | `/\.(html\|xml\|css\|json\|js\|mjs\|svg\|yaml\|yml\|toml)$/` | Include all assets matching any of these conditions.                                       |
-| `exclude`              | `string \| RegExp \| Array<string \| RegExp>` | `-`                                                          | Exclude all assets matching any of these conditions.                                       |
-| `threshold`            | `number`                                      | `0`                                                          | Only assets bigger than this size are processed (in bytes)                                 |
-| `algorithms`           | `Algorithms`                                  | `['gzip', 'brotliCompress']`                                 | Array of compression algorithms or defineAlgorithm results                                 |
-| `filename`             | `string \| function`                          | `[path][base].gz` or `[path][base].br`                       | The target asset filename pattern                                                          |
-| `deleteOriginalAssets` | `boolean`                                     | `false`                                                      | Whether to delete the original assets or not                                               |
-| `skipIfLargerOrEqual`  | `boolean`                                     | `true`                                                       | Whether to skip the compression if the result is larger than or equal to the original file |
+| params                 | type                                          | default                                                                              | description                                                                                |
+| ---------------------- | --------------------------------------------- | ------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------ |
+| `include`              | `string \| RegExp \| Array<string \| RegExp>` | `/\.(html\|xml\|css\|json\|js\|mjs\|svg\|yaml\|yml\|toml)$/`                         | Include all assets matching any of these conditions.                                       |
+| `exclude`              | `string \| RegExp \| Array<string \| RegExp>` | `-`                                                                                  | Exclude all assets matching any of these conditions.                                       |
+| `threshold`            | `number`                                      | `0`                                                                                  | Only assets bigger than this size are processed (in bytes)                                 |
+| `algorithms`           | `Algorithms`                                  | `['gzip', 'brotliCompress']`                                                         | Array of compression algorithms or defineAlgorithm results                                 |
+| `filename`             | `string \| function`                          | `[path][base].gz` or `[path][base]. br` If algorithm is `zstd` be `[path][base].zst` | The target asset filename pattern                                                          |
+| `deleteOriginalAssets` | `boolean`                                     | `false`                                                                              | Whether to delete the original assets or not                                               |
+| `skipIfLargerOrEqual`  | `boolean`                                     | `true`                                                                               | Whether to skip the compression if the result is larger than or equal to the original file |
 
 ### Tarball Plugin Options
 
@@ -112,7 +112,7 @@ Define a compression algorithm with options.
 
 **Parameters:**
 
-- `algorithm`: Algorithm name (`'gzip' | 'brotliCompress' | 'deflate' | 'deflateRaw'`) or custom function
+- `algorithm`: Algorithm name (`'gzip' | 'brotliCompress' | 'deflate' | 'deflateRaw' | 'zstd'`) or custom function
 - `options`: Compression options for the algorithm
 
 **Returns:** `[algorithm, options]` tuple
@@ -149,6 +149,7 @@ defineAlgorithm(
 - **brotliCompress**: Brotli compression (better compression ratio)
 - **deflate**: Deflate compression
 - **deflateRaw**: Raw deflate compression
+- **zstd**: Zstandard compression with excellent speed/ratio balance (`.zst` extension) - **Requires Node.js >= 22.15.0 or >= 23.8.0**
 - **Custom Function**: Your own compression algorithm
 
 ### Algorithm Types
@@ -227,6 +228,13 @@ compression({
 - If you want to analyze your bundle assets, try [vite-bundle-analyzer](https://github.com/nonzzz/vite-bundle-analyzer)
 - `tarball` option `dest` means to generate a tarball somewhere
 - `tarball` is based on the `ustar` format. It should be compatible with all popular tar distributions (gnutar, bsdtar etc)
+
+### Node.js Version Requirements
+
+- **gzip, brotliCompress, deflate, deflateRaw**: All Node.js versions supported
+- **zstd**: Requires Node.js >= 22.15.0 or >= 23.8.0
+
+> **Note**: If you try to use zstd compression on an unsupported Node.js version, the plugin will throw a helpful error message indicating the required version.
 
 ### Sponsors
 
