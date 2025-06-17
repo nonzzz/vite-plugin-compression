@@ -1,8 +1,8 @@
 import type { FilterPattern } from '@rollup/pluginutils'
 import type { HookHandler, Plugin } from 'vite'
-import type { BrotliOptions, InputType, ZlibOptions } from 'zlib'
+import type { BrotliOptions, InputType, ZlibOptions, ZstdOptions } from 'zlib'
 
-export type Algorithm = 'gzip' | 'brotliCompress' | 'deflate' | 'deflateRaw'
+export type Algorithm = 'gzip' | 'brotliCompress' | 'deflate' | 'deflateRaw' | 'zstd'
 
 export interface UserCompressionOptions {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -37,6 +37,7 @@ export interface AlgorithmToZlib {
   brotliCompress: BrotliOptions
   deflate: ZlibOptions
   deflateRaw: ZlibOptions
+  zstd: ZstdOptions
 }
 
 export type AlgorithmFunction<T extends UserCompressionOptions> = (buf: InputType, options: T) => Promise<Buffer>
@@ -49,6 +50,10 @@ export type DefineAlgorithmResult<T extends UserCompressionOptions = UserCompres
   | readonly [
     'brotliCompress',
     BrotliOptions
+  ]
+  | readonly [
+    'zstd',
+    ZstdOptions
   ]
   | readonly [
     AlgorithmFunction<T>,

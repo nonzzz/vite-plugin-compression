@@ -183,7 +183,8 @@ function compression(
   const zlibs = algorithms.map(([algorithm, options]) => ({
     algorithm: typeof algorithm === 'string' ? ensureAlgorithm(algorithm).algorithm : algorithm,
     options,
-    filename: filename ?? (algorithm === 'brotliCompress' ? '[path][base].br' : '[path][base].gz')
+    filename: filename ??
+      (algorithm === 'brotliCompress' ? '[path][base].br' : algorithm === 'zstd' ? '[path][base].zst' : '[path][base].gz')
   }))
 
   const queue = createConcurrentQueue(MAX_CONCURRENT)

@@ -3,13 +3,34 @@ import path from 'path'
 import { createPack } from 'tar-mini'
 import util from 'util'
 import zlib from 'zlib'
-import type { BrotliOptions, InputType, ZlibOptions } from 'zlib'
+import type { BrotliOptions, InputType, ZlibOptions, ZstdOptions } from 'zlib'
 
 import type { Algorithm, AlgorithmFunction, UserCompressionOptions } from './interface'
 import { slash, stringToBytes } from './shared'
 
+// Note: we should verify zstd support
+// It add at `v23.8.0` and `v22.15.0`
 export function ensureAlgorithm(userAlgorithm: Algorithm) {
+  if (userAlgorithm === 'zstd') {
+    const [major, minor] = process.versions.node.split('.').map((s) => +s)
+    const isSupported = (major > 23) ||
+      (major === 23 && minor >= 8) ||
+      (major === 22 && minor >= 15)
+    if (!isSupported) {
+      throw new Error(
+        `Node.js ${process.versions.node} does not support zstd compression. ` +
+          `Requires Node.js >= 22.15.0 or >= 23.8.0`
+      )
+    }
+    if (!zlib.zstdCompress) {
+      throw new Error('zstd compression is not available in this Node.js build')
+    }
+    return {
+      algorithm: util.promisify(zlib.zstdCompress)
+    }
+  }
   const algorithm = userAlgorithm in zlib ? userAlgorithm : 'gzip'
+
   return {
     algorithm: util.promisify(zlib[algorithm])
   }
@@ -29,7 +50,7 @@ export async function compress<T extends UserCompressionOptions | undefined>(
 }
 
 export const defaultCompressionOptions: {
-  [algorithm in Algorithm]: algorithm extends 'brotliCompress' ? BrotliOptions : ZlibOptions
+  [algorithm in Algorithm]: algorithm extends 'brotliCompress' ? BrotliOptions : algorithm extends 'zstd' ? ZstdOptions : ZlibOptions
 } = {
   gzip: {
     level: zlib.constants.Z_BEST_COMPRESSION
@@ -44,7 +65,9 @@ export const defaultCompressionOptions: {
   },
   deflateRaw: {
     level: zlib.constants.Z_BEST_COMPRESSION
-  }
+  },
+  // I don't know what the best default options for zstd are, so using an empty object
+  zstd: {}
 }
 
 interface TarballOptions {

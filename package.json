@@ -1,7 +1,7 @@
 {
   "name": "vite-plugin-compression2",
   "version": "2.0.1",
-  "packageManager": "pnpm@9.4.0",
+  "packageManager": "pnpm@10.12.1+sha512.f0dda8580f0ee9481c5c79a1d927b9164f2c478e90992ad268bbb2465a736984391d6333d2c327913578b2804af33474ca554ba29c04a8b13060a717675ae3ac",
   "description": "a fast vite compression plugin",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -41,7 +41,7 @@
     "@rollup/plugin-esm-shim": "^0.1.8",
     "@rollup/plugin-node-resolve": "^16.0.1",
     "@swc/core": "^1.11.31",
-    "@types/node": "^20.14.9",
+    "@types/node": "^24.0.3",
     "@vitest/coverage-v8": "^2.0.3",
     "ansis": "^4.0.0",
     "dprint": "^0.46.3",
