@@ -1,3 +1,7 @@
+## 2.1.0
+
+- Add `zstd` support. (Use the built-in zstd of nodejs. Note that you need to ensure your local node version)
+
 ## 2.0.1
 
 - Fix build script.
