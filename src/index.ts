@@ -181,7 +181,8 @@ function compression(
   let root: string = process.cwd()
 
   const zlibs = algorithms.map(([algorithm, options]) => ({
-    algorithm: typeof algorithm === 'string' ? ensureAlgorithm(algorithm).algorithm : algorithm,
+    algorithm,
+    algorithmFunction: typeof algorithm === 'string' ? ensureAlgorithm(algorithm).algorithm : algorithm,
     options,
     filename: filename ??
       (algorithm === 'brotliCompress' ? '[path][base].br' : algorithm === 'zstd' ? '[path][base].zst' : '[path][base].gz')
@@ -201,7 +202,7 @@ function compression(
           const z = zlibs[i]
           const flag = i === zlibs.length - 1
           const name = replaceFileName(fileName, z.filename, { options: z.options, algorithm: z.algorithm })
-          const compressed = await compress(source, z.algorithm, z.options)
+          const compressed = await compress(source, z.algorithmFunction, z.options)
           if (skipIfLargerOrEqual && len(compressed) >= size) { return }
           // #issue 30 31
           // https://rollupjs.org/plugin-development/#this-emitfile
@@ -270,7 +271,7 @@ function compression(
         for (let i = 0; i < zlibs.length; i++) {
           const z = zlibs[i]
           const flag = i === zlibs.length - 1
-          const compressed = await compress(buf, z.algorithm, z.options)
+          const compressed = await compress(buf, z.algorithmFunction, z.options)
           if (skipIfLargerOrEqual && len(compressed) >= len(buf)) {
             if (!pluginContext.staticOutputs.has(file)) { pluginContext.staticOutputs.add(file) }
             return
