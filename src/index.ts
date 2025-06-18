@@ -97,7 +97,6 @@ function createEnhancedError(error: Error, context: string): Error {
   const enhancedError = new Error(enhancedMessage)
   enhancedError.name = 'CompressionError'
 
-  // 合并 stack 信息
   enhancedError.stack = [
     `CompressionError: ${enhancedMessage}`,
     '',

@@ -88,15 +88,15 @@ export default defineConfig({
 
 ### Compression Plugin Options
 
-| params                 | type                                          | default                                                                              | description                                                                                |
-| ---------------------- | --------------------------------------------- | ------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------ |
-| `include`              | `string \| RegExp \| Array<string \| RegExp>` | `/\.(html\|xml\|css\|json\|js\|mjs\|svg\|yaml\|yml\|toml)$/`                         | Include all assets matching any of these conditions.                                       |
-| `exclude`              | `string \| RegExp \| Array<string \| RegExp>` | `-`                                                                                  | Exclude all assets matching any of these conditions.                                       |
-| `threshold`            | `number`                                      | `0`                                                                                  | Only assets bigger than this size are processed (in bytes)                                 |
-| `algorithms`           | `Algorithms`                                  | `['gzip', 'brotliCompress']`                                                         | Array of compression algorithms or defineAlgorithm results                                 |
-| `filename`             | `string \| function`                          | `[path][base].gz` or `[path][base]. br` If algorithm is `zstd` be `[path][base].zst` | The target asset filename pattern                                                          |
-| `deleteOriginalAssets` | `boolean`                                     | `false`                                                                              | Whether to delete the original assets or not                                               |
-| `skipIfLargerOrEqual`  | `boolean`                                     | `true`                                                                               | Whether to skip the compression if the result is larger than or equal to the original file |
+| params                 | type                                          | default                                                                                   | description                                                                                |
+| ---------------------- | --------------------------------------------- | ----------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------ |
+| `include`              | `string \| RegExp \| Array<string \| RegExp>` | `/\.(html\|xml\|css\|json\|js\|mjs\|svg\|yaml\|yml\|toml)$/`                              | Include all assets matching any of these conditions.                                       |
+| `exclude`              | `string \| RegExp \| Array<string \| RegExp>` | `-`                                                                                       | Exclude all assets matching any of these conditions.                                       |
+| `threshold`            | `number`                                      | `0`                                                                                       | Only assets bigger than this size are processed (in bytes)                                 |
+| `algorithms`           | `Algorithms`                                  | `['gzip', 'brotliCompress']`                                                              | Array of compression algorithms or defineAlgorithm results                                 |
+| `filename`             | `string \| function`                          | `[path][base].gz` or `[path][base]. br` If algorithm is `zstandard` be `[path][base].zst` | The target asset filename pattern                                                          |
+| `deleteOriginalAssets` | `boolean`                                     | `false`                                                                                   | Whether to delete the original assets or not                                               |
+| `skipIfLargerOrEqual`  | `boolean`                                     | `true`                                                                                    | Whether to skip the compression if the result is larger than or equal to the original file |
 
 ### Tarball Plugin Options
 
