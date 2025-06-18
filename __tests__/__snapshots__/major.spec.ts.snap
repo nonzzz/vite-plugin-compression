@@ -1,0 +1,9 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`compression plugin > pretty error stack 1`] = `
+[CompressionError: [31m[vite:build-import-analysis] Compression failed in bundle compression with 3 error(s):
+
+[1] Test error for pretty stack
+[2] Test error for pretty stack
+[3] Test error for pretty stack[39m]
+`;

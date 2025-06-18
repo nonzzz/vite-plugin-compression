@@ -5,7 +5,7 @@ import fsp from 'fs/promises'
 import os from 'os'
 import path from 'path'
 import type { Logger, Plugin, ResolvedConfig } from 'vite'
-import { compress, createTarBall, defaultCompressionOptions, ensureAlgorithm } from './compress'
+import { compress, createTarBall, defaultCompressionOptions, ensureAlgorithm, resolveAlgorithm } from './compress'
 import type {
   Algorithm,
   AlgorithmFunction,
@@ -70,6 +70,46 @@ async function handleStaticFiles(config: ResolvedConfig, callback: (file: string
   }
 }
 
+function createEnhancedError(error: Error, context: string): Error {
+  if (error.name !== 'AggregateError' || !('errors' in error)) {
+    return error
+  }
+
+  const aggregateError = error as AggregateError
+  const errorCount = aggregateError.errors.length
+
+  const messages = aggregateError.errors.map((err: Error, index: number) => {
+    const message = err.message || 'Unknown error'
+    return `[${index + 1}] ${message}`
+  })
+
+  const stacks = aggregateError.errors.map((err: Error, index: number) => {
+    const stack = err.stack || err.message || 'No stack trace available'
+    return `--- Error ${index + 1} ---\n${stack}`
+  })
+
+  const enhancedMessage = [
+    `Compression failed in ${context} with ${errorCount} error(s):`,
+    '',
+    ...messages
+  ].join('\n')
+
+  const enhancedError = new Error(enhancedMessage)
+  enhancedError.name = 'CompressionError'
+
+  // 合并 stack 信息
+  enhancedError.stack = [
+    `CompressionError: ${enhancedMessage}`,
+    '',
+    'Combined stack traces:',
+    ...stacks
+  ].join('\n')
+
+  enhancedError.cause = aggregateError.errors
+
+  return enhancedError
+}
+
 function tarball(opts: ViteTarballPluginOptions = {}): Plugin {
   const { dest: userDest } = opts
   const statics: string[] = []
@@ -120,7 +160,9 @@ function tarball(opts: ViteTarballPluginOptions = {}): Plugin {
           })
         }
       }
-      await queue.wait()
+      await queue.wait().catch((err: Error) => {
+        this.error(createEnhancedError(err, 'tarball creation'))
+      })
       await tarball.done()
     }
   }
@@ -185,7 +227,7 @@ function compression(
     algorithmFunction: typeof algorithm === 'string' ? ensureAlgorithm(algorithm).algorithm : algorithm,
     options,
     filename: filename ??
-      (algorithm === 'brotliCompress' ? '[path][base].br' : algorithm === 'zstd' ? '[path][base].zst' : '[path][base].gz')
+      (algorithm === 'brotliCompress' ? '[path][base].br' : algorithm === 'zstandard' ? '[path][base].zst' : '[path][base].gz')
   }))
 
   const queue = createConcurrentQueue(MAX_CONCURRENT)
@@ -213,7 +255,9 @@ function compression(
         }
       })
     }
-    await queue.wait().catch(this.error)
+    await queue.wait().catch((err: Error) => {
+      this.error(createEnhancedError(err, 'bundle compression'))
+    })
   }
 
   const doneResolver: { resolve: () => void } = { resolve: noop }
@@ -350,14 +394,13 @@ export function defineAlgorithm<T extends Algorithm | UserCompressionOptions | A
   options?: T extends Algorithm ? AlgorithmToZlib[T] : T extends AlgorithmFunction<UserCompressionOptions> ? UserCompressionOptions : T
 ): DefineAlgorithmResult<T extends Algorithm | AlgorithmFunction<UserCompressionOptions> ? UserCompressionOptions : T> {
   if (typeof algorithm === 'string') {
-    if (algorithm in defaultCompressionOptions) {
-      // @ts-expect-error no need to check
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-      const opts = { ...defaultCompressionOptions[algorithm] }
+    const resolvedAlgorithm = resolveAlgorithm(algorithm)
+    if (resolvedAlgorithm in defaultCompressionOptions) {
+      const opts = { ...defaultCompressionOptions[resolvedAlgorithm] }
       if (options) {
         Object.assign(opts, options)
       }
-      return [algorithm, opts]
+      return [resolvedAlgorithm, opts]
     }
     throw new Error(`[vite-plugin-compression] Unsupported algorithm: ${algorithm}`)
   }

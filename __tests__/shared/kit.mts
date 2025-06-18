@@ -46,3 +46,11 @@ export async function mockBuild(fixture: string, dest: string, options?: InlineC
   })
   return { output, bundle }
 }
+
+export function typedForIn<T extends NonNullable<object>>(obj: T, callback: (key: keyof T, value: T[keyof T]) => void) {
+  for (const key in obj) {
+    if (Object.prototype.hasOwnProperty.call(obj, key)) {
+      callback(key satisfies keyof T, obj[key satisfies keyof T])
+    }
+  }
+}

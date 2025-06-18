@@ -112,7 +112,7 @@ Define a compression algorithm with options.
 
 **Parameters:**
 
-- `algorithm`: Algorithm name (`'gzip' | 'brotliCompress' | 'deflate' | 'deflateRaw' | 'zstd'`) or custom function
+- `algorithm`: Algorithm name (`'gzip' | 'brotliCompress' | 'deflate' | 'deflateRaw' | 'zstandard'`) or custom function
 - `options`: Compression options for the algorithm
 
 **Returns:** `[algorithm, options]` tuple
@@ -145,12 +145,14 @@ defineAlgorithm(
 
 ### Supported Algorithms
 
-- **gzip**: Standard gzip compression
-- **brotliCompress**: Brotli compression (better compression ratio)
-- **deflate**: Deflate compression
-- **deflateRaw**: Raw deflate compression
-- **zstd**: Zstandard compression with excellent speed/ratio balance (`.zst` extension) - **Requires Node.js >= 22.15.0 or >= 23.8.0**
-- **Custom Function**: Your own compression algorithm
+| Algorithm        | Aliases        | Extension | Node.js Support         | Description                                                    |
+| ---------------- | -------------- | --------- | ----------------------- | -------------------------------------------------------------- |
+| `gzip`           | `gz`           | `.gz`     | All versions            | Standard gzip compression with good balance of speed and ratio |
+| `brotliCompress` | `brotli`, `br` | `.br`     | All versions            | Brotli compression with better compression ratio than gzip     |
+| `deflate`        | -              | `.gz`     | All versions            | Deflate compression algorithm                                  |
+| `deflateRaw`     | -              | `.gz`     | All versions            | Raw deflate compression without headers                        |
+| `zstandard`      | `zstd`         | `.zst`    | >= 22.15.0 or >= 23.8.0 | Zstandard compression with excellent speed/ratio balance       |
+| Custom Function  | -              | Custom    | All versions            | Your own compression algorithm implementation                  |
 
 ### Algorithm Types
 

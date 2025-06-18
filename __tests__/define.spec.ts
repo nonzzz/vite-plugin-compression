@@ -3,7 +3,8 @@ import { describe, expect, test } from 'vitest'
 import zlib, { constants } from 'zlib'
 import { defineAlgorithm } from '../src'
 import { defaultCompressionOptions } from '../src/compress'
-import type { AlgorithmFunction } from '../src/interface'
+import type { AlgorithmFunction, AliasAlgorithm } from '../src/interface'
+import { typedForIn } from './shared/kit.mjs'
 
 describe('define function', () => {
   test('defineAlgorithm with gzip algorithm only', () => {
@@ -129,5 +130,20 @@ describe('define function', () => {
     const result = defineAlgorithm('brotliCompress', complexOptions)
 
     expect(result[1]).toEqual(complexOptions)
+  })
+
+  test('defineAlgorithm with alias matrix', () => {
+    const aliasMatrix: Record<AliasAlgorithm, string> = {
+      gz: 'gzip',
+      br: 'brotliCompress',
+      brotli: 'brotliCompress',
+      zstd: 'zstandard'
+    }
+
+    typedForIn(aliasMatrix, (alias, value) => {
+      const result = defineAlgorithm(alias)
+      expect(result[0]).toBe(value)
+      expect(result[1]).toEqual(defaultCompressionOptions[value as keyof typeof defaultCompressionOptions])
+    })
   })
 })

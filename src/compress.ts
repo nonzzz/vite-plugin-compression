@@ -5,13 +5,20 @@ import util from 'util'
 import zlib from 'zlib'
 import type { BrotliOptions, InputType, ZlibOptions, ZstdOptions } from 'zlib'
 
-import type { Algorithm, AlgorithmFunction, UserCompressionOptions } from './interface'
+import type { Algorithm, AlgorithmFunction, CoreAlgorithm, UserCompressionOptions } from './interface'
 import { slash, stringToBytes } from './shared'
 
+export function resolveAlgorithm(algorithm: Algorithm): CoreAlgorithm {
+  if (algorithm === 'gz') { return 'gzip' }
+  if (algorithm === 'brotli' || algorithm === 'br') { return 'brotliCompress' }
+  if (algorithm === 'zstd') { return 'zstandard' }
+  return algorithm
+}
 // Note: we should verify zstd support
 // It add at `v23.8.0` and `v22.15.0`
 export function ensureAlgorithm(userAlgorithm: Algorithm) {
-  if (userAlgorithm === 'zstd') {
+  const resolvedAlgorithm = resolveAlgorithm(userAlgorithm)
+  if (resolvedAlgorithm === 'zstandard') {
     const [major, minor] = process.versions.node.split('.').map((s) => +s)
     const isSupported = (major > 23) ||
       (major === 23 && minor >= 8) ||
@@ -29,7 +36,7 @@ export function ensureAlgorithm(userAlgorithm: Algorithm) {
       algorithm: util.promisify(zlib.zstdCompress)
     }
   }
-  const algorithm = userAlgorithm in zlib ? userAlgorithm : 'gzip'
+  const algorithm = resolvedAlgorithm in zlib ? resolvedAlgorithm : 'gzip'
 
   return {
     algorithm: util.promisify(zlib[algorithm])
@@ -50,7 +57,7 @@ export async function compress<T extends UserCompressionOptions | undefined>(
 }
 
 export const defaultCompressionOptions: {
-  [algorithm in Algorithm]: algorithm extends 'brotliCompress' ? BrotliOptions : algorithm extends 'zstd' ? ZstdOptions : ZlibOptions
+  [algorithm in CoreAlgorithm]: algorithm extends 'brotliCompress' ? BrotliOptions : algorithm extends 'zstd' ? ZstdOptions : ZlibOptions
 } = {
   gzip: {
     level: zlib.constants.Z_BEST_COMPRESSION
@@ -67,7 +74,7 @@ export const defaultCompressionOptions: {
     level: zlib.constants.Z_BEST_COMPRESSION
   },
   // I don't know what the best default options for zstd are, so using an empty object
-  zstd: {}
+  zstandard: {}
 }
 
 interface TarballOptions {

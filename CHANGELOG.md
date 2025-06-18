@@ -1,3 +1,12 @@
+## 2.2.0
+
+- Add compression algorithm aliases.
+- The correct variable should be passed when using custom `filename`.
+
+### Credits
+
+@solonovamax
+
 ## 2.1.0
 
 - Add `zstd` support. (Use the built-in zstd of nodejs. Note that you need to ensure your local node version)

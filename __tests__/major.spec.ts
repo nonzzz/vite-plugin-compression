@@ -186,4 +186,16 @@ describe('compression plugin', () => {
       expect((await readAll(output)).filter((s) => s.endsWith('.zst')).length).toBe(1)
     }
   })
+  it('pretty error stack', async () => {
+    await expect(async () =>
+      mockBuild('normal', root, {
+        plugins: [compression({
+          algorithms: ['gz'],
+          filename: () => {
+            throw new Error('Test error for pretty stack')
+          }
+        })]
+      })
+    ).rejects.toThrowErrorMatchingSnapshot()
+  })
 })
