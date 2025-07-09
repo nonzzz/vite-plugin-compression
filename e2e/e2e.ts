@@ -12,8 +12,9 @@ import type { Vite3Instance } from './vite3/interface'
 import type { Vite4Instance } from './vite4/interface'
 import type { Vite5Instance } from './vite5/interface'
 import type { Vite6Instance } from './vite6/interface'
+import type { Vite7Instance } from './vite7/interface'
 
-type ViteInstance = Vite2Instance | Vite3Instance | Vite4Instance | Vite5Instance | Vite6Instance | RolldownViteInstance
+type ViteInstance = Vite2Instance | Vite3Instance | Vite4Instance | Vite5Instance | Vite6Instance | RolldownViteInstance | Vite7Instance
 
 type Server = http.Server & {
   ip: string
