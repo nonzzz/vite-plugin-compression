@@ -127,6 +127,18 @@ importers:
         specifier: ^7
         version: 7.0.3(@types/node@24.0.3)(lightningcss@1.30.1)(terser@5.36.0)
 
+  example:
+    devDependencies:
+      sirv:
+        specifier: 2.0.3
+        version: 2.0.3
+      vite:
+        specifier: ^4.4.9
+        version: 4.5.5(@types/node@24.0.3)(lightningcss@1.30.1)(terser@5.36.0)
+      vite-plugin-compression2:
+        specifier: workspace:*
+        version: link:..
+
 packages:
 
   '@ampproject/remapping@2.3.0':

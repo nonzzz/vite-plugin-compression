@@ -198,4 +198,8 @@ describe('compression plugin', () => {
       })
     ).rejects.toThrowErrorMatchingSnapshot()
   })
+  it('alias for algorithm', async () => {
+    const { output } = await mockBuild('normal', root, { plugins: [compression({ include: /\.(js)$/, algorithms: [['br', {}]] })] })
+    expect((await readAll(output)).filter((s) => s.endsWith('.br')).length).toBe(1)
+  })
 })

@@ -37,7 +37,6 @@ export function ensureAlgorithm(userAlgorithm: Algorithm) {
     }
   }
   const algorithm = resolvedAlgorithm in zlib ? resolvedAlgorithm : 'gzip'
-
   return {
     algorithm: util.promisify(zlib[algorithm])
   }

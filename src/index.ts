@@ -14,7 +14,8 @@ import type {
   GenerateBundle,
   UserCompressionOptions,
   ViteCompressionPluginOption,
-  ViteTarballPluginOptions
+  ViteTarballPluginOptions,
+  defineAliasAlgorithmResult
 } from './interface'
 import { captureViteLogger, len, noop, readAll, replaceFileName, slash, stringToBytes } from './shared'
 import { createConcurrentQueue } from './task'
@@ -194,10 +195,11 @@ function compression(
     algorithms: userAlgorithms = ['gzip', 'brotliCompress'],
     filename,
     deleteOriginalAssets = false,
-    skipIfLargerOrEqual = true
+    skipIfLargerOrEqual = true,
+    logLevel = 'info'
   } = opts
 
-  const algorithms: DefineAlgorithmResult[] = []
+  const algorithms: Array<DefineAlgorithmResult | defineAliasAlgorithmResult> = []
 
   userAlgorithms.forEach((algorithm) => {
     if (typeof algorithm === 'string') {
@@ -221,13 +223,16 @@ function compression(
 
   let root: string = process.cwd()
 
-  const zlibs = algorithms.map(([algorithm, options]) => ({
-    algorithm,
-    algorithmFunction: typeof algorithm === 'string' ? ensureAlgorithm(algorithm).algorithm : algorithm,
-    options,
-    filename: filename ??
-      (algorithm === 'brotliCompress' ? '[path][base].br' : algorithm === 'zstandard' ? '[path][base].zst' : '[path][base].gz')
-  }))
+  const zlibs = algorithms.map(([_algorithm, options]) => {
+    const algorithm = typeof _algorithm === 'string' ? resolveAlgorithm(_algorithm) : _algorithm
+    return ({
+      algorithm,
+      algorithmFunction: typeof algorithm === 'string' ? ensureAlgorithm(algorithm).algorithm : algorithm,
+      options,
+      filename: filename ??
+        (algorithm === 'brotliCompress' ? '[path][base].br' : algorithm === 'zstandard' ? '[path][base].zst' : '[path][base].gz')
+    })
+  })
 
   const queue = createConcurrentQueue(MAX_CONCURRENT)
 
@@ -255,6 +260,7 @@ function compression(
       })
     }
     await queue.wait().catch((err: Error) => {
+      if (logLevel === 'silent') { return }
       this.error(createEnhancedError(err, 'bundle compression'))
     })
   }
@@ -364,7 +370,7 @@ function compression(
       doneResolver.resolve()
       cleanup()
 
-      if (logger) {
+      if (logLevel !== 'silent' && logger) {
         const paddingSize = compressedMessages.reduce((acc, cur) => {
           const full = cur.dest + cur.file
           return Math.max(acc, full.length)

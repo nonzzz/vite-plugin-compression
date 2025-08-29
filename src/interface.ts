@@ -27,6 +27,9 @@ export interface FileNameFunctionMetadata {
   algorithm: CoreAlgorithm | AlgorithmFunction<UserCompressionOptions>
   options: UserCompressionOptions
 }
+
+export type LogLevel = 'info' | 'silent'
+
 interface BaseCompressionPluginOptions {
   include?: FilterPattern
   exclude?: FilterPattern
@@ -34,6 +37,7 @@ interface BaseCompressionPluginOptions {
   filename?: string | ((id: string, metadata: FileNameFunctionMetadata) => string)
   deleteOriginalAssets?: boolean
   skipIfLargerOrEqual?: boolean
+  logLevel?: LogLevel
 }
 export interface AlgorithmToZlib {
   gz: ZlibOptions
@@ -48,6 +52,24 @@ export interface AlgorithmToZlib {
 }
 
 export type AlgorithmFunction<T extends UserCompressionOptions> = (buf: InputType, options: T) => Promise<Buffer>
+
+export type defineAliasAlgorithmResult<T extends UserCompressionOptions = UserCompressionOptions> =
+  | readonly [
+    'gz',
+    ZlibOptions
+  ]
+  | readonly [
+    'br' | 'brotli',
+    BrotliOptions
+  ]
+  | readonly [
+    'zstd',
+    ZstdOptions
+  ]
+  | readonly [
+    AlgorithmFunction<T>,
+    T
+  ]
 
 export type DefineAlgorithmResult<T extends UserCompressionOptions = UserCompressionOptions> =
   | readonly [
@@ -67,7 +89,7 @@ export type DefineAlgorithmResult<T extends UserCompressionOptions = UserCompres
     T
   ]
 
-export type Algorithms = (Algorithm | DefineAlgorithmResult)[]
+export type Algorithms = (Algorithm | DefineAlgorithmResult | defineAliasAlgorithmResult)[]
 
 export interface ViteCompressionPluginOption extends BaseCompressionPluginOptions {
   algorithms?: Algorithms

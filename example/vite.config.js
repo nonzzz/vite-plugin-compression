@@ -6,7 +6,8 @@ export default defineConfig({
     compression({
       include: [/\.(js)$/, /\.(css)$/],
       deleteOriginalAssets: true,
-      skipIfLargerOrEqual: false
+      skipIfLargerOrEqual: false,
+      logLevel: 'silent'
     }),
     tarball()
   ]
