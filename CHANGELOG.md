@@ -1,3 +1,8 @@
+## 2.2.1
+
+- Enhanced `algorithms` option to accept alias strings in array format.
+- Add new option `logLevel` to control log in stdout.
+
 ## 2.2.0
 
 - Add compression algorithm aliases.

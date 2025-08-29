@@ -97,6 +97,7 @@ export default defineConfig({
 | `filename`             | `string \| function`                          | `[path][base].gz` or `[path][base]. br` If algorithm is `zstandard` be `[path][base].zst` | The target asset filename pattern                                                          |
 | `deleteOriginalAssets` | `boolean`                                     | `false`                                                                                   | Whether to delete the original assets or not                                               |
 | `skipIfLargerOrEqual`  | `boolean`                                     | `true`                                                                                    | Whether to skip the compression if the result is larger than or equal to the original file |
+| `logLevel`             | `string`                                      | `info`                                                                                    | Control sdout info                                                                         |
 
 ### Tarball Plugin Options
 
@@ -112,7 +113,7 @@ Define a compression algorithm with options.
 
 **Parameters:**
 
-- `algorithm`: Algorithm name (`'gzip' | 'brotliCompress' | 'deflate' | 'deflateRaw' | 'zstandard'`) or custom function
+- `algorithm`: Algorithm name (`'gzip' | 'brotliCompress' | 'deflate' | 'deflateRaw' | 'zstandard' | 'gz' | 'br' | 'brotli' | 'zstd'`) or custom function
 - `options`: Compression options for the algorithm
 
 **Returns:** `[algorithm, options]` tuple
