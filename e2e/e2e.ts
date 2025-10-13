@@ -77,10 +77,6 @@ async function createChromeBrowser(server: Server) {
 }
 
 async function expectTestCase(taskName: string, page: Awaited<Page>, localUrl: Awaited<string>) {
-  const expect1 = new Promise((resolve) => {
-    page.on('console', (message) => resolve(message.text()))
-  })
-
   const expect2 = new Promise((resolve) => {
     page.on('console', (message) => {
       if (message.type() === 'log' && message.text() === 'append child') {
@@ -90,8 +86,11 @@ async function expectTestCase(taskName: string, page: Awaited<Page>, localUrl: A
   })
 
   test(`${taskName} page first load`, async () => {
-    expect(await expect1).toBe('load main process')
+    const waitLoad = page.waitForEvent('console', (m) => m.type() === 'log' && m.text() === 'load main process')
+    await page.goto(localUrl)
+    expect((await waitLoad).text()).toBe('load main process')
   })
+
   test(`${taskName} insert line`, async () => {
     await page.click('.button--insert')
     await page.waitForSelector('text=p-1', { timeout: 5000 })
