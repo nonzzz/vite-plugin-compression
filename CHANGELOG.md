@@ -1,3 +1,7 @@
+## 2.3.0
+
+- Add new option `artifacts`.
+
 ## 2.2.1
 
 - Enhanced `algorithms` option to accept alias strings in array format.
