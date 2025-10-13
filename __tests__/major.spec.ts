@@ -5,7 +5,7 @@ import { afterAll, assert, describe, expect, it } from 'vitest'
 import zlib from 'zlib'
 import { compression, defineAlgorithm } from '../src'
 import { readAll } from '../src/shared'
-import { createDisk, getId, mockBuild } from './shared/kit.mjs'
+import { createDisk, getFixturePath, getId, mockBuild } from './shared/kit.mjs'
 
 describe('compression plugin', () => {
   const { root, destroy, dir } = createDisk('compression-plugin')
@@ -201,5 +201,21 @@ describe('compression plugin', () => {
   it('alias for algorithm', async () => {
     const { output } = await mockBuild('normal', root, { plugins: [compression({ include: /\.(js)$/, algorithms: [['br', {}]] })] })
     expect((await readAll(output)).filter((s) => s.endsWith('.br')).length).toBe(1)
+  })
+
+  it('artifacts', async () => {
+    const otherStaticPath = path.join(getFixturePath('public-assets'), 'public')
+    const otherStatics = await readAll(otherStaticPath)
+    const { output } = await mockBuild('normal', root, {
+      plugins: [compression({
+        include: /\.(yaml)$/,
+        algorithms: ['gzip'],
+        artifacts() {
+          return otherStatics.map((src) => ({ src }))
+        }
+      })]
+    })
+    const result = await readAll(output)
+    expect(result.filter((s) => s.endsWith('.gz')).length).toBe(1)
   })
 })

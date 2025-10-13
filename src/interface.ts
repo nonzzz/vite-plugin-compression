@@ -30,6 +30,8 @@ export interface FileNameFunctionMetadata {
 
 export type LogLevel = 'info' | 'silent'
 
+export type ArtifactsFunction = () => Array<{ src: string, replace?: (dest: string, fileName: string) => string }>
+
 interface BaseCompressionPluginOptions {
   include?: FilterPattern
   exclude?: FilterPattern
@@ -38,6 +40,7 @@ interface BaseCompressionPluginOptions {
   deleteOriginalAssets?: boolean
   skipIfLargerOrEqual?: boolean
   logLevel?: LogLevel
+  artifacts?: ArtifactsFunction
 }
 export interface AlgorithmToZlib {
   gz: ZlibOptions

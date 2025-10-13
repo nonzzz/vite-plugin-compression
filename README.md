@@ -98,6 +98,7 @@ export default defineConfig({
 | `deleteOriginalAssets` | `boolean`                                     | `false`                                                                                   | Whether to delete the original assets or not                                               |
 | `skipIfLargerOrEqual`  | `boolean`                                     | `true`                                                                                    | Whether to skip the compression if the result is larger than or equal to the original file |
 | `logLevel`             | `string`                                      | `info`                                                                                    | Control sdout info                                                                         |
+| `artifacts`            | `function`                                    | `undefined`                                                                               | Sometimes you need to copy something to the final output. This option may help you.        |
 
 ### Tarball Plugin Options
 

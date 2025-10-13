@@ -234,6 +234,24 @@ function compression(
     })
   })
 
+  const handleCompressFiles = async (source: Uint8Array, fileName: string, visit: {
+    skip: (fileName: string) => void,
+    pass: (fileName: string, flag: boolean, compressed: Uint8Array) => void | Promise<void>
+  }) => {
+    const size = len(source)
+    for (let i = 0; i < zlibs.length; i++) {
+      const z = zlibs[i]
+      const flag = i === zlibs.length - 1
+      const name = replaceFileName(fileName, z.filename, { options: z.options, algorithm: z.algorithm })
+      const compressed = await compress(source, z.algorithmFunction, z.options)
+      if (skipIfLargerOrEqual && len(compressed) >= size) {
+        visit.skip(fileName)
+        continue
+      }
+      await visit.pass(name, flag, compressed)
+    }
+  }
+
   const queue = createConcurrentQueue(MAX_CONCURRENT)
 
   const generateBundle: GenerateBundle = async function handler(_, bundles) {
@@ -244,19 +262,17 @@ function compression(
       const size = len(source)
       if (size < threshold) { continue }
       queue.enqueue(async () => {
-        for (let i = 0; i < zlibs.length; i++) {
-          const z = zlibs[i]
-          const flag = i === zlibs.length - 1
-          const name = replaceFileName(fileName, z.filename, { options: z.options, algorithm: z.algorithm })
-          const compressed = await compress(source, z.algorithmFunction, z.options)
-          if (skipIfLargerOrEqual && len(compressed) >= size) { return }
-          // #issue 30 31
-          // https://rollupjs.org/plugin-development/#this-emitfile
-          if (flag) {
-            if (deleteOriginalAssets || fileName === name) { Reflect.deleteProperty(bundles, fileName) }
+        await handleCompressFiles(source, fileName, {
+          skip: noop,
+          pass: (name, flag, compressed) => {
+            // #issue 30 31
+            // https://rollupjs.org/plugin-development/#this-emitfile
+            if (flag) {
+              if (deleteOriginalAssets || fileName === name) { Reflect.deleteProperty(bundles, fileName) }
+            }
+            this.emitFile({ type: 'asset', fileName: name, source: compressed })
           }
-          this.emitFile({ type: 'asset', fileName: name, source: compressed })
-        }
+        })
       })
     }
     await queue.wait().catch((err: Error) => {
@@ -314,32 +330,6 @@ function compression(
     async closeBundle() {
       const compressedMessages: Array<{ dest: string, file: string, size: number }> = []
 
-      const compressAndHandleFile = async (filePath: string, file: string, dest: string) => {
-        const buf = await fsp.readFile(filePath)
-
-        for (let i = 0; i < zlibs.length; i++) {
-          const z = zlibs[i]
-          const flag = i === zlibs.length - 1
-          const compressed = await compress(buf, z.algorithmFunction, z.options)
-          if (skipIfLargerOrEqual && len(compressed) >= len(buf)) {
-            if (!pluginContext.staticOutputs.has(file)) { pluginContext.staticOutputs.add(file) }
-            return
-          }
-
-          const fileName = replaceFileName(file, z.filename, { options: z.options, algorithm: z.algorithm })
-          if (!pluginContext.staticOutputs.has(fileName)) { pluginContext.staticOutputs.add(fileName) }
-
-          const outputPath = path.join(dest, fileName)
-          if (flag) {
-            if (deleteOriginalAssets && outputPath !== filePath) {
-              await fsp.rm(filePath, { recursive: true, force: true })
-            }
-          }
-          await fsp.writeFile(outputPath, compressed)
-          compressedMessages.push({ dest: path.relative(root, dest) + '/', file: fileName, size: len(compressed) })
-        }
-      }
-
       const processFile = async (dest: string, file: string) => {
         const filePath = path.join(dest, file)
         if (!filter(filePath) && !pluginContext.staticOutputs.has(file)) {
@@ -353,7 +343,43 @@ function compression(
           }
           return
         }
-        await compressAndHandleFile(filePath, file, dest)
+        const buf = await fsp.readFile(filePath)
+
+        await handleCompressFiles(buf, file, {
+          skip: (name) => {
+            if (!pluginContext.staticOutputs.has(name)) {
+              pluginContext.staticOutputs.add(name)
+            }
+          },
+          pass: async (name, flag, compressed) => {
+            if (!pluginContext.staticOutputs.has(name)) {
+              pluginContext.staticOutputs.add(name)
+            }
+            const outputPath = path.join(dest, name)
+            if (flag) {
+              if (deleteOriginalAssets && outputPath !== filePath) {
+                await fsp.rm(filePath, { recursive: true, force: true })
+              }
+            }
+            await fsp.writeFile(outputPath, compressed)
+            compressedMessages.push({ dest: path.relative(root, dest) + '/', file: name, size: len(compressed) })
+          }
+        })
+      }
+
+      // artifacts
+      if (opts.artifacts && typeof opts.artifacts === 'function') {
+        const result = opts.artifacts()
+        for (const dest of outputs) {
+          for (const item of result) {
+            if (fs.existsSync(item.src)) {
+              const baseName = path.basename(item.src)
+              const deset = item.replace ? item.replace(dest, baseName) : path.join(dest, baseName)
+              fs.cpSync(item.src, deset, { recursive: true })
+              statics.push(slash(path.relative(dest, deset)))
+            }
+          }
+        }
       }
 
       // parallel run

@@ -36,7 +36,7 @@ export async function mockBuild(fixture: string, dest: string, options?: InlineC
   const id = getId()
   const output = path.join(dest, id)
   const bundle = await build({
-    root: path.resolve(__dirname, '..', 'fixtures', fixture),
+    root: getFixturePath(fixture),
     configFile: false,
     logLevel: 'silent',
     build: {
@@ -53,4 +53,8 @@ export function typedForIn<T extends NonNullable<object>>(obj: T, callback: (key
       callback(key satisfies keyof T, obj[key satisfies keyof T])
     }
   }
+}
+
+export function getFixturePath(fixture: string) {
+  return path.resolve(__dirname, '..', 'fixtures', fixture)
 }

@@ -149,6 +149,28 @@ compression({
 })
 ```
 
+> How to using artifacts?
+
+```ts
+compression({
+  algorithms: ['gzip'],
+  deleteOriginalAssets: true,
+  artifacts: () => {
+    return [
+      {
+        src: 'node_modules/xxx/y.js',
+        // replace is an optional argument.
+        replace: (dest, filename) => {
+          // dest mean the vite output dir.
+          // filename is the input file basename.
+          return path.join(dest, `xzy.js`)
+        }
+      }
+    ]
+  }
+})
+```
+
 > What's the performance impact?
 
 - Compression happens during build time, not runtime
