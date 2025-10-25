@@ -3,6 +3,7 @@
 </p>
 
 [![codecov](https://codecov.io/gh/nonzzz/vite-plugin-compression/branch/master/graph/badge.svg?token=NG4475OP6B)](https://codecov.io/gh/nonzzz/vite-compression-plugin)
+[![Download](https://img.shields.io/npm/dm/vite-plugin-compression2)](https://www.npmjs.com/package/vite-plugin-compression2)
 
 ## Install
 
@@ -12,6 +13,10 @@ $ yarn add vite-plugin-compression2 -D
 # or
 
 $ npm install vite-plugin-compression2 -D
+
+# or
+
+$ pnpm add vite-plugin-compression2 -D
 ```
 
 ## Usage
