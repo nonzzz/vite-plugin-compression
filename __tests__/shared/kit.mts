@@ -39,10 +39,12 @@ export async function mockBuild(fixture: string, dest: string, options?: InlineC
     root: getFixturePath(fixture),
     configFile: false,
     logLevel: 'silent',
+
+    ...options,
     build: {
+      ...options?.build || {},
       outDir: output
-    },
-    ...options
+    }
   })
   return { output, bundle }
 }

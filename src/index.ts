@@ -21,6 +21,7 @@ import { captureViteLogger, len, noop, readAll, replaceFileName, slash, stringTo
 import { createConcurrentQueue } from './task'
 
 const VITE_INTERNAL_ANALYSIS_PLUGIN = 'vite:build-import-analysis'
+const VITE_INTERNAL_MANIFEST_PLUGIN = 'vite:manifest'
 const VITE_COMPRESSION_PLUGIN = 'vite-plugin-compression'
 const VITE_COPY_PUBLIC_DIR = 'copyPublicDir'
 const MAX_CONCURRENT = (() => {
@@ -28,6 +29,14 @@ const MAX_CONCURRENT = (() => {
   if (cpus.length === 1) { return 10 }
   return Math.max(1, cpus.length - 1)
 })()
+
+function ensureNeedHijackVitePlugin(config: ResolvedConfig) {
+  const hasManifestOption = !!config.build.manifest
+  if (hasManifestOption) {
+    return config.plugins.find((p) => p.name === VITE_INTERNAL_MANIFEST_PLUGIN)
+  }
+  return config.plugins.find((p) => p.name === VITE_INTERNAL_ANALYSIS_PLUGIN)
+}
 
 interface CompressionPluginAPI {
   staticOutputs: Set<string>
@@ -317,11 +326,11 @@ function compression(
       await handleStaticFiles(config, (file) => {
         statics.push(file)
       })
-      const viteAnalyzerPlugin = config.plugins.find((p) => p.name === VITE_INTERNAL_ANALYSIS_PLUGIN)
-      if (!viteAnalyzerPlugin) {
+      const viteInternalPlugin = ensureNeedHijackVitePlugin(config)
+      if (!viteInternalPlugin) {
         throw new Error("[vite-plugin-compression] Can't be work in versions lower than vite at 2.0.0")
       }
-      hijackGenerateBundle(viteAnalyzerPlugin, generateBundle)
+      hijackGenerateBundle(viteInternalPlugin, generateBundle)
 
       logger = config.logger
 

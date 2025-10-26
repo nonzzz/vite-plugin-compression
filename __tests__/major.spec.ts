@@ -218,4 +218,22 @@ describe('compression plugin', () => {
     const result = await readAll(output)
     expect(result.filter((s) => s.endsWith('.gz')).length).toBe(1)
   })
+  it('work with vite internal manifest plugin', async () => {
+    const { output } = await mockBuild('normal', root, {
+      build: { manifest: true },
+      plugins: [compression({ deleteOriginalAssets: true, algorithms: ['gz'], skipIfLargerOrEqual: false })]
+    })
+    console.log(output)
+    expect(1).toBe(1)
+    const files = await readAll(output)
+    expect(files.filter((s) => s.endsWith('.gz')).length).toBe(4)
+
+    const manifestPath = files.find((f) => f.endsWith('manifest.json.gz'))
+    expect(fs.existsSync(manifestPath)).toBe(true)
+
+    const original = zlib.gunzipSync(fs.readFileSync(manifestPath)).toString()
+    const manifest = JSON.parse(original) as Record<string, { file: string }>
+
+    expect(Object.keys(manifest).length).toBeGreaterThanOrEqual(1)
+  })
 })

@@ -1,3 +1,7 @@
+## 2.3.1
+
+- Fixed where it didn't work with vite manifest plugin.
+
 ## 2.3.0
 
 - Add new option `artifacts`.
