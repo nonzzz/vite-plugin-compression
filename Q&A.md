@@ -184,3 +184,263 @@ compression({
 2. Verify `include`/`exclude` patterns match your files
 3. Ensure your server is configured to serve compressed files
 4. Check build output for compression statistics
+
+> How do I verify compression is working?
+
+**1. Check build output:**
+Look for `.gz` or `.br` files in your dist folder after building.
+
+**2. Check response headers:**
+Use browser DevTools (Network tab) or curl:
+
+```bash
+curl -I -H "Accept-Encoding: gzip" https://your-site.com/main.js
+# Should see: Content-Encoding: gzip
+
+curl -I -H "Accept-Encoding: br" https://your-site.com/main.js
+# Should see: Content-Encoding: br
+```
+
+**3. Compare file sizes:**
+In browser DevTools Network tab:
+- **Size**: Actual file size
+- **Transferred**: Compressed size sent over network
+
+**4. Test locally:**
+```bash
+# Build your project
+npm run build
+
+# Serve with a static server that supports pre-compressed files
+npx serve dist
+```
+
+> What's the difference between static and dynamic compression?
+
+**Static Compression (this plugin):**
+- Files are compressed during build time
+- ✅ Pros: No CPU overhead on server, faster response, consistent performance
+- ❌ Cons: Requires more disk space, need to configure server
+
+**Dynamic Compression (nginx gzip module):**
+- Files are compressed on-the-fly for each request
+- ✅ Pros: No build step needed, saves disk space, automatic
+- ❌ Cons: CPU overhead on every request, slower first response, variable performance
+
+**Recommendation:** Use static compression for production deployments to maximize performance.
+
+> Should I use both gzip and brotli?
+
+**Yes!** This is the recommended approach:
+
+```js
+compression({
+  algorithms: ['gzip', 'brotliCompress']
+})
+```
+
+**Why both?**
+- **Brotli**: 15-20% better compression, supported by all modern browsers (Chrome, Firefox, Safari, Edge)
+- **Gzip**: Universal fallback for older browsers and tools
+- **Server behavior**: Automatically serves the best format based on client's `Accept-Encoding` header
+
+**Compression comparison example:**
+- Original: 1000 KB
+- Gzip: ~250 KB (75% reduction)
+- Brotli: ~200 KB (80% reduction)
+
+> How much disk space will compressed files take?
+
+**Typical compression ratios:**
+
+| File Type  | Original | Gzip      | Brotli    |
+|------------|----------|-----------|-----------|
+| JavaScript | 100%     | 20-30%    | 15-25%    |
+| CSS        | 100%     | 15-25%    | 10-20%    |
+| HTML       | 100%     | 30-40%    | 25-35%    |
+| JSON       | 100%     | 10-20%    | 5-15%     |
+| SVG        | 100%     | 20-30%    | 15-25%    |
+
+**Example:**
+- Original bundle: 5 MB
+- With gzip: +1.25 MB (25% of original)
+- With brotli: +1 MB (20% of original)
+- **Total disk usage**: ~7.25 MB (original + gzip + brotli)
+
+**Trade-off:** 45% more disk space for 75-80% bandwidth savings.
+
+> Can I use this with Docker?
+
+**Yes!** Here's a complete example with nginx:
+
+```dockerfile
+# Build stage
+FROM node:20-alpine AS builder
+WORKDIR /app
+COPY package*.json ./
+RUN npm ci
+COPY . .
+RUN npm run build
+
+# Production stage
+FROM nginx:alpine
+COPY --from=builder /app/dist /usr/share/nginx/html
+COPY nginx.conf /etc/nginx/nginx.conf
+EXPOSE 80
+CMD ["nginx", "-g", "daemon off;"]
+```
+
+**nginx.conf for Docker:**
+
+```nginx
+events {
+    worker_connections 1024;
+}
+
+http {
+    include /etc/nginx/mime.types;
+    default_type application/octet-stream;
+    
+    # Enable pre-compressed file serving
+    gzip_static on;
+    brotli_static on;
+    
+    # Fallback dynamic compression
+    gzip on;
+    gzip_types text/plain text/css application/json application/javascript text/xml application/xml application/xml+rss text/javascript;
+    
+    server {
+        listen 80;
+        server_name localhost;
+        root /usr/share/nginx/html;
+        index index.html;
+        
+        location / {
+            try_files $uri $uri/ /index.html;
+        }
+    }
+}
+```
+
+> How do I handle CDN caching with compressed files?
+
+**Configure your CDN to:**
+
+1. **Respect Vary header:**
+   - Ensure CDN caches different versions based on `Accept-Encoding`
+   - Most CDNs (CloudFlare, AWS CloudFront, Fastly) handle this automatically
+
+2. **Set cache-control headers:**
+
+```nginx
+location ~* \.(js|css|html)$ {
+    expires 1y;
+    add_header Cache-Control "public, immutable";
+    add_header Vary "Accept-Encoding";
+}
+```
+
+3. **CloudFlare specific settings:**
+   - Enable "Brotli" in Speed → Optimization
+   - Enable "Auto Minify" (optional, works with pre-compressed files)
+   - Cache Level: Standard or higher
+
+4. **AWS CloudFront:**
+
+```json
+{
+  "Compress": true,
+  "ViewerProtocolPolicy": "redirect-to-https",
+  "CachePolicyId": "658327ea-f89d-4fab-a63d-7e88639e58f6"
+}
+```
+
+**Note:** When using CDN compression + pre-compressed files:
+- CDN will serve your pre-compressed files if properly configured
+- CDN's own compression acts as a fallback
+- Pre-compressed files are typically better optimized (higher compression levels)
+
+> What about source maps?
+
+**Recommendation:** Don't compress source maps in production.
+
+```js
+compression({
+  exclude: [/\.map$/], // Exclude source maps
+  algorithms: ['gzip', 'brotliCompress']
+})
+```
+
+**Why?**
+- Source maps are only downloaded when DevTools is open
+- They're already quite large and compress well dynamically if needed
+- Saves build time and disk space
+
+**Alternative:** If you must compress them:
+
+```js
+compression({
+  include: [/\.(js|css|html|json|svg|map)$/],
+  threshold: 10240, // Only compress maps larger than 10KB
+  algorithms: ['gzip'] // Use only gzip for faster builds
+})
+```
+
+> How does this affect build time?
+
+**Typical impact:**
+
+| Project Size | Files | Gzip Only | Gzip + Brotli |
+|--------------|-------|-----------|---------------|
+| Small        | <50   | +2-5s     | +5-10s        |
+| Medium       | 50-200| +5-15s    | +15-30s       |
+| Large        | >200  | +15-30s   | +30-60s       |
+
+**Optimization tips:**
+
+```js
+compression({
+  threshold: 1024, // Skip small files
+  exclude: [/\.map$/, /\.txt$/], // Exclude unnecessary files
+  algorithms: ['gzip'], // Use only gzip in CI for faster builds
+  // Use brotli only for production deployments
+})
+```
+
+**CI/CD strategy:**
+- **Development builds:** Skip compression
+- **Staging:** Gzip only (faster)
+- **Production:** Gzip + Brotli (best compression)
+
+> Can I compress files after build?
+
+**Yes!** You can run compression as a separate step:
+
+```json
+{
+  "scripts": {
+    "build": "vite build",
+    "compress": "node compress.js",
+    "build:prod": "npm run build && npm run compress"
+  }
+}
+```
+
+**compress.js:**
+
+```js
+import { compression } from 'vite-plugin-compression2'
+import { build } from 'vite'
+
+// Run compression on existing dist folder
+await build({
+  build: {
+    emptyOutDir: false // Don't delete existing files
+  },
+  plugins: [
+    compression({
+      algorithms: ['gzip', 'brotliCompress']
+    })
+  ]
+})
+```
