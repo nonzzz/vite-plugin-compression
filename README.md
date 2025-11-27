@@ -232,6 +232,267 @@ compression({
 })
 ```
 
+## Production Deployment
+
+After building your project with compressed assets, you need to configure your web server to serve these pre-compressed files.
+
+### Nginx Configuration
+
+```nginx
+http {
+    # Enable gzip_static module to serve pre-compressed .gz files
+    gzip_static on;
+    
+    # Enable brotli_static to serve pre-compressed .br files
+    # Requires ngx_brotli module: https://github.com/google/ngx_brotli
+    brotli_static on;
+    
+    # Fallback to dynamic compression if static file not found
+    gzip on;
+    gzip_types text/plain text/css application/json application/javascript text/xml application/xml application/xml+rss text/javascript;
+    
+    server {
+        listen 80;
+        server_name example.com;
+        root /var/www/html;
+        
+        location / {
+            try_files $uri $uri/ /index.html;
+        }
+    }
+}
+```
+
+### Apache Configuration
+
+```apache
+# Enable mod_deflate for fallback dynamic compression
+<IfModule mod_deflate.c>
+    AddOutputFilterByType DEFLATE text/html text/plain text/xml text/css text/javascript application/javascript application/json
+</IfModule>
+
+# Serve pre-compressed files
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    
+    # Serve .br file if it exists and client supports brotli
+    RewriteCond %{HTTP:Accept-Encoding} br
+    RewriteCond %{REQUEST_FILENAME}.br -f
+    RewriteRule ^(.*)$ $1.br [L]
+    
+    # Serve .gz file if it exists and client supports gzip
+    RewriteCond %{HTTP:Accept-Encoding} gzip
+    RewriteCond %{REQUEST_FILENAME}.gz -f
+    RewriteRule ^(.*)$ $1.gz [L]
+</IfModule>
+
+# Set correct content-type and encoding headers
+<FilesMatch "\.js\.gz$">
+    Header set Content-Type "application/javascript"
+    Header set Content-Encoding "gzip"
+</FilesMatch>
+
+<FilesMatch "\.css\.gz$">
+    Header set Content-Type "text/css"
+    Header set Content-Encoding "gzip"
+</FilesMatch>
+
+<FilesMatch "\.js\.br$">
+    Header set Content-Type "application/javascript"
+    Header set Content-Encoding "br"
+</FilesMatch>
+
+<FilesMatch "\.css\.br$">
+    Header set Content-Type "text/css"
+    Header set Content-Encoding "br"
+</FilesMatch>
+```
+
+## Framework Integration
+
+### Next.js
+
+For Next.js projects, add the plugin to your Vite configuration if using the App Router with custom server:
+
+```js
+// vite.config.js (for custom Next.js setups)
+import { defineConfig } from 'vite'
+import { compression } from 'vite-plugin-compression2'
+
+export default defineConfig({
+  plugins: [
+    compression({
+      algorithms: ['gzip', 'brotliCompress'],
+      threshold: 1024
+    })
+  ]
+})
+```
+
+For standard Next.js builds, configure in `next.config.js`:
+
+```js
+// next.config.js
+/** @type {import('next').NextConfig} */
+const nextConfig = {
+  // Next.js handles compression differently
+  // Use this plugin with custom server or static export
+  output: 'export', // For static export
+  compress: false // Disable Next.js built-in compression to use pre-compressed files
+}
+
+module.exports = nextConfig
+```
+
+### Nuxt 3
+
+```js
+// nuxt.config.ts
+import { compression } from 'vite-plugin-compression2'
+
+export default defineNuxtConfig({
+  vite: {
+    plugins: [
+      compression({
+        algorithms: ['gzip', 'brotliCompress'],
+        threshold: 1024,
+        exclude: [/\.map$/, /stats\.html$/]
+      })
+    ]
+  }
+})
+```
+
+### SvelteKit
+
+```js
+// vite.config.js
+import { sveltekit } from '@sveltejs/kit/vite'
+import { compression } from 'vite-plugin-compression2'
+import { defineConfig } from 'vite'
+
+export default defineConfig({
+  plugins: [
+    sveltekit(),
+    compression({
+      algorithms: ['gzip', 'brotliCompress'],
+      threshold: 1024
+    })
+  ]
+})
+```
+
+### Astro
+
+```js
+// astro.config.mjs
+import { defineConfig } from 'astro/config'
+import { compression } from 'vite-plugin-compression2'
+
+export default defineConfig({
+  vite: {
+    plugins: [
+      compression({
+        algorithms: ['gzip', 'brotliCompress']
+      })
+    ]
+  }
+})
+```
+
+## Performance Tips
+
+### Compression Level Selection
+
+Choose compression levels based on your deployment strategy:
+
+```js
+compression({
+  algorithms: [
+    // Development: faster builds, lower compression
+    defineAlgorithm('gzip', { level: 6 }), // Default level
+    
+    // Production: slower builds, better compression
+    defineAlgorithm('gzip', { level: 9 }), // Maximum compression
+    
+    // Brotli: quality 10-11 recommended for static assets
+    defineAlgorithm('brotliCompress', {
+      params: {
+        [require('zlib').constants.BROTLI_PARAM_QUALITY]: 11
+      }
+    })
+  ]
+})
+```
+
+**Recommendations:**
+- **Development/CI**: Level 6 (gzip) or Quality 4-6 (brotli) - faster builds
+- **Production**: Level 9 (gzip) or Quality 10-11 (brotli) - best compression
+- **Balance**: Level 7-8 (gzip) or Quality 8-9 (brotli) - good compromise
+
+### File Size Threshold
+
+Only compress files that benefit from compression:
+
+```js
+compression({
+  threshold: 1024, // 1KB minimum - recommended
+  algorithms: ['gzip', 'brotliCompress']
+})
+```
+
+**Why use a threshold?**
+- Files smaller than 1KB may not benefit from compression
+- HTTP overhead can make tiny compressed files slower
+- Saves build time and disk space
+
+### Multi-Algorithm Strategy
+
+Use both gzip and brotli for maximum compatibility and performance:
+
+```js
+compression({
+  algorithms: [
+    defineAlgorithm('gzip', { level: 9 }),      // Wide browser support (all browsers)
+    defineAlgorithm('brotliCompress', {         // Better compression (modern browsers)
+      params: {
+        [require('zlib').constants.BROTLI_PARAM_QUALITY]: 11
+      }
+    })
+  ]
+})
+```
+
+**Benefits:**
+- Brotli: 15-20% better compression than gzip
+- Gzip: Fallback for older browsers
+- Server automatically serves the best format based on `Accept-Encoding` header
+
+### Selective Compression
+
+Compress only specific file types for optimal results:
+
+```js
+compression({
+  include: [/\.(js|mjs|json|css|html|svg)$/], // Text-based files
+  exclude: [/\.(png|jpg|jpeg|gif|webp|woff|woff2)$/], // Already compressed formats
+  threshold: 1024
+})
+```
+
+**File types that compress well:**
+- JavaScript/TypeScript (`.js`, `.mjs`, `.ts`)
+- CSS (`.css`)
+- HTML (`.html`)
+- JSON (`.json`)
+- SVG (`.svg`)
+- XML (`.xml`)
+
+**File types to skip:**
+- Images (`.png`, `.jpg`, `.webp`) - already compressed
+- Fonts (`.woff`, `.woff2`) - already compressed
+- Videos (`.mp4`, `.webm`) - already compressed
+
 ### Others
 
 - If you want to analyze your bundle assets, try [vite-bundle-analyzer](https://github.com/nonzzz/vite-bundle-analyzer)
