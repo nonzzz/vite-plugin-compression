@@ -56,7 +56,8 @@
     "typescript": "^5.3.3",
     "vite": "^7.0.3",
     "vite-bundle-analyzer": "^1.0.0",
-    "vitest": "^2.1.2"
+    "vitest": "^2.1.2",
+    "rolldown-vite": "^7.2.10"
   },
   "dependencies": {
     "@rollup/pluginutils": "^5.1.0",

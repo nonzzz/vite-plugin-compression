@@ -22,6 +22,8 @@ import { createConcurrentQueue } from './task'
 
 const VITE_INTERNAL_ANALYSIS_PLUGIN = 'vite:build-import-analysis'
 const VITE_INTERNAL_MANIFEST_PLUGIN = 'vite:manifest'
+const ROLLDOWN_VITE_INTENRAL_MANIFEST_PLUGIN = 'native:manifest'
+const ROLLDOWN_VITE_INTENRAL_MANIFEST_COMPAT_PLUGIN = 'native:manifest-compatible'
 const VITE_COMPRESSION_PLUGIN = 'vite-plugin-compression'
 const VITE_COPY_PUBLIC_DIR = 'copyPublicDir'
 const MAX_CONCURRENT = (() => {
@@ -30,11 +32,13 @@ const MAX_CONCURRENT = (() => {
   return Math.max(1, cpus.length - 1)
 })()
 
-function ensureNeedHijackVitePlugin(config: ResolvedConfig) {
+function ensureNeedHijackVitePlugin(config: ResolvedConfig, isRolldownVite: boolean) {
   const hasManifestOption = !!config.build.manifest
   if (hasManifestOption) {
-    return config.plugins.find((p) => p.name === VITE_INTERNAL_MANIFEST_PLUGIN)
+    const name = isRolldownVite ? ROLLDOWN_VITE_INTENRAL_MANIFEST_PLUGIN : VITE_INTERNAL_MANIFEST_PLUGIN
+    return config.plugins.find((p) => p.name === name)
   }
+  // 12/4/2025 it's also named as this in vite 7.x and rolldown vite
   return config.plugins.find((p) => p.name === VITE_INTERNAL_ANALYSIS_PLUGIN)
 }
 
@@ -174,6 +178,19 @@ function tarball(opts: ViteTarballPluginOptions = {}): Plugin {
       })
       await tarball.done()
     }
+  }
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function proxyReturn<T>(fn: (...args: any[]) => T | Promise<T>, handler: (result: T) => any) {
+  return (...args: Parameters<typeof fn>) => {
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+    const ret = fn(...args)
+    if (ret instanceof Promise) {
+      return ret.then(handler)
+    }
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-return
+    return handler(ret)
   }
 }
 
@@ -326,11 +343,35 @@ function compression(
       await handleStaticFiles(config, (file) => {
         statics.push(file)
       })
-      const viteInternalPlugin = ensureNeedHijackVitePlugin(config)
+      let isRolldownVite = false
+
+      if (this) {
+        // vite7
+        if (this.meta && 'rolldownVersion' in this.meta) {
+          isRolldownVite = true
+        }
+      }
+
+      const viteInternalPlugin = ensureNeedHijackVitePlugin(config, isRolldownVite)
+
       if (!viteInternalPlugin) {
         throw new Error("[vite-plugin-compression] Can't be work in versions lower than vite at 2.0.0")
       }
-      hijackGenerateBundle(viteInternalPlugin, generateBundle)
+      if (isRolldownVite && viteInternalPlugin.name === ROLLDOWN_VITE_INTENRAL_MANIFEST_PLUGIN) {
+        viteInternalPlugin.applyToEnvironment = proxyReturn(viteInternalPlugin.applyToEnvironment, (res) => {
+          if (Array.isArray(res)) {
+            const p = res.filter((r) => typeof r === 'object' && 'name' in r).find((r) =>
+              r.name === ROLLDOWN_VITE_INTENRAL_MANIFEST_COMPAT_PLUGIN
+            )
+            if (p) {
+              hijackGenerateBundle(p, generateBundle)
+            }
+          }
+          return res
+        })
+      } else {
+        hijackGenerateBundle(viteInternalPlugin, generateBundle)
+      }
 
       logger = config.logger
 

@@ -1,6 +1,8 @@
 import fs from 'fs'
 import { create, destroy as _destory } from 'memdisk'
 import path from 'path'
+import { build as rolldownBuild } from 'rolldown-vite'
+import type { InlineConfig as RolldownInlineConfig } from 'rolldown-vite'
 import url from 'url'
 import { build } from 'vite'
 import type { InlineConfig } from 'vite'
@@ -32,17 +34,35 @@ export function createDisk(p: string) {
   return { destroy, root, dir }
 }
 
-export async function mockBuild(fixture: string, dest: string, options?: InlineConfig) {
+export async function mockBuild(
+  fixture: string,
+  dest: string,
+  options: InlineConfig,
+  rolldown?: false
+): Promise<{ output: string, bundle: Awaited<ReturnType<typeof build>> }>
+export async function mockBuild(
+  fixture: string,
+  dest: string,
+  options: RolldownInlineConfig,
+  rolldown: true
+): Promise<{ output: string, bundle: Awaited<ReturnType<typeof rolldownBuild>> }>
+export async function mockBuild(
+  fixture: string,
+  dest: string,
+  options: InlineConfig | RolldownInlineConfig = {},
+  rolldown?: boolean
+) {
   const id = getId()
   const output = path.join(dest, id)
-  const bundle = await build({
+  const fn = rolldown ? rolldownBuild : build
+  const bundle = await fn({
     root: getFixturePath(fixture),
     configFile: false,
     logLevel: 'silent',
-
     ...options,
+    // @ts-expect-error ignore
     build: {
-      ...options?.build || {},
+      ...(options?.build || {}),
       outDir: output
     }
   })
