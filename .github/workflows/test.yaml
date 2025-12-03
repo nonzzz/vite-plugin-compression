@@ -6,7 +6,7 @@ jobs:
   test:
     strategy:
       matrix:
-        version: [22.3, 23.8, 24.0]
+        version: [24]
         os: [ubuntu-latest]
     runs-on: ${{ matrix.os }}
     steps:
