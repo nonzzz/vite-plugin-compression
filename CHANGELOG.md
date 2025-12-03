@@ -1,3 +1,7 @@
+## 2.4.0
+
+- Add support for rolldown-vite
+
 ## 2.3.1
 
 - Fixed where it didn't work with vite manifest plugin.
