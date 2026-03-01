@@ -32,6 +32,17 @@ export type LogLevel = 'info' | 'silent'
 
 export type ArtifactsFunction = () => Array<{ src: string, replace?: (dest: string, fileName: string) => string }>
 
+export type AlgorithmFunction<T extends UserCompressionOptions> = (buf: InputType, options: T) => Promise<Buffer>
+
+export interface SchedulerOptions {
+  /** Max number of high-memory compression operations running simultaneously. Default: 1 */
+  limit?: number
+  /** Determine whether an algorithm + options combination is "high memory".
+   *  When returns true, the operation will be guarded by the semaphore.
+   *  Default: zstd level >= 20 or brotli quality >= 10 */
+  isHighMemory?: (algorithm: CoreAlgorithm | AlgorithmFunction<UserCompressionOptions>, options: UserCompressionOptions) => boolean
+}
+
 interface BaseCompressionPluginOptions {
   include?: FilterPattern
   exclude?: FilterPattern
@@ -40,6 +51,7 @@ interface BaseCompressionPluginOptions {
   deleteOriginalAssets?: boolean
   skipIfLargerOrEqual?: boolean
   logLevel?: LogLevel
+  scheduler?: SchedulerOptions
   artifacts?: ArtifactsFunction
 }
 export interface AlgorithmToZlib {
@@ -53,8 +65,6 @@ export interface AlgorithmToZlib {
   zstd: ZstdOptions
   zstandard: ZstdOptions
 }
-
-export type AlgorithmFunction<T extends UserCompressionOptions> = (buf: InputType, options: T) => Promise<Buffer>
 
 export type defineAliasAlgorithmResult<T extends UserCompressionOptions = UserCompressionOptions> =
   | readonly [

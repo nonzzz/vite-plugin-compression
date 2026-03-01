@@ -104,6 +104,7 @@ export default defineConfig({
 | `skipIfLargerOrEqual`  | `boolean`                                     | `true`                                                                                    | Whether to skip the compression if the result is larger than or equal to the original file |
 | `logLevel`             | `string`                                      | `info`                                                                                    | Control sdout info                                                                         |
 | `artifacts`            | `function`                                    | `undefined`                                                                               | Sometimes you need to copy something to the final output. This option may help you.        |
+| `scheduler`            | `SchedulerOptions`                            | `undefined`                                                                               | Limit concurrency                                                                          |
 
 ### Tarball Plugin Options
 
@@ -368,8 +369,8 @@ export default defineNuxtConfig({
 ```js
 // vite.config.js
 import { sveltekit } from '@sveltejs/kit/vite'
-import { compression } from 'vite-plugin-compression2'
 import { defineConfig } from 'vite'
+import { compression } from 'vite-plugin-compression2'
 
 export default defineConfig({
   plugins: [
@@ -411,10 +412,10 @@ compression({
   algorithms: [
     // Development: faster builds, lower compression
     defineAlgorithm('gzip', { level: 6 }), // Default level
-    
+
     // Production: slower builds, better compression
     defineAlgorithm('gzip', { level: 9 }), // Maximum compression
-    
+
     // Brotli: quality 10-11 recommended for static assets
     defineAlgorithm('brotliCompress', {
       params: {
@@ -426,6 +427,7 @@ compression({
 ```
 
 **Recommendations:**
+
 - **Development/CI**: Level 6 (gzip) or Quality 4-6 (brotli) - faster builds
 - **Production**: Level 9 (gzip) or Quality 10-11 (brotli) - best compression
 - **Balance**: Level 7-8 (gzip) or Quality 8-9 (brotli) - good compromise
@@ -442,6 +444,7 @@ compression({
 ```
 
 **Why use a threshold?**
+
 - Files smaller than 1KB may not benefit from compression
 - HTTP overhead can make tiny compressed files slower
 - Saves build time and disk space
@@ -453,8 +456,8 @@ Use both gzip and brotli for maximum compatibility and performance:
 ```js
 compression({
   algorithms: [
-    defineAlgorithm('gzip', { level: 9 }),      // Wide browser support (all browsers)
-    defineAlgorithm('brotliCompress', {         // Better compression (modern browsers)
+    defineAlgorithm('gzip', { level: 9 }), // Wide browser support (all browsers)
+    defineAlgorithm('brotliCompress', { // Better compression (modern browsers)
       params: {
         [require('zlib').constants.BROTLI_PARAM_QUALITY]: 11
       }
@@ -464,6 +467,7 @@ compression({
 ```
 
 **Benefits:**
+
 - Brotli: 15-20% better compression than gzip
 - Gzip: Fallback for older browsers
 - Server automatically serves the best format based on `Accept-Encoding` header
@@ -481,6 +485,7 @@ compression({
 ```
 
 **File types that compress well:**
+
 - JavaScript/TypeScript (`.js`, `.mjs`, `.ts`)
 - CSS (`.css`)
 - HTML (`.html`)
@@ -489,6 +494,7 @@ compression({
 - XML (`.xml`)
 
 **File types to skip:**
+
 - Images (`.png`, `.jpg`, `.webp`) - already compressed
 - Fonts (`.woff`, `.woff2`) - already compressed
 - Videos (`.mp4`, `.webm`) - already compressed

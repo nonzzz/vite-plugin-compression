@@ -5,7 +5,7 @@ import fsp from 'fs/promises'
 import os from 'os'
 import path from 'path'
 import type { Logger, Plugin, ResolvedConfig } from 'vite'
-import { compress, createTarBall, defaultCompressionOptions, ensureAlgorithm, resolveAlgorithm } from './compress'
+import { compress, createTarBall, defaultCompressionOptions, defaultIsHighMemory, ensureAlgorithm, resolveAlgorithm } from './compress'
 import type {
   Algorithm,
   AlgorithmFunction,
@@ -222,7 +222,8 @@ function compression(
     filename,
     deleteOriginalAssets = false,
     skipIfLargerOrEqual = true,
-    logLevel = 'info'
+    logLevel = 'info',
+    scheduler
   } = opts
 
   const algorithms: Array<DefineAlgorithmResult | defineAliasAlgorithmResult> = []
@@ -249,6 +250,8 @@ function compression(
 
   let root: string = process.cwd()
 
+  const isHighMemory = scheduler?.isHighMemory ?? defaultIsHighMemory
+
   const zlibs = algorithms.map(([_algorithm, options]) => {
     const algorithm = typeof _algorithm === 'string' ? resolveAlgorithm(_algorithm) : _algorithm
     return ({
@@ -256,29 +259,23 @@ function compression(
       algorithmFunction: typeof algorithm === 'string' ? ensureAlgorithm(algorithm).algorithm : algorithm,
       options,
       filename: filename ??
-        (algorithm === 'brotliCompress' ? '[path][base].br' : algorithm === 'zstandard' ? '[path][base].zst' : '[path][base].gz')
+        (algorithm === 'brotliCompress' ? '[path][base].br' : algorithm === 'zstandard' ? '[path][base].zst' : '[path][base].gz'),
+      highMemory: scheduler ? isHighMemory(algorithm, options) : false
     })
   })
 
-  const handleCompressFiles = async (source: Uint8Array, fileName: string, visit: {
-    skip: (fileName: string) => void,
-    pass: (fileName: string, flag: boolean, compressed: Uint8Array) => void | Promise<void>
-  }) => {
-    const size = len(source)
-    for (let i = 0; i < zlibs.length; i++) {
-      const z = zlibs[i]
-      const flag = i === zlibs.length - 1
-      const name = replaceFileName(fileName, z.filename, { options: z.options, algorithm: z.algorithm })
-      const compressed = await compress(source, z.algorithmFunction, z.options)
-      if (skipIfLargerOrEqual && len(compressed) >= size) {
-        visit.skip(fileName)
-        continue
-      }
-      await visit.pass(name, flag, compressed)
-    }
+  const normalQueue = createConcurrentQueue(MAX_CONCURRENT)
+  const highMemQueue = scheduler ? createConcurrentQueue(scheduler.limit ?? 1) : null
+
+  const waitAllQueues = async () => {
+    const waits: Promise<void>[] = [normalQueue.wait()]
+    if (highMemQueue) { waits.push(highMemQueue.wait()) }
+    await Promise.all(waits)
   }
 
-  const queue = createConcurrentQueue(MAX_CONCURRENT)
+  const selectQueue = (z: typeof zlibs[number]) => {
+    return (z.highMemory && highMemQueue) ? highMemQueue : normalQueue
+  }
 
   const generateBundle: GenerateBundle = async function handler(_, bundles) {
     for (const fileName in bundles) {
@@ -287,21 +284,27 @@ function compression(
       const source = stringToBytes(bundle.type === 'asset' ? bundle.source : bundle.code)
       const size = len(source)
       if (size < threshold) { continue }
-      queue.enqueue(async () => {
-        await handleCompressFiles(source, fileName, {
-          skip: noop,
-          pass: (name, flag, compressed) => {
-            // #issue 30 31
-            // https://rollupjs.org/plugin-development/#this-emitfile
-            if (flag) {
-              if (deleteOriginalAssets || fileName === name) { Reflect.deleteProperty(bundles, fileName) }
-            }
-            this.emitFile({ type: 'asset', fileName: name, source: compressed })
+
+      for (let i = 0; i < zlibs.length; i++) {
+        const z = zlibs[i]
+        const flag = i === zlibs.length - 1
+
+        selectQueue(z).enqueue(async () => {
+          const name = replaceFileName(fileName, z.filename, { options: z.options, algorithm: z.algorithm })
+          const compressed = await compress(source, z.algorithmFunction, z.options)
+          if (skipIfLargerOrEqual && len(compressed) >= size) {
+            return
           }
+          // https://rollupjs.org/plugin-development/#this-emitfile
+          if (flag) {
+            if (deleteOriginalAssets || fileName === name) { Reflect.deleteProperty(bundles, fileName) }
+          }
+          this.emitFile({ type: 'asset', fileName: name, source: compressed })
         })
-      })
+      }
     }
-    await queue.wait().catch((err: Error) => {
+
+    await waitAllQueues().catch((err: Error) => {
       if (logLevel === 'silent') { return }
       this.error(createEnhancedError(err, 'bundle compression'))
     })
@@ -380,7 +383,7 @@ function compression(
     async closeBundle() {
       const compressedMessages: Array<{ dest: string, file: string, size: number }> = []
 
-      const processFile = async (dest: string, file: string) => {
+      const processFile = async (dest: string, file: string, z: typeof zlibs[number], flag: boolean) => {
         const filePath = path.join(dest, file)
         if (!filter(filePath) && !pluginContext.staticOutputs.has(file)) {
           pluginContext.staticOutputs.add(file)
@@ -395,26 +398,27 @@ function compression(
         }
         const buf = await fsp.readFile(filePath)
 
-        await handleCompressFiles(buf, file, {
-          skip: (name) => {
-            if (!pluginContext.staticOutputs.has(name)) {
-              pluginContext.staticOutputs.add(name)
-            }
-          },
-          pass: async (name, flag, compressed) => {
-            if (!pluginContext.staticOutputs.has(name)) {
-              pluginContext.staticOutputs.add(name)
-            }
-            const outputPath = path.join(dest, name)
-            if (flag) {
-              if (deleteOriginalAssets && outputPath !== filePath) {
-                await fsp.rm(filePath, { recursive: true, force: true })
-              }
-            }
-            await fsp.writeFile(outputPath, compressed)
-            compressedMessages.push({ dest: path.relative(root, dest) + '/', file: name, size: len(compressed) })
+        const name = replaceFileName(file, z.filename, { options: z.options, algorithm: z.algorithm })
+        const compressed = await compress(buf, z.algorithmFunction, z.options)
+
+        if (skipIfLargerOrEqual && len(compressed) >= size) {
+          if (!pluginContext.staticOutputs.has(file)) {
+            pluginContext.staticOutputs.add(file)
           }
-        })
+          return
+        }
+
+        if (!pluginContext.staticOutputs.has(name)) {
+          pluginContext.staticOutputs.add(name)
+        }
+        const outputPath = path.join(dest, name)
+        if (flag) {
+          if (deleteOriginalAssets && outputPath !== filePath) {
+            await fsp.rm(filePath, { recursive: true, force: true })
+          }
+        }
+        await fsp.writeFile(outputPath, compressed)
+        compressedMessages.push({ dest: path.relative(root, dest) + '/', file: name, size: len(compressed) })
       }
 
       // artifacts
@@ -435,14 +439,18 @@ function compression(
       // parallel run
       for (const dest of outputs) {
         for (const file of statics) {
-          queue.enqueue(() => processFile(dest, file))
+          for (let i = 0; i < zlibs.length; i++) {
+            const z = zlibs[i]
+            const flag = i === zlibs.length - 1
+            selectQueue(z).enqueue(() => processFile(dest, file, z, flag))
+          }
         }
       }
 
       // issue #18
       // In somecase. Like vuepress it will called vite build with `Promise.all`. But it's concurrency. when we record the
       // file fd. It had been changed. So that we should catch the error
-      await queue.wait().catch((e: unknown) => e)
+      await waitAllQueues().catch((e: unknown) => e)
       doneResolver.resolve()
       cleanup()
 

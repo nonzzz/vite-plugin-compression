@@ -56,7 +56,9 @@ export async function compress<T extends UserCompressionOptions | undefined>(
 }
 
 export const defaultCompressionOptions: {
-  [algorithm in CoreAlgorithm]: algorithm extends 'brotliCompress' ? BrotliOptions : algorithm extends 'zstd' ? ZstdOptions : ZlibOptions
+  [algorithm in CoreAlgorithm]: algorithm extends 'brotliCompress' ? BrotliOptions
+    : algorithm extends 'zstandard' ? ZstdOptions
+    : ZlibOptions
 } = {
   gzip: {
     level: zlib.constants.Z_BEST_COMPRESSION
@@ -77,6 +79,24 @@ export const defaultCompressionOptions: {
       [zlib.constants.ZSTD_c_compressionLevel]: 22
     }
   }
+}
+
+export function defaultIsHighMemory(
+  algorithm: CoreAlgorithm | AlgorithmFunction<UserCompressionOptions>,
+  options: UserCompressionOptions
+): boolean {
+  if (typeof algorithm === 'function') { return false }
+  if (algorithm === 'zstandard') {
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
+    const level = options?.params?.[zlib.constants.ZSTD_c_compressionLevel] ?? 3
+    return level >= 20
+  }
+  if (algorithm === 'brotliCompress') {
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
+    const quality = options?.params?.[zlib.constants.BROTLI_PARAM_QUALITY] ?? 11
+    return quality >= 10
+  }
+  return false
 }
 
 interface TarballOptions {
