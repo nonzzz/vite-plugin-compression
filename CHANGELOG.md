@@ -1,3 +1,12 @@
+## 2.5.0
+
+- Add default option for `zstd`
+- Add task limiter `scheduler`
+
+### Credits
+
+@bddjr
+
 ## 2.4.0
 
 - Add support for rolldown-vite
