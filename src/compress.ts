@@ -76,7 +76,7 @@ export const defaultCompressionOptions: {
   },
   zstandard: {
     params: {
-      [zlib.constants.ZSTD_c_compressionLevel]: 22
+      [zlib.constants.ZSTD_c_compressionLevel]: 19
     }
   }
 }
