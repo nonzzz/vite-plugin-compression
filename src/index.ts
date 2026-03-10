@@ -389,7 +389,9 @@ function compression(
           pluginContext.staticOutputs.add(file)
           return
         }
-        const { size } = await fsp.stat(filePath)
+        const stat = await fsp.stat(filePath).catch(() => null);
+        if (!stat) return;
+        const { size } = stat;
         if (size < threshold) {
           if (!pluginContext.staticOutputs.has(file)) {
             pluginContext.staticOutputs.add(file)
