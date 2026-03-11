@@ -1,3 +1,8 @@
+## 2.5.1
+
+- Adjusted the default configuration of zstd
+- Add support for the Vite environment
+
 ## 2.5.0
 
 - Add default option for `zstd`
