@@ -14,15 +14,36 @@ import type { Vite5Instance } from './vite5/interface'
 import type { Vite6Instance } from './vite6/interface'
 import type { Vite7Instance } from './vite7/interface'
 
-type ViteInstance = Vite2Instance | Vite3Instance | Vite4Instance | Vite5Instance | Vite6Instance | RolldownViteInstance | Vite7Instance
+type ViteBaseType = {
+  build:
+    | Vite2Instance['build']
+    | Vite3Instance['build']
+    | Vite4Instance['build']
+    | Vite5Instance['build']
+    | Vite6Instance['build']
+    | Vite7Instance['build']
+}
 
 type Server = http.Server & {
   ip: string
 }
 
 export interface TestOptions {
-  vite: ViteInstance
+  vite: ViteBaseType
   compressOption?: Parameters<typeof compression>[number]
+}
+type BuildTestOptions<T> = {
+  vite: T,
+  compressOption?: Parameters<typeof compression>[number]
+}
+type TestOptionsMap = {
+  2: BuildTestOptions<Vite2Instance>,
+  3: BuildTestOptions<Vite3Instance>,
+  4: BuildTestOptions<Vite4Instance>,
+  5: BuildTestOptions<Vite5Instance>,
+  6: BuildTestOptions<Vite6Instance>,
+  7: BuildTestOptions<Vite7Instance>,
+  r: BuildTestOptions<RolldownViteInstance>
 }
 
 function createGetter<T>(obj: T, key: string, getter: () => unknown) {
@@ -99,6 +120,13 @@ async function expectTestCase(taskName: string, page: Awaited<Page>, localUrl: A
   await page.goto(localUrl)
 }
 
+export async function runTest<T extends TestOptionsMap[2]>(taskName: string, options: T): Promise<void>
+export async function runTest<T extends TestOptionsMap[3]>(taskName: string, options: T): Promise<void>
+export async function runTest<T extends TestOptionsMap[4]>(taskName: string, options: T): Promise<void>
+export async function runTest<T extends TestOptionsMap[5]>(taskName: string, options: T): Promise<void>
+export async function runTest<T extends TestOptionsMap[6]>(taskName: string, options: T): Promise<void>
+export async function runTest<T extends TestOptionsMap[7]>(taskName: string, options: T): Promise<void>
+export async function runTest<T extends TestOptionsMap['r']>(taskName: string, options: T): Promise<void>
 export async function runTest(taskName: string, options: TestOptions) {
   await prepareAssets(taskName, options)
   await new Promise((resolve) => setTimeout(resolve, 5000))
