@@ -4,7 +4,7 @@ import fs from 'fs'
 import fsp from 'fs/promises'
 import os from 'os'
 import path from 'path'
-import type { Logger, Plugin, ResolvedConfig } from 'vite'
+import type { Logger, Plugin, ResolvedBuildOptions, ResolvedConfig } from 'vite'
 import { compress, createTarBall, defaultCompressionOptions, defaultIsHighMemory, ensureAlgorithm, resolveAlgorithm } from './compress'
 import type {
   Algorithm,
@@ -47,7 +47,7 @@ interface CompressionPluginAPI {
   done: Promise<void>
 }
 
-function handleOutputOption(conf: ResolvedConfig) {
+function generateOutpts(root: string, config: ResolvedBuildOptions) {
   // issue #39
   // In some case like vite-plugin-legacy will set an empty output item
   // we should skip it.
@@ -57,19 +57,31 @@ function handleOutputOption(conf: ResolvedConfig) {
   // eg:
   // yarn --cwd @pkg/website build
   const outputs: Set<string> = new Set()
+
   const prepareAbsPath = (root: string, sub: string) => slash(path.resolve(root, sub))
-  if (conf.build.rollupOptions?.output) {
-    const outputOptions = Array.isArray(conf.build.rollupOptions.output)
-      ? conf.build.rollupOptions.output
-      : [conf.build.rollupOptions.output]
+
+  if (config.rollupOptions?.output) {
+    const outputOptions = Array.isArray(config.rollupOptions.output)
+      ? config.rollupOptions.output
+      : [config.rollupOptions.output]
     outputOptions.forEach((opt) => {
       if (typeof opt === 'object' && !len(Object.keys(opt))) { return }
-      outputs.add(prepareAbsPath(conf.root, opt.dir || conf.build.outDir))
+      outputs.add(prepareAbsPath(root, opt.dir || config.outDir))
     })
   } else {
-    outputs.add(prepareAbsPath(conf.root, conf.build.outDir))
+    outputs.add(prepareAbsPath(root, config.outDir))
   }
   return outputs
+}
+
+// https://vite.dev/guide/api-environment#environment-api
+// generally the client will have a public directory for static resouce, so we only record client.
+function handleOutputOption(conf: ResolvedConfig) {
+  const envs = conf.environments
+    ? Object.values({ client: conf.environments.client }).map((envConf) => envConf.build)
+    : [conf.build]
+
+  return new Set(envs.flatMap((buildConf) => Array.from(generateOutpts(conf.root, buildConf))))
 }
 
 async function handleStaticFiles(config: ResolvedConfig, callback: (file: string, assets: string) => void) {
@@ -340,6 +352,7 @@ function compression(
       // Vite follow rollup option as first and the configResolved Hook don't expose merged conf for user. :(
       // Someone who like using rollupOption. `config.build.outDir` will not as expected.
       outputs.push(...handleOutputOption(config))
+      console.log(outputs)
       // Vite's pubic build: https://github.com/vitejs/vite/blob/HEAD/packages/vite/src/node/build.ts#L704-L709
       // copyPublicDir minimum version 3.2+
       // No need check size here.
@@ -389,9 +402,10 @@ function compression(
           pluginContext.staticOutputs.add(file)
           return
         }
-        const stat = await fsp.stat(filePath).catch(() => null);
-        if (!stat) return;
-        const { size } = stat;
+        // .catch(() => null)
+        const stat = await fsp.stat(filePath)
+        if (!stat) { return }
+        const { size } = stat
         if (size < threshold) {
           if (!pluginContext.staticOutputs.has(file)) {
             pluginContext.staticOutputs.add(file)

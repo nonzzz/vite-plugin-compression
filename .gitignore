@@ -19,3 +19,7 @@ yarn-error.log*
 tsconfig.vitest-temp.json
 
 .tmpl_suite
+.output
+.tankstack
+
+*.tar

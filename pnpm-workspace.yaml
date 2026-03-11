@@ -1,6 +1,7 @@
 packages:
   - example
   - e2e/**/*
+  - __tests__/specials/**
 
 onlyBuiltDependencies:
   - "@swc/core"
