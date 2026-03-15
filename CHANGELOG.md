@@ -1,3 +1,7 @@
+## 2.5.2
+
+- Quiet the console
+
 ## 2.5.1
 
 - Adjusted the default configuration of zstd

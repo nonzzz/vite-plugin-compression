@@ -352,7 +352,6 @@ function compression(
       // Vite follow rollup option as first and the configResolved Hook don't expose merged conf for user. :(
       // Someone who like using rollupOption. `config.build.outDir` will not as expected.
       outputs.push(...handleOutputOption(config))
-      console.log(outputs)
       // Vite's pubic build: https://github.com/vitejs/vite/blob/HEAD/packages/vite/src/node/build.ts#L704-L709
       // copyPublicDir minimum version 3.2+
       // No need check size here.
