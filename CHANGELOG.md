@@ -1,3 +1,7 @@
+## 2.5.3
+
+- Static directories need to respect excludes
+
 ## 2.5.2
 
 - Quiet the console

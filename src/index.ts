@@ -397,43 +397,46 @@ function compression(
 
       const processFile = async (dest: string, file: string, z: typeof zlibs[number], flag: boolean) => {
         const filePath = path.join(dest, file)
-        if (!pluginContext.staticOutputs.has(file)) {
-          pluginContext.staticOutputs.add(file)
-        }
+        const normalizedFile = slash(file)
 
-        if (!filter(filePath)) { return }
+        if (!pluginContext.staticOutputs.has(normalizedFile)) {
+          pluginContext.staticOutputs.add(normalizedFile)
+        }
 
         const stat = await fsp.stat(filePath)
         if (!stat) { return }
+
+        if (!filter(filePath)) { return }
+
         const { size } = stat
         if (size < threshold) {
-          if (!pluginContext.staticOutputs.has(file)) {
-            pluginContext.staticOutputs.add(file)
-          }
           return
         }
-        const buf = await fsp.readFile(filePath)
 
+        const buf = await fsp.readFile(filePath)
         const name = replaceFileName(file, z.filename, { options: z.options, algorithm: z.algorithm })
+        const normalizedName = slash(name)
         const compressed = await compress(buf, z.algorithmFunction, z.options)
 
         if (skipIfLargerOrEqual && len(compressed) >= size) {
-          if (!pluginContext.staticOutputs.has(file)) {
-            pluginContext.staticOutputs.add(file)
-          }
           return
         }
 
-        if (!pluginContext.staticOutputs.has(name)) {
-          pluginContext.staticOutputs.add(name)
-        }
         const outputPath = path.join(dest, name)
-        if (flag) {
-          if (deleteOriginalAssets && outputPath !== filePath) {
-            await fsp.rm(filePath, { recursive: true, force: true })
+
+        await fsp.writeFile(outputPath, compressed)
+
+        if (!pluginContext.staticOutputs.has(normalizedName)) {
+          pluginContext.staticOutputs.add(normalizedName)
+        }
+
+        if (flag && deleteOriginalAssets && outputPath !== filePath) {
+          await fsp.rm(filePath, { recursive: true, force: true }).catch(() => undefined)
+          if (pluginContext.staticOutputs.has(normalizedFile)) {
+            pluginContext.staticOutputs.delete(normalizedFile)
           }
         }
-        await fsp.writeFile(outputPath, compressed)
+
         compressedMessages.push({ dest: path.relative(root, dest) + '/', file: name, size: len(compressed) })
       }
 
