@@ -397,11 +397,12 @@ function compression(
 
       const processFile = async (dest: string, file: string, z: typeof zlibs[number], flag: boolean) => {
         const filePath = path.join(dest, file)
-        if (!filter(filePath) && !pluginContext.staticOutputs.has(file)) {
+        if (!pluginContext.staticOutputs.has(file)) {
           pluginContext.staticOutputs.add(file)
-          return
         }
-        // .catch(() => null)
+
+        if (!filter(filePath)) { return }
+
         const stat = await fsp.stat(filePath)
         if (!stat) { return }
         const { size } = stat
