@@ -397,8 +397,12 @@ function compression(
 
       const processFile = async (dest: string, file: string, z: typeof zlibs[number], flag: boolean) => {
         const filePath = path.join(dest, file)
-        if (!filter(filePath) && !pluginContext.staticOutputs.has(file)) {
-          pluginContext.staticOutputs.add(file)
+        const name = replaceFileName(file, z.filename, { options: z.options, algorithm: z.algorithm })
+        if(pluginContext.staticOutputs.has(name)){
+          return 
+        }
+        pluginContext.staticOutputs.add(name)
+        if (!filter(filePath)) {
           return
         }
         // .catch(() => null)
@@ -406,26 +410,17 @@ function compression(
         if (!stat) { return }
         const { size } = stat
         if (size < threshold) {
-          if (!pluginContext.staticOutputs.has(file)) {
-            pluginContext.staticOutputs.add(file)
-          }
           return
         }
         const buf = await fsp.readFile(filePath)
 
-        const name = replaceFileName(file, z.filename, { options: z.options, algorithm: z.algorithm })
+        
         const compressed = await compress(buf, z.algorithmFunction, z.options)
 
         if (skipIfLargerOrEqual && len(compressed) >= size) {
-          if (!pluginContext.staticOutputs.has(file)) {
-            pluginContext.staticOutputs.add(file)
-          }
           return
         }
 
-        if (!pluginContext.staticOutputs.has(name)) {
-          pluginContext.staticOutputs.add(name)
-        }
         const outputPath = path.join(dest, name)
         if (flag) {
           if (deleteOriginalAssets && outputPath !== filePath) {
@@ -453,6 +448,7 @@ function compression(
 
       // parallel run
       for (const dest of outputs) {
+        pluginContext.staticOutputs.clear()
         for (const file of statics) {
           for (let i = 0; i < zlibs.length; i++) {
             const z = zlibs[i]
