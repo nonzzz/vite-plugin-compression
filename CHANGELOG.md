@@ -1,3 +1,7 @@
+## 2.5.4
+
+- Fix `generateBundle`
+
 ## 2.5.3
 
 - Static directories need to respect excludes
