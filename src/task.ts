@@ -23,7 +23,7 @@ class Queue {
       const task = this.queue.shift()
       this.running++
       try {
-        await task()
+        await task?.()
       } catch (error) {
         this.errors.push(error as Error)
       } finally {

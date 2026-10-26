@@ -1,3 +1,4 @@
+// The software is simple so I want to make it compatible with the latest vite and vite2.
 import { createFilter } from '@rollup/pluginutils'
 import ansis from 'ansis'
 import fs from 'fs'
@@ -60,10 +61,13 @@ function generateOutpts(root: string, config: ResolvedBuildOptions) {
 
   const prepareAbsPath = (root: string, sub: string) => slash(path.resolve(root, sub))
 
-  if (config.rollupOptions?.output) {
-    const outputOptions = Array.isArray(config.rollupOptions.output)
-      ? config.rollupOptions.output
-      : [config.rollupOptions.output]
+  // rolldown ouput win the order
+  const universalOutputs = config?.rolldownOptions?.output || config?.rollupOptions?.output
+
+  if (universalOutputs) {
+    const outputOptions = Array.isArray(universalOutputs)
+      ? universalOutputs
+      : [universalOutputs]
     outputOptions.forEach((opt) => {
       if (typeof opt === 'object' && !len(Object.keys(opt))) { return }
       outputs.add(prepareAbsPath(root, opt.dir || config.outDir))
@@ -373,9 +377,12 @@ function compression(
         throw new Error("[vite-plugin-compression] Can't be work in versions lower than vite at 2.0.0")
       }
       if (isRolldownVite && viteInternalPlugin.name === ROLLDOWN_VITE_INTENRAL_MANIFEST_PLUGIN) {
+        if (!viteInternalPlugin.applyToEnvironment) {
+          throw new Error("[vite-plugin-compression] Can't be work in versions lower than vite at 7.0.0")
+        }
         viteInternalPlugin.applyToEnvironment = proxyReturn(viteInternalPlugin.applyToEnvironment, (res) => {
           if (Array.isArray(res)) {
-            const p = res.filter((r) => typeof r === 'object' && 'name' in r).find((r) =>
+            const p = res.filter((r) => r !== null && typeof r === 'object' && 'name' in r).find((r) =>
               r.name === ROLLDOWN_VITE_INTENRAL_MANIFEST_COMPAT_PLUGIN
             )
             if (p) {
@@ -497,10 +504,21 @@ function compression(
 compression.getPluginAPI = (plugins: readonly Plugin[]): CompressionPluginAPI | undefined =>
   (plugins.find((p) => p.name === VITE_COMPRESSION_PLUGIN) as Plugin<CompressionPluginAPI>)?.api
 
-export function defineAlgorithm<T extends Algorithm | UserCompressionOptions | AlgorithmFunction<UserCompressionOptions>>(
-  algorithm: T extends Algorithm | AlgorithmFunction<UserCompressionOptions> ? T : AlgorithmFunction<Exclude<T, string>>,
-  options?: T extends Algorithm ? AlgorithmToZlib[T] : T extends AlgorithmFunction<UserCompressionOptions> ? UserCompressionOptions : T
-): DefineAlgorithmResult<T extends Algorithm | AlgorithmFunction<UserCompressionOptions> ? UserCompressionOptions : T> {
+export function defineAlgorithm<T extends Algorithm>(
+  algorithm: T,
+  options?: AlgorithmToZlib[T]
+): DefineAlgorithmResult
+export function defineAlgorithm(
+  algorithm: AlgorithmFunction<unknown>
+): DefineAlgorithmResult
+export function defineAlgorithm<T extends UserCompressionOptions = UserCompressionOptions>(
+  algorithm: AlgorithmFunction<T>,
+  options?: T
+): DefineAlgorithmResult<T>
+export function defineAlgorithm(
+  algorithm: Algorithm | AlgorithmFunction<never>,
+  options?: UserCompressionOptions
+): DefineAlgorithmResult {
   if (typeof algorithm === 'string') {
     const resolvedAlgorithm = resolveAlgorithm(algorithm)
     if (resolvedAlgorithm in defaultCompressionOptions) {
@@ -512,8 +530,7 @@ export function defineAlgorithm<T extends Algorithm | UserCompressionOptions | A
     }
     throw new Error(`[vite-plugin-compression] Unsupported algorithm: ${algorithm}`)
   }
-  // @ts-expect-error no need to check
-  return [algorithm, options || {}]
+  return [algorithm, options || {}] as DefineAlgorithmResult
 }
 
 export { compression, tarball }

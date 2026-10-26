@@ -1,11 +1,11 @@
 import fs from 'fs'
 import { create, destroy as _destory } from 'memdisk'
 import path from 'path'
-import { build as rolldownBuild } from 'rolldown-vite'
-import type { InlineConfig as RolldownInlineConfig } from 'rolldown-vite'
 import url from 'url'
 import { build } from 'vite'
 import type { InlineConfig } from 'vite'
+import { build as vite6Build } from 'vite6'
+import type { InlineConfig as Vite6InlineConfig, Plugin as _Vite6Plugin } from 'vite6'
 
 export const __filename = url.fileURLToPath(import.meta.url)
 
@@ -38,23 +38,24 @@ export async function mockBuild(
   fixture: string,
   dest: string,
   options: InlineConfig,
-  rolldown?: false
+  compact?: false
 ): Promise<{ output: string, bundle: Awaited<ReturnType<typeof build>> }>
 export async function mockBuild(
   fixture: string,
   dest: string,
-  options: RolldownInlineConfig,
-  rolldown: true
-): Promise<{ output: string, bundle: Awaited<ReturnType<typeof rolldownBuild>> }>
+  options: Vite6InlineConfig,
+  compact: true
+): Promise<{ output: string, bundle: Awaited<ReturnType<typeof vite6Build>> }>
 export async function mockBuild(
   fixture: string,
   dest: string,
-  options: InlineConfig | RolldownInlineConfig = {},
-  rolldown?: boolean
+  options: InlineConfig | Vite6InlineConfig = {},
+  compact?: boolean
 ) {
   const id = getId()
   const output = path.join(dest, id)
-  const fn = rolldown ? rolldownBuild : build
+
+  const fn = compact ? vite6Build : build
   const bundle = await fn({
     root: getFixturePath(fixture),
     configFile: false,
@@ -80,3 +81,5 @@ export function typedForIn<T extends NonNullable<object>>(obj: T, callback: (key
 export function getFixturePath(fixture: string) {
   return path.resolve(__dirname, '..', 'fixtures', fixture)
 }
+
+export type Vite6Plugin = _Vite6Plugin

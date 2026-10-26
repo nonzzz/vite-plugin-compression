@@ -42,13 +42,13 @@ export function ensureAlgorithm(userAlgorithm: Algorithm) {
   }
 }
 
-export async function compress<T extends UserCompressionOptions | undefined>(
+export async function compress<T extends UserCompressionOptions = UserCompressionOptions>(
   buf: InputType,
   compress: AlgorithmFunction<T>,
-  options: T
+  options?: T
 ) {
   try {
-    const res = await compress(buf, options)
+    const res = await compress(buf, options ?? {} as T)
     return res
   } catch (error) {
     return Promise.reject(error as Error)

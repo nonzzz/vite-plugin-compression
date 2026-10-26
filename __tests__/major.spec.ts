@@ -6,6 +6,7 @@ import zlib from 'zlib'
 import { compression, defineAlgorithm } from '../src'
 import { readAll } from '../src/shared'
 import { createDisk, getFixturePath, getId, mockBuild } from './shared/kit.mjs'
+import type { Vite6Plugin } from './shared/kit.mjs'
 
 describe('compression plugin', () => {
   const { root, destroy, dir } = createDisk('compression-plugin')
@@ -196,7 +197,7 @@ describe('compression plugin', () => {
           }
         })]
       })
-    ).rejects.toThrowErrorMatchingSnapshot()
+    ).rejects.toThrow('Test error for pretty stack')
   })
   it('alias for algorithm', async () => {
     const { output } = await mockBuild('normal', root, { plugins: [compression({ include: /\.(js)$/, algorithms: [['br', {}]] })] })
@@ -221,13 +222,18 @@ describe('compression plugin', () => {
   it('work with vite internal manifest plugin', async () => {
     const { output } = await mockBuild('normal', root, {
       build: { manifest: true },
-      plugins: [compression({ deleteOriginalAssets: true, algorithms: ['gz'], skipIfLargerOrEqual: false })]
-    })
+      plugins: [compression({ deleteOriginalAssets: true, algorithms: ['gz'], skipIfLargerOrEqual: false }) as unknown as Vite6Plugin]
+    }, true)
     expect(1).toBe(1)
     const files = await readAll(output)
     expect(files.filter((s) => s.endsWith('.gz')).length).toBe(4)
 
     const manifestPath = files.find((f) => f.endsWith('manifest.json.gz'))
+
+    if (!manifestPath) {
+      expect.fail('missing manifestPath for suite: work with vite internal manifest plugin')
+    }
+
     expect(fs.existsSync(manifestPath)).toBe(true)
 
     const original = zlib.gunzipSync(fs.readFileSync(manifestPath)).toString()
@@ -240,12 +246,17 @@ describe('compression plugin', () => {
     const { output } = await mockBuild('normal', root, {
       build: { manifest: true },
       plugins: [compression({ deleteOriginalAssets: true, algorithms: ['gz'], skipIfLargerOrEqual: false })]
-    }, true)
+    })
     expect(1).toBe(1)
     const files = await readAll(output)
     expect(files.filter((s) => s.endsWith('.gz')).length).toBe(4)
 
     const manifestPath = files.find((f) => f.endsWith('manifest.json.gz'))
+
+    if (!manifestPath) {
+      expect.fail('missing manifestPath for suite: work with rolldown vite internal manifest plugin')
+    }
+
     expect(fs.existsSync(manifestPath)).toBe(true)
 
     const original = zlib.gunzipSync(fs.readFileSync(manifestPath)).toString()

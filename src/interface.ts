@@ -23,7 +23,6 @@ export type Pretty<T> =
   & NonNullable<unknown>
 
 export interface FileNameFunctionMetadata {
-  // eslint-disable-next-line no-use-before-define
   algorithm: CoreAlgorithm | AlgorithmFunction<UserCompressionOptions>
   options: UserCompressionOptions
 }
@@ -32,7 +31,14 @@ export type LogLevel = 'info' | 'silent'
 
 export type ArtifactsFunction = () => Array<{ src: string, replace?: (dest: string, fileName: string) => string }>
 
-export type AlgorithmFunction<T extends UserCompressionOptions> = (buf: InputType, options: T) => Promise<Buffer>
+export type AlgorithmFunction<T = UserCompressionOptions> = (buf: InputType, options: T) => Promise<Buffer>
+
+// The function and its options are consumed as a correlated tuple. Using a
+// bivariant callback here lets a specifically inferred tuple remain assignable
+// to the non-generic public Algorithms container.
+type DefinedAlgorithmFunction<T extends UserCompressionOptions> = {
+  callback(buf: InputType, options: T): Promise<Buffer>
+}['callback']
 
 export interface SchedulerOptions {
   /** Max number of high-memory compression operations running simultaneously. Default: 1 */
@@ -80,7 +86,7 @@ export type defineAliasAlgorithmResult<T extends UserCompressionOptions = UserCo
     ZstdOptions
   ]
   | readonly [
-    AlgorithmFunction<T>,
+    DefinedAlgorithmFunction<T>,
     T
   ]
 
@@ -98,7 +104,7 @@ export type DefineAlgorithmResult<T extends UserCompressionOptions = UserCompres
     ZstdOptions
   ]
   | readonly [
-    AlgorithmFunction<T>,
+    DefinedAlgorithmFunction<T>,
     T
   ]
 
@@ -108,9 +114,9 @@ export interface ViteCompressionPluginOption extends BaseCompressionPluginOption
   algorithms?: Algorithms
 }
 
-export type GenerateBundle = HookHandler<Plugin['generateBundle']>
+export type GenerateBundle = Exclude<HookHandler<Plugin['generateBundle']>, undefined>
 
-export type WriteBundle = HookHandler<Plugin['writeBundle']>
+export type WriteBundle = Exclude<HookHandler<Plugin['writeBundle']>, undefined>
 
 export interface ViteTarballPluginOptions {
   dest?: string
