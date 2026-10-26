@@ -1,49 +1,41 @@
+import fs from 'fs'
 import http from 'http'
 import path from 'path'
 import { chromium } from 'playwright'
 import type { Page } from 'playwright'
 import sirv from 'sirv'
 import { expect, test } from 'vitest'
+import zlib from 'zlib'
 import { compression } from '../src'
+import { readAll } from '../src/shared'
 
-import type { RolldownViteInstance } from './rolldown-vite/interface'
-import type { Vite2Instance } from './vite2/interface'
-import type { Vite3Instance } from './vite3/interface'
-import type { Vite4Instance } from './vite4/interface'
-import type { Vite5Instance } from './vite5/interface'
-import type { Vite6Instance } from './vite6/interface'
-import type { Vite7Instance } from './vite7/interface'
-
-type ViteBaseType = {
-  build:
-    | Vite2Instance['build']
-    | Vite3Instance['build']
-    | Vite4Instance['build']
-    | Vite5Instance['build']
-    | Vite6Instance['build']
-    | Vite7Instance['build']
+interface E2EBuildConfig {
+  root: string
+  build: {
+    manifest?: boolean,
+    outDir: string
+  }
+  logLevel: 'silent'
+  plugins: unknown[]
 }
+
+type ViteBuild = (config: E2EBuildConfig) => Promise<unknown>
 
 type Server = http.Server & {
   ip: string
 }
 
 export interface TestOptions {
-  vite: ViteBaseType
+  vite: unknown
   compressOption?: Parameters<typeof compression>[number]
+  orderedHooks?: boolean
 }
-type BuildTestOptions<T> = {
-  vite: T,
-  compressOption?: Parameters<typeof compression>[number]
-}
-type TestOptionsMap = {
-  2: BuildTestOptions<Vite2Instance>,
-  3: BuildTestOptions<Vite3Instance>,
-  4: BuildTestOptions<Vite4Instance>,
-  5: BuildTestOptions<Vite5Instance>,
-  6: BuildTestOptions<Vite6Instance>,
-  7: BuildTestOptions<Vite7Instance>,
-  r: BuildTestOptions<RolldownViteInstance>
+
+function getViteBuild(vite: unknown): ViteBuild {
+  if (typeof vite !== 'object' || vite === null || !('build' in vite) || typeof vite.build !== 'function') {
+    throw new TypeError('Expected a Vite module with a build function')
+  }
+  return vite.build.bind(vite) as ViteBuild
 }
 
 function createGetter<T>(obj: T, key: string, getter: () => unknown) {
@@ -57,13 +49,12 @@ const defaultWd = __dirname
 // generator assets
 function prepareAssets(taskName: string, options: TestOptions) {
   const { vite, compressOption = {} } = options
-  return vite.build({
+  return getViteBuild(vite)({
     root: defaultWd,
     build: {
       outDir: path.join(defaultWd, 'dist', taskName)
     },
     logLevel: 'silent',
-    // @ts-expect-error vite type error
     plugins: [compression({ ...compressOption, include: [/\.(js)$/, /\.(css)$/] })]
   })
 }
@@ -83,6 +74,7 @@ function createServer(taskName: string) {
   createGetter(server, 'ip', () => {
     const address = server.address()
     if (typeof address === 'string') { return address }
+    if (!address) { throw new Error('Invalid data') }
     return `http://127.0.0.1:${address.port}`
   })
   server.listen(0)
@@ -120,14 +112,53 @@ async function expectTestCase(taskName: string, page: Awaited<Page>, localUrl: A
   await page.goto(localUrl)
 }
 
-export async function runTest<T extends TestOptionsMap[2]>(taskName: string, options: T): Promise<void>
-export async function runTest<T extends TestOptionsMap[3]>(taskName: string, options: T): Promise<void>
-export async function runTest<T extends TestOptionsMap[4]>(taskName: string, options: T): Promise<void>
-export async function runTest<T extends TestOptionsMap[5]>(taskName: string, options: T): Promise<void>
-export async function runTest<T extends TestOptionsMap[6]>(taskName: string, options: T): Promise<void>
-export async function runTest<T extends TestOptionsMap[7]>(taskName: string, options: T): Promise<void>
-export async function runTest<T extends TestOptionsMap['r']>(taskName: string, options: T): Promise<void>
+function registerBundleOrderTest(taskName: string, options: TestOptions) {
+  test(`${taskName} compresses the final post-processed bundle`, async () => {
+    const marker = '<!-- transformed by post hook -->'
+    const output = path.join(defaultWd, 'dist', `${taskName}-bundle-order`)
+    const transformBundle = function(_outputOptions: unknown, bundle: Record<string, { type: string, source?: string | Uint8Array }>) {
+      const html = bundle['index.html']
+      if (!html || html.type !== 'asset' || html.source === undefined) { return }
+      const source = typeof html.source === 'string' ? html.source : Buffer.from(html.source).toString()
+      html.source = source + marker
+    }
+    const postPlugin = {
+      name: 'e2e-post-bundle-transform',
+      enforce: 'post',
+      generateBundle: options.orderedHooks
+        ? { order: 'post', handler: transformBundle }
+        : transformBundle
+    }
+
+    await getViteBuild(options.vite)({
+      root: defaultWd,
+      build: {
+        manifest: true,
+        outDir: output
+      },
+      logLevel: 'silent',
+      plugins: [
+        compression({ algorithms: ['gzip'], include: [/\.html$/, /\.json$/], skipIfLargerOrEqual: false }),
+        postPlugin
+      ]
+    })
+
+    const html = fs.readFileSync(path.join(output, 'index.html'))
+    const compressedHtml = zlib.gunzipSync(fs.readFileSync(path.join(output, 'index.html.gz')))
+    const files = await readAll(output)
+    const compressedManifest = files.find((file) => file.endsWith('manifest.json.gz'))
+
+    expect(html.toString()).toContain(marker)
+    expect(compressedHtml.equals(html)).toBe(true)
+    expect(compressedManifest).toBeDefined()
+    expect(() => {
+      JSON.parse(zlib.gunzipSync(fs.readFileSync(compressedManifest!)).toString())
+    }).not.toThrow()
+  })
+}
+
 export async function runTest(taskName: string, options: TestOptions) {
+  registerBundleOrderTest(taskName, options)
   await prepareAssets(taskName, options)
   await new Promise((resolve) => setTimeout(resolve, 5000))
   const { server } = createServer(taskName)

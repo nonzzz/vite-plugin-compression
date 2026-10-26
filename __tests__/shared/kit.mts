@@ -1,5 +1,6 @@
 import fs from 'fs'
 import { create, destroy as _destory } from 'memdisk'
+import os from 'os'
 import path from 'path'
 import url from 'url'
 import { build } from 'vite'
@@ -22,13 +23,24 @@ export function sleep(delay: number) {
 const namespace = 'compression-suite-'
 
 export function createDisk(p: string) {
-  const dir = create.sync(namespace + p, 64 * 1024 * 1024, { quiet: false })
+  let memoryDisk = true
+  let dir: string
+  try {
+    dir = create.sync(namespace + p, 64 * 1024 * 1024, { quiet: false })
+  } catch {
+    memoryDisk = false
+    dir = fs.mkdtempSync(path.join(os.tmpdir(), `${namespace}${p}-`))
+  }
   const root = dir
 
   fs.mkdirSync(root, { recursive: true })
 
   const destroy = () => {
-    _destory.sync(dir, { quiet: false })
+    if (memoryDisk) {
+      _destory.sync(dir, { quiet: false })
+    } else {
+      fs.rmSync(dir, { recursive: true, force: true })
+    }
   }
 
   return { destroy, root, dir }

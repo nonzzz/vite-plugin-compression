@@ -21,27 +21,14 @@ import type {
 import { captureViteLogger, len, noop, readAll, replaceFileName, slash, stringToBytes } from './shared'
 import { createConcurrentQueue } from './task'
 
-const VITE_INTERNAL_ANALYSIS_PLUGIN = 'vite:build-import-analysis'
-const VITE_INTERNAL_MANIFEST_PLUGIN = 'vite:manifest'
-const ROLLDOWN_VITE_INTENRAL_MANIFEST_PLUGIN = 'native:manifest'
-const ROLLDOWN_VITE_INTENRAL_MANIFEST_COMPAT_PLUGIN = 'native:manifest-compatible'
 const VITE_COMPRESSION_PLUGIN = 'vite-plugin-compression'
+const VITE_COMPRESSION_RUNNER_PLUGIN = `${VITE_COMPRESSION_PLUGIN}:runner`
 const VITE_COPY_PUBLIC_DIR = 'copyPublicDir'
 const MAX_CONCURRENT = (() => {
   const cpus = os.cpus() || { length: 1 }
   if (cpus.length === 1) { return 10 }
   return Math.max(1, cpus.length - 1)
 })()
-
-function ensureNeedHijackVitePlugin(config: ResolvedConfig, isRolldownVite: boolean) {
-  const hasManifestOption = !!config.build.manifest
-  if (hasManifestOption) {
-    const name = isRolldownVite ? ROLLDOWN_VITE_INTENRAL_MANIFEST_PLUGIN : VITE_INTERNAL_MANIFEST_PLUGIN
-    return config.plugins.find((p) => p.name === name)
-  }
-  // 12/4/2025 it's also named as this in vite 7.x and rolldown vite
-  return config.plugins.find((p) => p.name === VITE_INTERNAL_ANALYSIS_PLUGIN)
-}
 
 interface CompressionPluginAPI {
   staticOutputs: Set<string>
@@ -197,34 +184,19 @@ function tarball(opts: ViteTarballPluginOptions = {}): Plugin {
   }
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function proxyReturn<T>(fn: (...args: any[]) => T | Promise<T>, handler: (result: T) => any) {
-  return (...args: Parameters<typeof fn>) => {
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
-    const ret = fn(...args)
-    if (ret instanceof Promise) {
-      return ret.then(handler)
-    }
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-return
-    return handler(ret)
+function installCompressionRunner(plugins: readonly Plugin[], generateBundle: GenerateBundle) {
+  const supportsHookOrder = plugins.some((plugin) => {
+    const hook = plugin.generateBundle
+    return typeof plugin.applyToEnvironment === 'function' ||
+      (typeof hook === 'object' && hook !== null && typeof hook.handler === 'function')
+  })
+  const runner: Plugin = {
+    name: VITE_COMPRESSION_RUNNER_PLUGIN,
+    generateBundle: supportsHookOrder
+      ? { order: 'post', handler: generateBundle }
+      : generateBundle
   }
-}
-
-function hijackGenerateBundle(plugin: Plugin, afterHook: GenerateBundle) {
-  const hook = plugin.generateBundle
-  if (typeof hook === 'object' && hook.handler) {
-    const fn = hook.handler
-    hook.handler = async function handler(this, ...args: Parameters<GenerateBundle>) {
-      await fn.apply(this, args)
-      await afterHook.apply(this, args)
-    }
-  }
-  if (typeof hook === 'function') {
-    plugin.generateBundle = async function handler(this, ...args: Parameters<GenerateBundle>) {
-      await hook.apply(this, args)
-      await afterHook.apply(this, args)
-    }
-  }
+  ;(plugins as Plugin[]).push(runner)
 }
 
 function compression(
@@ -256,6 +228,7 @@ function compression(
 
   const statics: string[] = []
   const outputs: string[] = []
+  let staticFilesReady = Promise.resolve()
 
   // vite internal vite:reporter don't write any log info to stdout. So we only capture the built in message
   // and print static process to stdout. I don't want to complicate things. So about message aligned with internal
@@ -349,57 +322,21 @@ function compression(
     apply: 'build',
     enforce: 'post',
     api: pluginContext,
-    async configResolved(config) {
-      // hijack vite's internal `vite:build-import-analysis` plugin.So we won't need process us chunks at closeBundle anymore.
-      // issue #26
-      // https://github.com/vitejs/vite/blob/716286ef21f4d59786f21341a52a81ee5db58aba/packages/vite/src/node/build.ts#L566-L611
-      // Vite follow rollup option as first and the configResolved Hook don't expose merged conf for user. :(
-      // Someone who like using rollupOption. `config.build.outDir` will not as expected.
+    configResolved(config) {
       outputs.push(...handleOutputOption(config))
-      // Vite's pubic build: https://github.com/vitejs/vite/blob/HEAD/packages/vite/src/node/build.ts#L704-L709
-      // copyPublicDir minimum version 3.2+
-      // No need check size here.
-      await handleStaticFiles(config, (file) => {
+      logger = config.logger
+      root = config.root
+
+      // Vite 2 does not await configResolved, so install the runner before
+      // starting asynchronous setup and await that setup again in closeBundle.
+      installCompressionRunner(config.plugins, generateBundle)
+      staticFilesReady = handleStaticFiles(config, (file) => {
         statics.push(file)
       })
-      let isRolldownVite = false
-
-      if (this) {
-        // vite7
-        if (this.meta && 'rolldownVersion' in this.meta) {
-          isRolldownVite = true
-        }
-      }
-
-      const viteInternalPlugin = ensureNeedHijackVitePlugin(config, isRolldownVite)
-
-      if (!viteInternalPlugin) {
-        throw new Error("[vite-plugin-compression] Can't be work in versions lower than vite at 2.0.0")
-      }
-      if (isRolldownVite && viteInternalPlugin.name === ROLLDOWN_VITE_INTENRAL_MANIFEST_PLUGIN) {
-        if (!viteInternalPlugin.applyToEnvironment) {
-          throw new Error("[vite-plugin-compression] Can't be work in versions lower than vite at 7.0.0")
-        }
-        viteInternalPlugin.applyToEnvironment = proxyReturn(viteInternalPlugin.applyToEnvironment, (res) => {
-          if (Array.isArray(res)) {
-            const p = res.filter((r) => r !== null && typeof r === 'object' && 'name' in r).find((r) =>
-              r.name === ROLLDOWN_VITE_INTENRAL_MANIFEST_COMPAT_PLUGIN
-            )
-            if (p) {
-              hijackGenerateBundle(p, generateBundle)
-            }
-          }
-          return res
-        })
-      } else {
-        hijackGenerateBundle(viteInternalPlugin, generateBundle)
-      }
-
-      logger = config.logger
-
-      root = config.root
+      return staticFilesReady
     },
     async closeBundle() {
+      await staticFilesReady
       const compressedMessages: Array<{ dest: string, file: string, size: number }> = []
 
       const processFile = async (dest: string, file: string, z: typeof zlibs[number], flag: boolean) => {

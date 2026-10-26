@@ -3,10 +3,12 @@ import { runTest } from '../e2e'
 import { name } from './package.json'
 
 describe('vite5', async () => {
-  const vite = await import('vite')
+  const vitePackage = 'vite'
+  const vite: unknown = await import(vitePackage)
 
   await runTest(name, {
     vite,
+    orderedHooks: true,
     compressOption: {
       deleteOriginalAssets: true
     }

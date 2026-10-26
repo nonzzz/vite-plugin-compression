@@ -1,6 +1,7 @@
 import fs from 'fs'
 import path from 'path'
 import util from 'util'
+import type { Plugin } from 'vite'
 import { afterAll, assert, describe, expect, it } from 'vitest'
 import zlib from 'zlib'
 import { compression, defineAlgorithm } from '../src'
@@ -34,6 +35,34 @@ describe('compression plugin', () => {
       plugins: [compression({ algorithms: ['gzip'], skipIfLargerOrEqual: false })]
     })
     expect((await readAll(output)).filter((s) => s.endsWith('.gz')).length).toBe(3)
+  })
+
+  it('compresses content after post-ordered generateBundle hooks', async () => {
+    const marker = '<!-- transformed by post hook -->'
+    const postPlugin = {
+      name: 'post-bundle-transform',
+      enforce: 'post',
+      generateBundle: {
+        order: 'post',
+        handler(_, bundle) {
+          const html = bundle['index.html']
+          if (!html || html.type !== 'asset') { return }
+          const source = typeof html.source === 'string' ? html.source : Buffer.from(html.source).toString()
+          html.source = source + marker
+        }
+      }
+    } satisfies Plugin
+    const { output } = await mockBuild('normal', root, {
+      plugins: [
+        compression({ algorithms: ['gzip'], include: /\.html$/, skipIfLargerOrEqual: false }),
+        postPlugin
+      ]
+    })
+    const html = fs.readFileSync(path.join(output, 'index.html'))
+    const compressed = zlib.gunzipSync(fs.readFileSync(path.join(output, 'index.html.gz')))
+
+    expect(html.toString()).toContain(marker)
+    expect(compressed.equals(html)).toBe(true)
   })
 
   it('custom alorithm', async () => {
